@@ -12,48 +12,161 @@
       font-family: system-ui, sans-serif;
     }
     main {
-      max-width: 850px;
-      margin: 60px auto;
-      padding: 24px;
+      max-width: 950px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    .providers {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
     }
     .card {
       background: white;
-      padding: 24px;
-      margin-top: 18px;
+      padding: 22px;
+      margin: 12px 0;
       border-radius: 14px;
       box-shadow: 0 4px 18px #1720330c;
     }
-    h1 { margin-bottom: 8px; }
     .badge {
       display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
       background: #dcfce7;
       color: #166534;
-      border-radius: 20px;
-      padding: 5px 12px;
       font-size: 14px;
     }
-    code { direction: ltr; display: inline-block; }
+    .count {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 12px 0;
+    }
+    .muted {
+      color: #64748b;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 16px;
+      background: #2563eb;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+    .message {
+      min-height: 24px;
+      margin-top: 12px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
-  <main>
-    <h1>MyCode Gateway</h1>
-    <p>درگاه اختصاصی اتصال دستیارهای برنامه‌نویسی به مدل‌های هوش مصنوعی</p>
+<main>
+  <h1>MyCode Gateway</h1>
+  <p>پنل مدیریت اتصال به مدل‌های هوش مصنوعی</p>
 
-    <section class="card">
-      <span class="badge">برنامه اجرا شده است</span>
-      <h2>وضعیت سرویس</h2>
-      <p>سرور اولیه فعال است و آماده توسعه است.</p>
-      <p>نشانی بررسی سلامت: <code>/health</code></p>
-      <p>مستندات API: <code>/docs</code></p>
-    </section>
+  <section class="card">
+    <span class="badge">سرویس فعال است</span>
+    <h2>ارائه‌دهندگان مدل</h2>
+    <p id="status">در حال دریافت اطلاعات...</p>
+    <div class="providers" id="providers"></div>
+  </section>
 
-    <section class="card">
-      <h2>مرحله بعد</h2>
-      <p>افزودن ارائه‌دهندگان، مدیریت کلیدهای API،
-      انتخاب مدل اصلی و مدل‌های پشتیبان.</p>
-      <p>در این نسخه هنوز هیچ درخواست واقعی به مدل‌ها ارسال نمی‌شود.</p>
-    </section>
-  </main>
+  <section class="card">
+    <h2>مسیریابی مدل‌ها</h2>
+    <p>مدل اصلی: هنوز انتخاب نشده</p>
+    <p>مدل‌های پشتیبان: ۰ از ۳</p>
+    <p class="muted">
+      انتخاب مدل اصلی و پشتیبان را در مرحله بعد اضافه می‌کنیم.
+    </p>
+  </section>
+</main>
+
+<script>
+const providerNames = {
+  nvidia: "NVIDIA NIM",
+  openrouter: "OpenRouter",
+  token_router: "Token Router"
+};
+
+async function loadProviders() {
+  const status = document.getElementById("status");
+  const container = document.getElementById("providers");
+
+  try {
+    const response = await fetch("/api/providers");
+    if (!response.ok) throw new Error("HTTP " + response.status);
+
+    const providers = await response.json();
+    container.replaceChildren();
+
+    for (const [key, provider] of Object.entries(providers)) {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("h3");
+      title.textContent = providerNames[key] || key;
+
+      const state = document.createElement("p");
+      state.textContent = provider.enabled ? "فعال" : "غیرفعال";
+
+      const count = document.createElement("div");
+      count.className = "count";
+      count.textContent = provider.model_count ?? 0;
+
+      const label = document.createElement("p");
+      label.textContent = "مدل ثبت‌شده";
+
+      const button = document.createElement("button");
+      button.textContent = "دریافت مدل‌ها";
+
+      const message = document.createElement("div");
+      message.className = "message muted";
+
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        message.textContent = "در حال دریافت فهرست مدل‌ها...";
+
+        try {
+          const result = await fetch(
+            `/api/providers/${encodeURIComponent(key)}/refresh-models`,
+            { method: "POST" }
+          );
+
+          const data = await result.json();
+
+          if (!result.ok) {
+            throw new Error(data.detail || "خطای نامشخص");
+          }
+
+          count.textContent = data.model_count;
+          state.textContent = "فعال";
+          message.textContent =
+            `${data.model_count} مدل با موفقیت دریافت شد.`;
+        } catch (error) {
+          message.textContent = "خطا: " + error.message;
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      card.append(title, state, count, label, button, message);
+      container.appendChild(card);
+    }
+
+    status.textContent = "اطلاعات با موفقیت دریافت شد.";
+  } catch (error) {
+    status.textContent = "دریافت اطلاعات ناموفق بود: " + error.message;
+  }
+}
+
+loadProviders();
+</script>
 </body>
 </html>

@@ -1,0 +1,23 @@
+{
+  "providers": {
+    "nvidia": {
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "api_key_env": "NVIDIA_API_KEY",
+      "enabled": false
+    },
+    "openrouter": {
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "enabled": false
+    },
+    "token_router": {
+      "base_url": "",
+      "api_key_env": "TOKEN_ROUTER_API_KEY",
+      "enabled": false
+    }
+  },
+  "routing": {
+    "primary": null,
+    "fallbacks": []
+  }
+}

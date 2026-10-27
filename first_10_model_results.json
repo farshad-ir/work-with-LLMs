@@ -1,0 +1,62 @@
+[
+  {
+    "model": "openai/gpt-6.1-terra",
+    "status": 403,
+    "result": "FAIL",
+    "detail": "Access denied by security policy."
+  },
+  {
+    "model": "moonshotai/kimi-k3.1-pro",
+    "status": 403,
+    "result": "FAIL",
+    "detail": "Access denied by security policy."
+  },
+  {
+    "model": "minimax/minimax-m3.1-flash",
+    "status": 403,
+    "result": "FAIL",
+    "detail": "Access denied by security policy."
+  },
+  {
+    "model": "deepseek/deepseek-v4.1-flash-1017",
+    "status": 403,
+    "result": "FAIL",
+    "detail": "Access denied by security policy."
+  },
+  {
+    "model": "elorian/glimpse",
+    "status": 403,
+    "result": "FAIL",
+    "detail": "Access denied by security policy."
+  },
+  {
+    "model": "reflection/beam-1.0-501b-a23b",
+    "status": 403,
+    "result": "FAIL",
+    "detail": "Access denied by security policy."
+  },
+  {
+    "model": "inception/mercury-3",
+    "status": 403,
+    "result": "FAIL",
+    "detail": "Access denied by security policy."
+  },
+  {
+    "model": "moondream/moondream3-preview",
+    "status": 403,
+    "result": "FAIL",
+    "detail": "Access denied by security policy."
+  },
+  {
+    "model": "moondream/moondream3.1-9b-a2b",
+    "status": 403,
+    "result": "FAIL",
+    "detail": "Access denied by security policy."
+  },
+  {
+    "model": "meta/muse-spark-open",
+    "status": 403,
+    "result": "FAIL",
+    "detail": "Access denied by security policy."
+  }
+]
