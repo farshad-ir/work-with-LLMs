@@ -17,3 +17,5 @@ They are archived for reference and are not part of the running application.
   Identical content to the 15:30 pre-adapter snapshot; original filename and timestamp retained here.
 - 2026-10-27 16:18: app/responses_adapter.py.bak
   Historical Responses adapter snapshot, preserved as 2026-10-27-1618-responses-adapter.py.
+- 2026-10-27 16:55: app/responses_adapter.py.before_stream_conversion.bak
+  Responses adapter snapshot before stream conversion, preserved as 2026-10-27-1655-responses-adapter-before-stream-conversion.py.
