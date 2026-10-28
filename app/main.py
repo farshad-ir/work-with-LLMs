@@ -1,5 +1,7 @@
 import json
 import os
+import asyncio
+
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -37,6 +39,27 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 async def lifespan(app: FastAPI):
     yield
 
+class SequentialResponsesMiddleware:
+    """Serialize complete /v1/responses requests, including streaming."""
+
+    def __init__(self, app):
+        self.app = app
+        self.lock = asyncio.Lock()
+
+    async def __call__(self, scope, receive, send):
+        if (
+            scope["type"] != "http"
+            or scope.get("path") != "/v1/responses"
+        ):
+            await self.app(scope, receive, send)
+            return
+
+        await self.lock.acquire()
+
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            self.lock.release()
 
 app = FastAPI(
     title="MyCode Gateway",
@@ -45,6 +68,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(SequentialResponsesMiddleware)
 
 @app.get("/health")
 async def health():
@@ -241,14 +265,11 @@ async def codex_responses(request: Request):
         "token-router": "token_router",
     }
 
-    # حداکثر تعداد مدل‌هایی که برای همین درخواست امتحان می‌کنیم.
-    MAX_MODEL_ATTEMPTS = 5
-
     last_provider_error = None
     upstream = None
     client = None
 
-    for attempt in range(MAX_MODEL_ATTEMPTS):
+    while True:
 
         # انتخاب مدل برای این تلاش
         selected_model = select_next_model()
@@ -367,69 +388,39 @@ async def codex_responses(request: Request):
                     "content-type",
                     "application/json",
                 )
-
-                permanent_error = (
-                    status_code in (402, 403)
-                    or _is_permanent_model_error(
-                        status_code,
-                        content,
-                    )
-                )
-
+        
+                error_message = content.decode(
+                    "utf-8",
+                    errors="replace",
+                )[:500]
+        
                 _record_rotation_result(
                     model_key=model_key,
                     input_chars=input_chars,
                     success=False,
-                    ends_model_test=permanent_error,
-                    error_type=(
-                        "model_unavailable"
-                        if permanent_error
-                        else "provider_http_error"
-                    ),
-                    error_message=content.decode(
-                        "utf-8",
-                        errors="replace",
-                    )[:500],
+                    ends_model_test=True,
+                    error_type="provider_http_error",
+                    error_message=error_message,
                 )
-
-                if permanent_error:
-                    last_provider_error = (
-                        content,
-                        status_code,
-                        content_type,
-                    )
-
+        
+                last_provider_error = (
+                    content,
+                    status_code,
+                    content_type,
+                )
+        
+                print(
+                    "[ROTATION] "
+                    f"Model failed: {model_key}; "
+                    f"HTTP {status_code}; trying next model."
+                )
+        
             finally:
                 await upstream.aclose()
                 await client.aclose()
-
-            # فقط خطاهای قطعی مدل باعث رفتن به مدل بعدی می‌شوند.
-            if permanent_error:
-                print(
-                    "[ROTATION] "
-                    f"Terminal error for {model_key}; "
-                    f"attempt={attempt + 1}/{MAX_MODEL_ATTEMPTS}"
-                )
-
-                if attempt + 1 < MAX_MODEL_ATTEMPTS:
-                    continue
-
-                # سقف تلاش تمام شده است؛ آخرین خطای واقعی را برگردان.
-                content, status_code, content_type = last_provider_error
-
-                return Response(
-                    content=content,
-                    status_code=status_code,
-                    headers={"Content-Type": content_type},
-                )
-
-            # خطاهای موقت مثل 429 یا خطاهای معمول سرور،
-            # فعلاً باعث کنار گذاشتن مدل نمی‌شوند.
-            return Response(
-                content=content,
-                status_code=status_code,
-                headers={"Content-Type": content_type},
-            )
+        
+            continue
+        
 
         # پاسخ موفق HTTP داریم؛ ادامهٔ پردازش با همین مدل انجام می‌شود.
         break
