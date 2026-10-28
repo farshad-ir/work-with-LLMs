@@ -137,7 +137,6 @@ def _find_model(
 
     return None
 
-
 def _provider_has_untested_model(
     catalog: dict[str, Any],
     provider: str,
@@ -153,10 +152,8 @@ def _provider_has_untested_model(
         if model.get("test_status") == "untested":
             return True
 
-        if model.get("lifetime_chars") is None:
-            return True
-
     return False
+
 
 
 def select_next_model() -> dict[str, Any] | None:
@@ -204,13 +201,7 @@ def select_next_model() -> dict[str, Any] | None:
             if _provider_key(str(model.get("provider", ""))) != provider:
                 continue
 
-            if model.get("test_status") == "in_progress":
-                model["test_status"] = "untested"
-
-            if (
-                model.get("test_status") != "untested"
-                and model.get("lifetime_chars") is not None
-            ):
+            if model.get("test_status") != "in_progress":
                 continue
 
             model_key = _model_key(model)
@@ -330,7 +321,7 @@ def record_request_result(
     _save_state(state)
 
     return {
-        "model_key": str(current_key),
+        "model_key": result_key,
         "success": bool(success),
         "lifetime_chars": model.get("lifetime_chars"),
         "successful_requests": model.get("successful_requests", 0),
@@ -358,15 +349,16 @@ def get_rotation_status() -> dict[str, Any]:
         _initialize_model_fields(model)
 
         status = model.get("test_status")
-
-        if status == "tested" or model.get("lifetime_chars") is not None:
-            tested += 1
-        elif status == "failed":
+        
+        if status == "failed":
             failed += 1
+        elif status == "tested" or model.get("lifetime_chars") is not None:
+            tested += 1
         elif status == "in_progress":
             in_progress += 1
         else:
             untested += 1
+
 
     return {
         "total": total,
