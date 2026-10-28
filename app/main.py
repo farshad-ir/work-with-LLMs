@@ -24,7 +24,10 @@ from app.thinker_room import (
     rebuild_large_catalog,
     load_large_catalog,
 )
-
+from app.model_rotation import (
+    select_next_model,
+    record_request_result,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -139,36 +142,141 @@ async def refresh_models(provider_name: str):
     }
 
 
+def _record_rotation_result(
+    model_key: str,
+    input_chars: int,
+    output_chars: int = 0,
+    success: bool = False,
+    ends_model_test: bool = False,
+    error_type: str | None = None,
+    error_message: str | None = None,
+) -> None:
+    """ثبت نتیجه؛ خطای ثبت نباید پاسخ جاری Codex را خراب کند."""
+    try:
+        result = record_request_result(
+            model_key=model_key,
+            input_chars=input_chars,
+            output_chars=output_chars,
+            success=success,
+            ends_model_test=ends_model_test,
+            error_type=error_type,
+            error_message=error_message,
+        )
+        print(
+            "[ROTATION] "
+            f"model={result['model_key']} "
+            f"success={result['success']} "
+            f"chars={result['lifetime_chars']} "
+            f"status={result['test_status']}"
+        )
+    except (RuntimeError, ValueError, OSError) as exc:
+        print(f"[ROTATION] Could not record result: {exc}")
+
+
+def _is_permanent_model_error(status_code: int, content: bytes) -> bool:
+    """فقط خطاهایی که به‌وضوح به مدل ناموجود یا نامعتبر مربوط‌اند."""
+    if status_code in (404, 410):
+        return True
+
+    if status_code != 400:
+        return False
+
+    message = content.decode("utf-8", errors="replace").lower()
+
+    model_error_phrases = (
+        "model not found",
+        "model does not exist",
+        "unknown model",
+        "unsupported model",
+        "invalid model",
+    )
+
+    return any(phrase in message for phrase in model_error_phrases)
+
+
+def _response_output_char_count(response: dict) -> int:
+    """شمارش کاراکترهای متن خروجی و آرگومان‌های فراخوانی ابزارها."""
+    total = 0
+
+    for item in response.get("output", []):
+        if not isinstance(item, dict):
+            continue
+
+        if item.get("type") == "message":
+            for part in item.get("content", []):
+                if isinstance(part, dict) and isinstance(part.get("text"), str):
+                    total += len(part["text"])
+
+        elif item.get("type") == "function_call":
+            arguments = item.get("arguments", "")
+            if isinstance(arguments, str):
+                total += len(arguments)
+
+    return total
+
+
 @app.post("/v1/responses")
 async def codex_responses(request: Request):
     config = load_config()
-    provider = config["providers"].get("openrouter", {})
-
-    base_url = provider.get("base_url", "").rstrip("/")
-    key_name = provider.get("api_key_env", "OPENROUTER_API_KEY")
-    api_key = get_env_value(key_name)
-
-    if not base_url:
-        raise HTTPException(
-            status_code=503,
-            detail="OpenRouter base URL is not configured.",
-        )
-
-    if not api_key:
-        raise HTTPException(
-            status_code=503,
-            detail="OpenRouter API key is not configured on the gateway.",
-        )
 
     try:
-        body = parse_json_object(await request.body())
+        raw_body = await request.body()
+        body = parse_json_object(raw_body)
+        input_chars = len(raw_body.decode("utf-8"))
     except (ValueError, UnicodeDecodeError):
         raise HTTPException(
             status_code=400,
             detail="Request body must be a valid JSON object.",
         ) from None
 
+    # انتخاب مدل جاری از چرخهٔ آزمایش
+    selected_model = select_next_model()
+
+    if selected_model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="All models have completed their tests.",
+        )
+
+    provider_name = str(selected_model.get("provider", "")).strip().lower()
+
+    provider_aliases = {
+        "nvidia_nim": "nvidia",
+        "nvidia-nim": "nvidia",
+        "tokenrouter": "token_router",
+        "token-router": "token_router",
+    }
+    provider_name = provider_aliases.get(provider_name, provider_name)
+
+    model_id = str(selected_model.get("id", ""))
+    model_key = str(
+        selected_model.get("key") or f"{provider_name}:{model_id}"
+    )
+
+    provider = config["providers"].get(provider_name, {})
+    if not provider.get("enabled", False):
+        raise HTTPException(
+            status_code=503,
+            detail=f"Provider '{provider_name}' is disabled.",
+        )
+
+    base_url = str(provider.get("base_url", "")).rstrip("/")
+    key_name = provider.get("api_key_env", "")
+    api_key = get_env_value(key_name) if key_name else ""
+
+    if not base_url or not api_key or not model_id:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Provider '{provider_name}' is not fully configured. "
+                "Check its base URL, API key and model ID."
+            ),
+        )
+
+    # تبدیل درخواست Responses به Chat Completions و تعیین مدل منتخب
     chat_body = responses_to_chat(body)
+    chat_body["model"] = model_id
+
     streaming = bool(chat_body.get("stream"))
 
     headers = {
@@ -188,72 +296,183 @@ async def codex_responses(request: Request):
             json=chat_body,
             headers=headers,
         )
+
         upstream = await client.send(
             upstream_request,
             stream=streaming,
         )
-    except httpx.HTTPError:
-        await client.aclose()
-        raise HTTPException(
-            status_code=502,
-            detail="Could not connect to OpenRouter Chat Completions API.",
-        ) from None
 
-    if upstream.status_code >= 400:
-        content = await upstream.aread()
-        status_code = upstream.status_code
-        content_type = upstream.headers.get("content-type", "application/json")
-        await upstream.aclose()
+    except httpx.HTTPError as exc:
         await client.aclose()
-        return Response(
-            content=content,
-            status_code=status_code,
-            headers={"Content-Type": content_type},
+
+        _record_rotation_result(
+            model_key=model_key,
+            input_chars=input_chars,
+            success=False,
+            error_type="temporary_network",
+            error_message=str(exc)[:500],
         )
 
+        raise HTTPException(
+            status_code=502,
+            detail=f"Could not connect to provider '{provider_name}'.",
+        ) from None
+
+    # خطای HTTP ارائه‌دهنده
+    if upstream.status_code >= 400:
+        try:
+            content = await upstream.aread()
+            status_code = upstream.status_code
+            content_type = upstream.headers.get(
+                "content-type",
+                "application/json",
+            )
+
+
+            permanent_error = (
+                status_code in (402, 403)
+                or _is_permanent_model_error(status_code, content)
+            )
+
+
+            _record_rotation_result(
+                model_key=model_key,
+                input_chars=input_chars,
+                success=False,
+                ends_model_test=permanent_error,
+                error_type=(
+                    "model_unavailable"
+                    if permanent_error
+                    else "provider_http_error"
+                ),
+                error_message=content.decode(
+                    "utf-8",
+                    errors="replace",
+                )[:500],
+            )
+
+            return Response(
+                content=content,
+                status_code=status_code,
+                headers={"Content-Type": content_type},
+            )
+
+        finally:
+            await upstream.aclose()
+            await client.aclose()
+
+    # پاسخ غیرجریانی
     if not streaming:
         try:
             upstream_payload = upstream.json()
             converted = chat_to_responses_text(upstream_payload)
+
+            if not isinstance(converted, dict):
+                raise ValueError("Unexpected response format.")
+
             content = json.dumps(converted, ensure_ascii=False)
-        except (ValueError, TypeError, AttributeError):
-            await upstream.aclose()
-            await client.aclose()
+            output_chars = _response_output_char_count(converted)
+
+        except (ValueError, TypeError, AttributeError) as exc:
+            _record_rotation_result(
+                model_key=model_key,
+                input_chars=input_chars,
+                success=False,
+                error_type="invalid_provider_response",
+                error_message=str(exc)[:500],
+            )
+
             raise HTTPException(
                 status_code=502,
-                detail="OpenRouter returned an invalid Chat Completions response.",
+                detail=f"Provider '{provider_name}' returned an invalid response.",
             ) from None
 
-        await upstream.aclose()
-        await client.aclose()
-        return Response(content=content, media_type="application/json")
+        finally:
+            await upstream.aclose()
+            await client.aclose()
 
+        _record_rotation_result(
+            model_key=model_key,
+            input_chars=input_chars,
+            output_chars=output_chars,
+            success=True,
+        )
+
+        return Response(
+            content=content,
+            media_type="application/json",
+        )
+
+    # پاسخ جریانی
     async def convert_stream():
         converter = ResponsesStreamConverter()
         event_lines = []
+        stream_completed = False
+        stream_error = None
 
         try:
             async for line in upstream.aiter_lines():
                 if line == "":
                     if event_lines:
-                        parsed = parse_chat_sse_event("\n".join(event_lines))
+                        parsed = parse_chat_sse_event(
+                            "\n".join(event_lines)
+                        )
                         event_lines = []
+
                         if parsed:
+                            if parsed.get("type") == "done":
+                                stream_completed = True
+
                             for output_event in converter.feed(parsed):
                                 yield output_event
+
                 else:
                     event_lines.append(line)
 
             if event_lines:
-                parsed = parse_chat_sse_event("\n".join(event_lines))
+                parsed = parse_chat_sse_event(
+                    "\n".join(event_lines)
+                )
+
                 if parsed:
+                    if parsed.get("type") == "done":
+                        stream_completed = True
+
                     for output_event in converter.feed(parsed):
                         yield output_event
 
+            # تبدیل جریان را مانند قبل خاتمه می‌دهیم.
             for output_event in converter.finish():
                 yield output_event
 
+        except httpx.HTTPError as exc:
+            stream_error = str(exc)[:500]
+
         finally:
+            output_chars = len(converter.text)
+
+            for tool in converter.tool_calls.values():
+                arguments = tool.get("arguments", "")
+                if isinstance(arguments, str):
+                    output_chars += len(arguments)
+
+            _record_rotation_result(
+                model_key=model_key,
+                input_chars=input_chars,
+                output_chars=output_chars,
+                success=stream_completed,
+                error_type=(
+                    None
+                    if stream_completed
+                    else "incomplete_stream"
+                ),
+                error_message=(
+                    None
+                    if stream_completed
+                    else stream_error or "Stream ended without [DONE]."
+                ),
+            )
+
             await upstream.aclose()
             await client.aclose()
 
@@ -267,7 +486,6 @@ async def codex_responses(request: Request):
         },
     )
 
-
 if __name__ == "__main__":
     import uvicorn
 
@@ -277,3 +495,4 @@ if __name__ == "__main__":
         port=int(os.getenv("PORT", "8088")),
         reload=True,
     )
+

@@ -1,266 +1,403 @@
+from __future__ import annotations
+
 import json
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from app.thinker_room import LARGE_CATALOG_PATH, DATA_DIR
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
 
+CATALOG_PATH = DATA_DIR / "large_catalog.json"
 ROTATION_STATE_PATH = DATA_DIR / "rotation_state.json"
 
-# ترتیب ثابت گردش ارائه‌دهندگان
 PROVIDER_ORDER = [
     "openrouter",
     "nvidia",
     "token_router",
 ]
 
-
-def now_utc() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-def now_iso() -> str:
-    return now_utc().isoformat()
+# مجموع کاراکترهای ورودی درخواست‌های موفق برای پایان دورهٔ آزمایش مدل.
+# مقدار را می‌توان بعداً از تنظیمات پروژه خواند.
+DEFAULT_TEST_INPUT_CHAR_LIMIT = 100_000
 
 
-def save_json(path: Path, data: dict[str, Any]) -> None:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-    temporary_path = path.with_suffix(".tmp")
-    temporary_path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-
-    os.replace(temporary_path, path)
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
-def load_json(path: Path, default: dict[str, Any]) -> dict[str, Any]:
+def _read_json(path: Path, default: Any) -> Any:
     if not path.exists():
         return default
 
-    with path.open("r", encoding="utf-8") as file:
-        data = json.load(file)
-
-    if not isinstance(data, dict):
-        raise ValueError(f"{path.name} must contain a JSON object.")
-
-    return data
+    try:
+        with path.open("r", encoding="utf-8") as file:
+            return json.load(file)
+    except (OSError, json.JSONDecodeError):
+        return default
 
 
-def load_catalog() -> dict[str, Any]:
-    return load_json(
-        LARGE_CATALOG_PATH,
-        {
-            "updated_at": None,
-            "model_count": 0,
-            "models": [],
-        },
-    )
+def _write_json(path: Path, data: Any) -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    temporary_path = path.with_suffix(path.suffix + ".tmp")
+    with temporary_path.open("w", encoding="utf-8") as file:
+        json.dump(data, file, ensure_ascii=False, indent=2)
+        file.write("\n")
+
+    temporary_path.replace(path)
 
 
-def save_catalog(catalog: dict[str, Any]) -> None:
-    catalog["updated_at"] = now_iso()
-    save_json(LARGE_CATALOG_PATH, catalog)
+def _load_catalog() -> dict[str, Any]:
+    catalog = _read_json(CATALOG_PATH, {"models": []})
+
+    if not isinstance(catalog, dict):
+        catalog = {"models": []}
+
+    if not isinstance(catalog.get("models"), list):
+        catalog["models"] = []
+
+    return catalog
 
 
-def load_state() -> dict[str, Any]:
-    return load_json(
+def _save_catalog(catalog: dict[str, Any]) -> None:
+    _write_json(CATALOG_PATH, catalog)
+
+
+def _load_state() -> dict[str, Any]:
+    state = _read_json(
         ROTATION_STATE_PATH,
         {
             "next_provider_index": 0,
             "current_model_key": None,
-            "current_model_started_at": None,
-            "completed_count": 0,
             "finished": False,
+            "test_input_char_limit": DEFAULT_TEST_INPUT_CHAR_LIMIT,
         },
     )
 
+    if not isinstance(state, dict):
+        state = {}
 
-def get_model(
+    state.setdefault("next_provider_index", 0)
+    state.setdefault("current_model_key", None)
+    state.setdefault("finished", False)
+    state.setdefault("test_input_char_limit", DEFAULT_TEST_INPUT_CHAR_LIMIT)
+
+    return state
+
+
+def _save_state(state: dict[str, Any]) -> None:
+    _write_json(ROTATION_STATE_PATH, state)
+
+
+def _provider_key(provider: str) -> str:
+    aliases = {
+        "nvidia_nim": "nvidia",
+        "nvidia-nim": "nvidia",
+        "tokenrouter": "token_router",
+        "token-router": "token_router",
+    }
+
+    normalized = provider.strip().lower()
+    return aliases.get(normalized, normalized)
+
+
+def _model_key(model: dict[str, Any]) -> str:
+    existing_key = model.get("key")
+    if existing_key:
+        return str(existing_key)
+
+    provider = _provider_key(str(model.get("provider", "")))
+    model_id = str(model.get("id", ""))
+
+    return f"{provider}:{model_id}"
+
+
+def _initialize_model_fields(model: dict[str, Any]) -> None:
+    # None یعنی هنوز دورهٔ آزمایش مدل تمام نشده و نتیجه‌ای ثبت نشده است.
+    model.setdefault("lifetime_chars", None)
+    model.setdefault("successful_requests", 0)
+    model.setdefault("failed_requests", 0)
+    model.setdefault("output_chars", 0)
+    model.setdefault("test_status", "untested")
+    model.setdefault("last_tested_at", None)
+    model.setdefault("last_error_type", None)
+    model.setdefault("last_error_message", None)
+    model.setdefault("failure_at", None)
+
+
+def _find_model(
     catalog: dict[str, Any],
     model_key: str,
 ) -> dict[str, Any] | None:
-    for model in catalog.get("models", []):
-        if model.get("key") == model_key:
+    for model in catalog["models"]:
+        if _model_key(model) == model_key:
             return model
 
     return None
 
 
+def _provider_has_untested_model(
+    catalog: dict[str, Any],
+    provider: str,
+) -> bool:
+    provider = _provider_key(provider)
+
+    for model in catalog["models"]:
+        _initialize_model_fields(model)
+
+        if _provider_key(str(model.get("provider", ""))) != provider:
+            continue
+
+        if model.get("test_status") == "untested":
+            return True
+
+        if model.get("lifetime_chars") is None:
+            return True
+
+    return False
+
+
 def select_next_model() -> dict[str, Any] | None:
     """
-    اگر مدلی در حال آزمایش باشد، همان مدل را برمی‌گرداند.
+    مدل جاری را حفظ می‌کند تا دورهٔ آزمایش آن تمام شود.
 
-    در غیر این صورت، اولین مدل آزمایش‌نشده را از ارائه‌دهنده
-    نوبت‌دار پیدا می‌کند. ترتیب دفتر بزرگ تغییر نمی‌کند.
+    در نبود مدل جاری، ارائه‌دهندهٔ نوبت‌دار را انتخاب می‌کند و از ابتدای
+    دفتر بزرگ به دنبال اولین مدل آزمایش‌نشدهٔ همان ارائه‌دهنده می‌گردد.
+
+    اگر همهٔ مدل‌ها آزمایش شده باشند، None برمی‌گرداند.
     """
+    catalog = _load_catalog()
+    state = _load_state()
 
-    catalog = load_catalog()
-    state = load_state()
+    models = catalog["models"]
 
-    if state.get("finished"):
-        return None
+    for model in models:
+        _initialize_model_fields(model)
 
-    models = catalog.get("models", [])
-
-    # اگر مدلی در حال آزمایش است، آن را دوباره انتخاب نکن.
     current_key = state.get("current_model_key")
 
     if current_key:
-        current_model = get_model(catalog, current_key)
+        current_model = _find_model(catalog, str(current_key))
 
-        if current_model is None:
-            raise RuntimeError(
-                "مدل جاری دیگر در دفتر بزرگ وجود ندارد. "
-                "وضعیت گردش را بررسی کن."
-            )
+        if current_model is not None:
+            if current_model.get("test_status") == "in_progress":
+                return current_model
 
-        return {
-            **current_model,
-            "started_at": state["current_model_started_at"],
-        }
+        # مدل جاری دیگر در دفتر نیست یا وضعیت آن معتبر نیست.
+        state["current_model_key"] = None
 
-    if not PROVIDER_ORDER:
-        return None
+    provider_index = int(state.get("next_provider_index", 0))
+    provider_index %= len(PROVIDER_ORDER)
 
-    start_index = (
-        state.get("next_provider_index", 0)
-        % len(PROVIDER_ORDER)
-    )
-
-    # حداکثر یک دور کامل بین ارائه‌دهندگان
+    # هر ارائه‌دهنده حداکثر یک بار در این جست‌وجو بررسی می‌شود.
     for offset in range(len(PROVIDER_ORDER)):
-        provider_index = (
-            start_index + offset
-        ) % len(PROVIDER_ORDER)
+        index = (provider_index + offset) % len(PROVIDER_ORDER)
+        provider = PROVIDER_ORDER[index]
 
-        provider_name = PROVIDER_ORDER[provider_index]
+        if not _provider_has_untested_model(catalog, provider):
+            continue
 
-        # همیشه از ابتدای دفتر بزرگ جست‌وجو می‌کنیم.
+        # ترتیب دفتر بزرگ حفظ می‌شود؛ هیچ مرتب‌سازی تازه‌ای انجام نمی‌شود.
         for model in models:
-            if model.get("provider") != provider_name:
+            if _provider_key(str(model.get("provider", ""))) != provider:
                 continue
 
-            # None یعنی آزمایش‌نشده؛ صفر یعنی آزمایش‌شده.
-            if model.get("lifetime_seconds") is not None:
+            if model.get("test_status") == "in_progress":
+                model["test_status"] = "untested"
+
+            if (
+                model.get("test_status") != "untested"
+                and model.get("lifetime_chars") is not None
+            ):
                 continue
 
-            started_at = now_iso()
+            model_key = _model_key(model)
+            model["key"] = model_key
+            model["test_status"] = "in_progress"
+            model["last_tested_at"] = _now()
 
-            state["current_model_key"] = model["key"]
-            state["current_model_started_at"] = started_at
-
+            state["current_model_key"] = model_key
             state["next_provider_index"] = (
-                provider_index + 1
+                index + 1
             ) % len(PROVIDER_ORDER)
+            state["finished"] = False
 
-            save_json(ROTATION_STATE_PATH, state)
+            _save_catalog(catalog)
+            _save_state(state)
 
-            return {
-                **model,
-                "started_at": started_at,
-            }
+            return model
 
-    # هیچ مدل آزمایش‌نشده‌ای باقی نمانده است.
     state["current_model_key"] = None
-    state["current_model_started_at"] = None
     state["finished"] = True
 
-    save_json(ROTATION_STATE_PATH, state)
+    _save_catalog(catalog)
+    _save_state(state)
 
     return None
 
 
-def finish_current_model() -> dict[str, Any]:
+def record_request_result(
+    model_key: str,
+    input_chars: int,
+    output_chars: int = 0,
+    success: bool = False,
+    ends_model_test: bool = False,
+    error_type: str | None = None,
+    error_message: str | None = None,
+) -> dict[str, Any]:
     """
-    پایان آزمایش مدل جاری و ثبت مدت دوام آن در دفتر بزرگ.
+    نتیجهٔ یک درخواست را برای مدل جاری ثبت می‌کند.
 
-    زمان شروع هنگام انتخاب مدل ثبت می‌شود.
-    زمان پایان هنگام اعلام پایان آزمایش ثبت می‌شود.
+    موفقیت:
+      - input_chars به lifetime_chars اضافه می‌شود.
+      - output_chars و successful_requests افزایش می‌یابند.
+
+    شکست:
+      - failed_requests افزایش می‌یابد.
+      - خطای موقت به‌تنهایی مدل را از چرخه خارج نمی‌کند.
+      - شکست نهایی باید با ends_model_test=True مشخص شود.
+
+    توجه:
+      این تابع خودش نوع خطا را تشخیص نمی‌دهد؛ فراخواننده باید مشخص کند
+      آیا شکست نهایی مدل است یا خطای موقت شبکه/درگاه.
     """
+    catalog = _load_catalog()
+    state = _load_state()
 
-    catalog = load_catalog()
-    state = load_state()
+    current_key = state.get("current_model_key")
 
-    model_key = state.get("current_model_key")
-    started_at_text = state.get("current_model_started_at")
+    if not current_key:
+        raise RuntimeError("No model is currently selected.")
 
-    if not model_key or not started_at_text:
-        raise RuntimeError("هیچ مدل جاری برای پایان آزمایش وجود ندارد.")
+    if str(current_key) != str(model_key):
+        raise ValueError(
+            f"Result model '{model_key}' is not the current model "
+            f"'{current_key}'."
+        )
 
-    model = get_model(catalog, model_key)
+    model = _find_model(catalog, str(current_key))
 
     if model is None:
         raise RuntimeError(
-            f"مدل جاری در دفتر بزرگ پیدا نشد: {model_key}"
+            f"Current model '{current_key}' was not found in the catalog."
         )
 
-    if model.get("lifetime_seconds") is not None:
-        raise RuntimeError(
-            f"طول عمر این مدل قبلاً ثبت شده است: {model_key}"
+    _initialize_model_fields(model)
+
+    input_chars = max(0, int(input_chars))
+    output_chars = max(0, int(output_chars))
+
+    if success:
+        previous_chars = model.get("lifetime_chars")
+
+        if previous_chars is None:
+            previous_chars = 0
+
+        model["lifetime_chars"] = int(previous_chars) + input_chars
+        model["output_chars"] += output_chars
+        model["successful_requests"] += 1
+        model["last_tested_at"] = _now()
+        model["last_error_type"] = None
+        model["last_error_message"] = None
+
+        limit = int(
+            state.get(
+                "test_input_char_limit",
+                DEFAULT_TEST_INPUT_CHAR_LIMIT,
+            )
         )
 
-    started_at = datetime.fromisoformat(started_at_text)
+        reached_limit = model["lifetime_chars"] >= limit
 
-    if started_at.tzinfo is None:
-        raise RuntimeError("زمان شروع فاقد اطلاعات منطقه زمانی است.")
+        if ends_model_test or reached_limit:
+            model["test_status"] = "tested"
+            state["current_model_key"] = None
 
-    finished_at = now_utc()
+    else:
+        model["failed_requests"] += 1
+        model["last_tested_at"] = _now()
+        model["last_error_type"] = error_type
+        model["last_error_message"] = error_message
 
-    lifetime_seconds = max(
-        0.0,
-        (finished_at - started_at).total_seconds(),
-    )
+        if ends_model_test:
+            model["test_status"] = "failed"
+            model["failure_at"] = _now()
+            state["current_model_key"] = None
 
-    # فقط همان ستون در دفتر بزرگ به‌روز می‌شود.
-    model["lifetime_seconds"] = round(lifetime_seconds, 3)
-    model["last_tested_at"] = finished_at.isoformat()
-    model["test_count"] = model.get("test_count", 0) + 1
-
-    state["completed_count"] = (
-        state.get("completed_count", 0) + 1
-    )
-
-    state["current_model_key"] = None
-    state["current_model_started_at"] = None
-
-    save_catalog(catalog)
-    save_json(ROTATION_STATE_PATH, state)
+    _save_catalog(catalog)
+    _save_state(state)
 
     return {
-        "key": model_key,
-        "provider": model["provider"],
-        "id": model["id"],
-        "lifetime_seconds": model["lifetime_seconds"],
-        "completed_count": state["completed_count"],
-        "model_count": catalog.get("model_count", len(catalog["models"])),
+        "model_key": str(current_key),
+        "success": bool(success),
+        "lifetime_chars": model.get("lifetime_chars"),
+        "successful_requests": model.get("successful_requests", 0),
+        "failed_requests": model.get("failed_requests", 0),
+        "output_chars": model.get("output_chars", 0),
+        "test_status": model.get("test_status"),
+        "current_model_key": state.get("current_model_key"),
+        "finished": state.get("finished", False),
     }
 
 
 def get_rotation_status() -> dict[str, Any]:
-    catalog = load_catalog()
-    state = load_state()
+    catalog = _load_catalog()
+    state = _load_state()
 
-    models = catalog.get("models", [])
+    models = catalog["models"]
 
-    tested_count = sum(
-        1
-        for model in models
-        if model.get("lifetime_seconds") is not None
-    )
+    total = len(models)
+    tested = 0
+    failed = 0
+    untested = 0
+    in_progress = 0
 
-    untested_count = len(models) - tested_count
+    for model in models:
+        _initialize_model_fields(model)
+
+        status = model.get("test_status")
+
+        if status == "tested" or model.get("lifetime_chars") is not None:
+            tested += 1
+        elif status == "failed":
+            failed += 1
+        elif status == "in_progress":
+            in_progress += 1
+        else:
+            untested += 1
 
     return {
-        "total": len(models),
-        "tested": tested_count,
-        "untested": untested_count,
+        "total": total,
+        "tested": tested,
+        "failed": failed,
+        "untested": untested,
+        "in_progress": in_progress,
         "current_model_key": state.get("current_model_key"),
-        "current_model_started_at": state.get(
-            "current_model_started_at"
+        "finished": bool(state.get("finished", False)),
+        "test_input_char_limit": int(
+            state.get(
+                "test_input_char_limit",
+                DEFAULT_TEST_INPUT_CHAR_LIMIT,
+            )
         ),
-        "finished": state.get("finished", False),
     }
+
+
+def set_test_input_char_limit(limit: int) -> dict[str, Any]:
+    """
+    تنظیم حد کاراکترهای ورودی برای هر مدل.
+    فقط مقدار مثبت پذیرفته می‌شود.
+    """
+    limit = int(limit)
+
+    if limit <= 0:
+        raise ValueError("The character limit must be greater than zero.")
+
+    state = _load_state()
+    state["test_input_char_limit"] = limit
+    _save_state(state)
+
+    return get_rotation_status()
+

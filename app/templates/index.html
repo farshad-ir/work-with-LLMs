@@ -189,10 +189,12 @@ async function loadProviders() {
 loadProviders();
 
 
+
+let largeCatalogModels = [];
+
 async function loadLargeCatalog() {
     const countElement = document.getElementById("large-catalog-count");
     const statusElement = document.getElementById("large-catalog-status");
-    const listElement = document.getElementById("large-catalog-list");
 
     try {
         const response = await fetch("/api/thinker-room/catalog");
@@ -203,25 +205,36 @@ async function loadLargeCatalog() {
 
         const catalog = await response.json();
 
-        countElement.textContent = catalog.model_count;
+        largeCatalogModels = catalog.models || [];
+
+        countElement.textContent = catalog.model_count ?? largeCatalogModels.length;
+
         statusElement.textContent = catalog.updated_at
             ? "آخرین به‌روزرسانی: " +
               new Date(catalog.updated_at).toLocaleString()
             : "دفتر بزرگ هنوز ساخته نشده است.";
 
-        renderLargeCatalog(catalog.models || []);
+        renderLargeCatalog();
     } catch (error) {
         statusElement.textContent = error.message;
     }
 }
 
-function renderLargeCatalog(models) {
+function renderLargeCatalog() {
     const listElement = document.getElementById("large-catalog-list");
     const searchElement = document.getElementById("large-catalog-search");
     const query = searchElement.value.trim().toLowerCase();
 
-    const filtered = models.filter(model =>
-        `${model.provider} ${model.id} ${model.name}`
+    // مرتب‌سازی فقط برای نمایش است و اطلاعات ذخیره‌شده را تغییر نمی‌دهد.
+    const sorted = [...largeCatalogModels].sort((a, b) => {
+        const charsA = Number(a.lifetime_chars) || 0;
+        const charsB = Number(b.lifetime_chars) || 0;
+
+        return charsB - charsA;
+    });
+
+    const filtered = sorted.filter(model =>
+        `${model.provider || ""} ${model.id || ""} ${model.name || ""}`
             .toLowerCase()
             .includes(query)
     );
@@ -237,16 +250,51 @@ function renderLargeCatalog(models) {
 
     for (const model of filtered) {
         const row = document.createElement("div");
-        row.style.cssText =
-            "padding:8px 0;border-bottom:1px solid #ddd;overflow-wrap:anywhere;";
+
+        row.style.cssText = [
+            "padding:12px 0",
+            "border-bottom:1px solid #ddd",
+            "overflow-wrap:anywhere"
+        ].join(";");
 
         const title = document.createElement("strong");
-        title.textContent = model.name;
+        title.textContent = model.name || model.id || "مدل بدون نام";
 
         const details = document.createElement("div");
-        details.textContent = `${model.provider} — ${model.id}`;
+        details.className = "muted";
+        details.textContent =
+            `${providerNames[model.provider] || model.provider || "نامشخص"} — ${model.id || ""}`;
 
-        row.append(title, details);
+        const chars = document.createElement("div");
+        const lifetimeChars = Number(model.lifetime_chars) || 0;
+        chars.textContent =
+            `کاراکترهای ورودی موفق: ${lifetimeChars.toLocaleString()}`;
+
+        const requests = document.createElement("div");
+        requests.className = "muted";
+        requests.textContent =
+            `درخواست موفق: ${Number(model.successful_requests) || 0} | ` +
+            `درخواست ناموفق: ${Number(model.failed_requests) || 0}`;
+
+        const status = document.createElement("div");
+        status.className = "muted";
+
+        const testStatus = model.test_status || model.status || "untested";
+
+        const statusNames = {
+            tested: "آزمایش‌شده",
+            completed: "آزمایش‌شده",
+            in_progress: "در حال آزمایش",
+            testing: "در حال آزمایش",
+            failed: "ناموفق",
+            untested: "آزمایش‌نشده",
+            pending: "آزمایش‌نشده"
+        };
+
+        status.textContent =
+            `وضعیت: ${statusNames[testStatus] || testStatus}`;
+
+        row.append(title, details, chars, requests, status);
         fragment.appendChild(row);
     }
 
@@ -255,9 +303,11 @@ function renderLargeCatalog(models) {
 
 document
     .getElementById("large-catalog-search")
-    .addEventListener("input", loadLargeCatalog);
+    .addEventListener("input", renderLargeCatalog);
 
 loadLargeCatalog();
+
+
 </script>
 </body>
 </html>
