@@ -265,23 +265,16 @@ def record_request_result(
     """
     catalog = _load_catalog()
     state = _load_state()
-
+    # نتیجه متعلق به مدل همین درخواست است، نه لزوماً مدل جاری.
+    
     current_key = state.get("current_model_key")
+    result_key = str(model_key)
 
-    if not current_key:
-        raise RuntimeError("No model is currently selected.")
-
-    if str(current_key) != str(model_key):
-        raise ValueError(
-            f"Result model '{model_key}' is not the current model "
-            f"'{current_key}'."
-        )
-
-    model = _find_model(catalog, str(current_key))
+    model = _find_model(catalog, result_key)
 
     if model is None:
         raise RuntimeError(
-            f"Current model '{current_key}' was not found in the catalog."
+            f"Result model '{result_key}' was not found in the catalog."
         )
 
     _initialize_model_fields(model)
@@ -313,18 +306,25 @@ def record_request_result(
 
         if ends_model_test or reached_limit:
             model["test_status"] = "tested"
-            state["current_model_key"] = None
+
+            if str(state.get("current_model_key")) == result_key:
+                state["current_model_key"] = None
+        
+
 
     else:
         model["failed_requests"] += 1
         model["last_tested_at"] = _now()
         model["last_error_type"] = error_type
         model["last_error_message"] = error_message
-
+        
         if ends_model_test:
             model["test_status"] = "failed"
             model["failure_at"] = _now()
-            state["current_model_key"] = None
+
+            if str(state.get("current_model_key")) == result_key:
+                state["current_model_key"] = None
+        
 
     _save_catalog(catalog)
     _save_state(state)
