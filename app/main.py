@@ -229,16 +229,10 @@ async def codex_responses(request: Request):
             detail="Request body must be a valid JSON object.",
         ) from None
 
-    # انتخاب مدل جاری از چرخهٔ آزمایش
-    selected_model = select_next_model()
 
-    if selected_model is None:
-        raise HTTPException(
-            status_code=503,
-            detail="All models have completed their tests.",
-        )
-
-    provider_name = str(selected_model.get("provider", "")).strip().lower()
+    # تبدیل درخواست ورودی؛ محتوای درخواست در تمام تلاش‌ها ثابت می‌ماند.
+    chat_body = responses_to_chat(body)
+    streaming = bool(chat_body.get("stream"))
 
     provider_aliases = {
         "nvidia_nim": "nvidia",
@@ -246,120 +240,199 @@ async def codex_responses(request: Request):
         "tokenrouter": "token_router",
         "token-router": "token_router",
     }
-    provider_name = provider_aliases.get(provider_name, provider_name)
 
-    model_id = str(selected_model.get("id", ""))
-    model_key = str(
-        selected_model.get("key") or f"{provider_name}:{model_id}"
-    )
+    # حداکثر تعداد مدل‌هایی که برای همین درخواست امتحان می‌کنیم.
+    MAX_MODEL_ATTEMPTS = 5
 
-    provider = config["providers"].get(provider_name, {})
-    if not provider.get("enabled", False):
-        raise HTTPException(
-            status_code=503,
-            detail=f"Provider '{provider_name}' is disabled.",
+    last_provider_error = None
+    upstream = None
+    client = None
+
+    for attempt in range(MAX_MODEL_ATTEMPTS):
+
+        # انتخاب مدل برای این تلاش
+        selected_model = select_next_model()
+
+        if selected_model is None:
+            # اگر مدل‌های قبلی خطای قطعی داده‌اند، آخرین خطای واقعی
+            # ارائه‌دهنده را برگردان؛ در غیر این صورت چرخه تمام شده است.
+            if last_provider_error is not None:
+                content, status_code, content_type = last_provider_error
+
+                return Response(
+                    content=content,
+                    status_code=status_code,
+                    headers={"Content-Type": content_type},
+                )
+
+            raise HTTPException(
+                status_code=503,
+                detail="All models have completed their tests.",
+            )
+
+        provider_name = str(
+            selected_model.get("provider", "")
+        ).strip().lower()
+
+        provider_name = provider_aliases.get(
+            provider_name,
+            provider_name,
         )
 
-    base_url = str(provider.get("base_url", "")).rstrip("/")
-    key_name = provider.get("api_key_env", "")
-    api_key = get_env_value(key_name) if key_name else ""
+        model_id = str(selected_model.get("id", ""))
 
-    if not base_url or not api_key or not model_id:
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                f"Provider '{provider_name}' is not fully configured. "
-                "Check its base URL, API key and model ID."
+        model_key = str(
+            selected_model.get("key")
+            or f"{provider_name}:{model_id}"
+        )
+
+        provider = config["providers"].get(provider_name, {})
+
+        if not provider.get("enabled", False):
+            raise HTTPException(
+                status_code=503,
+                detail=f"Provider '{provider_name}' is disabled.",
+            )
+
+        base_url = str(
+            provider.get("base_url", "")
+        ).rstrip("/")
+
+        key_name = provider.get("api_key_env", "")
+        api_key = get_env_value(key_name) if key_name else ""
+
+        if not base_url or not api_key or not model_id:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    f"Provider '{provider_name}' is not fully configured. "
+                    "Check its base URL, API key and model ID."
+                ),
+            )
+
+        # در هر تلاش فقط مدل مقصد تغییر می‌کند.
+        chat_body["model"] = model_id
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "Accept": (
+                "text/event-stream"
+                if streaming
+                else "application/json"
             ),
+        }
+
+        client = httpx.AsyncClient(
+            timeout=httpx.Timeout(180.0, connect=15.0)
         )
 
-    # تبدیل درخواست Responses به Chat Completions و تعیین مدل منتخب
-    chat_body = responses_to_chat(body)
-    chat_body["model"] = model_id
-
-    streaming = bool(chat_body.get("stream"))
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-        "Accept": "text/event-stream" if streaming else "application/json",
-    }
-
-    client = httpx.AsyncClient(
-        timeout=httpx.Timeout(180.0, connect=15.0)
-    )
-
-    try:
-        upstream_request = client.build_request(
-            "POST",
-            f"{base_url}/chat/completions",
-            json=chat_body,
-            headers=headers,
-        )
-
-        upstream = await client.send(
-            upstream_request,
-            stream=streaming,
-        )
-
-    except httpx.HTTPError as exc:
-        await client.aclose()
-
-        _record_rotation_result(
-            model_key=model_key,
-            input_chars=input_chars,
-            success=False,
-            error_type="temporary_network",
-            error_message=str(exc)[:500],
-        )
-
-        raise HTTPException(
-            status_code=502,
-            detail=f"Could not connect to provider '{provider_name}'.",
-        ) from None
-
-    # خطای HTTP ارائه‌دهنده
-    if upstream.status_code >= 400:
         try:
-            content = await upstream.aread()
-            status_code = upstream.status_code
-            content_type = upstream.headers.get(
-                "content-type",
-                "application/json",
+            upstream_request = client.build_request(
+                "POST",
+                f"{base_url}/chat/completions",
+                json=chat_body,
+                headers=headers,
             )
 
-
-            permanent_error = (
-                status_code in (402, 403)
-                or _is_permanent_model_error(status_code, content)
+            upstream = await client.send(
+                upstream_request,
+                stream=streaming,
             )
 
+        except httpx.HTTPError as exc:
+            await client.aclose()
 
             _record_rotation_result(
                 model_key=model_key,
                 input_chars=input_chars,
                 success=False,
-                ends_model_test=permanent_error,
-                error_type=(
-                    "model_unavailable"
-                    if permanent_error
-                    else "provider_http_error"
-                ),
-                error_message=content.decode(
-                    "utf-8",
-                    errors="replace",
-                )[:500],
+                error_type="temporary_network",
+                error_message=str(exc)[:500],
             )
 
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"Could not connect to provider '{provider_name}'."
+                ),
+            ) from None
+
+        # خطای ارائه‌دهنده؛ هنوز هیچ پاسخی به Codex ارسال نشده است.
+        if upstream.status_code >= 400:
+            try:
+                content = await upstream.aread()
+                status_code = upstream.status_code
+                content_type = upstream.headers.get(
+                    "content-type",
+                    "application/json",
+                )
+
+                permanent_error = (
+                    status_code in (402, 403)
+                    or _is_permanent_model_error(
+                        status_code,
+                        content,
+                    )
+                )
+
+                _record_rotation_result(
+                    model_key=model_key,
+                    input_chars=input_chars,
+                    success=False,
+                    ends_model_test=permanent_error,
+                    error_type=(
+                        "model_unavailable"
+                        if permanent_error
+                        else "provider_http_error"
+                    ),
+                    error_message=content.decode(
+                        "utf-8",
+                        errors="replace",
+                    )[:500],
+                )
+
+                if permanent_error:
+                    last_provider_error = (
+                        content,
+                        status_code,
+                        content_type,
+                    )
+
+            finally:
+                await upstream.aclose()
+                await client.aclose()
+
+            # فقط خطاهای قطعی مدل باعث رفتن به مدل بعدی می‌شوند.
+            if permanent_error:
+                print(
+                    "[ROTATION] "
+                    f"Terminal error for {model_key}; "
+                    f"attempt={attempt + 1}/{MAX_MODEL_ATTEMPTS}"
+                )
+
+                if attempt + 1 < MAX_MODEL_ATTEMPTS:
+                    continue
+
+                # سقف تلاش تمام شده است؛ آخرین خطای واقعی را برگردان.
+                content, status_code, content_type = last_provider_error
+
+                return Response(
+                    content=content,
+                    status_code=status_code,
+                    headers={"Content-Type": content_type},
+                )
+
+            # خطاهای موقت مثل 429 یا خطاهای معمول سرور،
+            # فعلاً باعث کنار گذاشتن مدل نمی‌شوند.
             return Response(
                 content=content,
                 status_code=status_code,
                 headers={"Content-Type": content_type},
             )
 
-        finally:
-            await upstream.aclose()
-            await client.aclose()
+        # پاسخ موفق HTTP داریم؛ ادامهٔ پردازش با همین مدل انجام می‌شود.
+        break
 
     # پاسخ غیرجریانی
     if not streaming:
