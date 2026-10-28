@@ -201,7 +201,7 @@ def select_next_model() -> dict[str, Any] | None:
             if _provider_key(str(model.get("provider", ""))) != provider:
                 continue
 
-            if model.get("test_status") != "in_progress":
+            if model.get("test_status") != "untested":
                 continue
 
             model_key = _model_key(model)
@@ -218,7 +218,8 @@ def select_next_model() -> dict[str, Any] | None:
             _save_catalog(catalog)
             _save_state(state)
 
-            return model
+            return model     
+    
 
     state["current_model_key"] = None
     state["finished"] = True
