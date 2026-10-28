@@ -20,6 +20,11 @@ from app.config import (
     load_config,
     save_config,
 )
+from app.thinker_room import (
+    rebuild_large_catalog,
+    load_large_catalog,
+)
+
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -57,6 +62,12 @@ async def public_config():
 @app.get("/api/providers")
 async def providers():
     return get_public_config()["providers"]
+
+
+
+@app.get("/api/thinker-room/catalog")
+async def large_catalog():
+    return load_large_catalog()
 
 
 @app.post("/api/providers/{provider_name}/refresh-models")
@@ -112,14 +123,20 @@ async def refresh_models(provider_name: str):
 
     provider["models"] = models
     provider["enabled"] = True
+
+    # Save the refreshed provider list.
     save_config(config)
+
+    # Rebuild the large catalog from all current provider lists.
+    catalog = rebuild_large_catalog(config)
 
     return {
         "provider": provider_name,
         "model_count": len(models),
         "models": models,
+        "large_catalog_count": catalog["model_count"],
+        "large_catalog_updated_at": catalog["updated_at"],
     }
-
 
 
 @app.post("/v1/responses")

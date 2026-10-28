@@ -86,7 +86,27 @@
       انتخاب مدل اصلی و پشتیبان را در مرحله بعد اضافه می‌کنیم.
     </p>
   </section>
+
+
+  <section class="card" id="large-catalog-card" dir="rtl">
+    <h2>دفتر بزرگ مدل‌ها</h2>
+    <p>
+        تعداد مدل‌های فعال:
+        <strong id="large-catalog-count">در حال بارگذاری...</strong>
+    </p>
+    <p id="large-catalog-status">در حال خواندن دفتر بزرگ...</p>
+
+    <input
+        id="large-catalog-search"
+        type="search"
+        placeholder="جست‌وجوی نام یا شناسه مدل..."
+        style="width:100%; box-sizing:border-box; margin-bottom:12px;"
+    >
+
+    <div id="large-catalog-list"></div>
+  </section>
 </main>
+
 
 <script>
 const providerNames = {
@@ -167,6 +187,77 @@ async function loadProviders() {
 }
 
 loadProviders();
+
+
+async function loadLargeCatalog() {
+    const countElement = document.getElementById("large-catalog-count");
+    const statusElement = document.getElementById("large-catalog-status");
+    const listElement = document.getElementById("large-catalog-list");
+
+    try {
+        const response = await fetch("/api/thinker-room/catalog");
+
+        if (!response.ok) {
+            throw new Error("خطا در دریافت دفتر بزرگ");
+        }
+
+        const catalog = await response.json();
+
+        countElement.textContent = catalog.model_count;
+        statusElement.textContent = catalog.updated_at
+            ? "آخرین به‌روزرسانی: " +
+              new Date(catalog.updated_at).toLocaleString()
+            : "دفتر بزرگ هنوز ساخته نشده است.";
+
+        renderLargeCatalog(catalog.models || []);
+    } catch (error) {
+        statusElement.textContent = error.message;
+    }
+}
+
+function renderLargeCatalog(models) {
+    const listElement = document.getElementById("large-catalog-list");
+    const searchElement = document.getElementById("large-catalog-search");
+    const query = searchElement.value.trim().toLowerCase();
+
+    const filtered = models.filter(model =>
+        `${model.provider} ${model.id} ${model.name}`
+            .toLowerCase()
+            .includes(query)
+    );
+
+    listElement.replaceChildren();
+
+    if (filtered.length === 0) {
+        listElement.textContent = "مدلی برای نمایش وجود ندارد.";
+        return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    for (const model of filtered) {
+        const row = document.createElement("div");
+        row.style.cssText =
+            "padding:8px 0;border-bottom:1px solid #ddd;overflow-wrap:anywhere;";
+
+        const title = document.createElement("strong");
+        title.textContent = model.name;
+
+        const details = document.createElement("div");
+        details.textContent = `${model.provider} — ${model.id}`;
+
+        row.append(title, details);
+        fragment.appendChild(row);
+    }
+
+    listElement.appendChild(fragment);
+}
+
+document
+    .getElementById("large-catalog-search")
+    .addEventListener("input", loadLargeCatalog);
+
+loadLargeCatalog();
 </script>
 </body>
 </html>
