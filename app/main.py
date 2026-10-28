@@ -361,6 +361,7 @@ async def codex_responses(request: Request):
                 stream=streaming,
             )
 
+
         except httpx.HTTPError as exc:
             await client.aclose()
 
@@ -368,16 +369,18 @@ async def codex_responses(request: Request):
                 model_key=model_key,
                 input_chars=input_chars,
                 success=False,
-                error_type="temporary_network",
+                ends_model_test=True,
+                error_type="provider_connection_error",
                 error_message=str(exc)[:500],
             )
 
-            raise HTTPException(
-                status_code=502,
-                detail=(
-                    f"Could not connect to provider '{provider_name}'."
-                ),
-            ) from None
+            print(
+                "[ROTATION] "
+                f"Model failed: {model_key}; "
+                f"connection error; trying next model."
+            )
+
+            continue
 
         # خطای ارائه‌دهنده؛ هنوز هیچ پاسخی به Codex ارسال نشده است.
         if upstream.status_code >= 400:
