@@ -492,13 +492,13 @@ def record_request_result(
         model["last_error_message"] = None
 
         if not was_confirmed_turn:
-            # Confirmation is triggered immediately by successful
-            # ordinary input accumulation. Failed requests add nothing.
-            if (
-                model.get("confirmed") is not True
-                and model["lifetime_chars"] >= CONFIRMED_MODEL_ENTRY_CHARS
+            if ends_model_test or (
+                model["lifetime_chars"]
+                >= int(state.get("test_input_char_limit", DEFAULT_TEST_INPUT_CHAR_LIMIT))
             ):
-                model["confirmed"] = True
+                model["confirmed"] = (
+                    model["lifetime_chars"] >= CONFIRMED_MODEL_ENTRY_CHARS
+                )
 
             limit = int(
                 state.get(
