@@ -489,6 +489,11 @@ async def codex_responses(request: Request):
                         if parsed:
                             if parsed.get("type") == "done":
                                 stream_completed = True
+                            elif (
+                                parsed.get("type") == "delta"
+                                and parsed.get("finish_reason") is not None
+                            ):
+                                stream_completed = True
 
                             for output_event in converter.feed(parsed):
                                 yield output_event
@@ -504,6 +509,12 @@ async def codex_responses(request: Request):
                 if parsed:
                     if parsed.get("type") == "done":
                         stream_completed = True
+                    elif (
+                        parsed.get("type") == "delta"
+                        and parsed.get("finish_reason") is not None
+                    ):
+                        stream_completed = True
+
 
                     for output_event in converter.feed(parsed):
                         yield output_event
@@ -531,12 +542,13 @@ async def codex_responses(request: Request):
                 f"text_chars={len(converter.text)} "
                 f"tool_calls={len(converter.tool_calls)}"
             )
-            
+
             _record_rotation_result(
                 model_key=model_key,
                 input_chars=input_chars,
                 output_chars=output_chars,
                 success=stream_completed,
+                ends_model_test=not stream_completed,
                 error_type=(
                     None
                     if stream_completed
@@ -545,9 +557,10 @@ async def codex_responses(request: Request):
                 error_message=(
                     None
                     if stream_completed
-                    else stream_error or "Stream ended without [DONE]."
+                    else stream_error or "Stream ended without a completion event."
                 ),
             )
+
 
             await upstream.aclose()
             await client.aclose()
