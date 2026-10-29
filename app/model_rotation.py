@@ -320,7 +320,9 @@ def select_next_model() -> dict[str, Any] | None:
     current_model_key is persisted. Empty groups are skipped safely.
     """
     catalog = _load_catalog()
-    refresh_confirmed_models(catalog)
+    
+    if refresh_confirmed_models(catalog):
+        _save_catalog(catalog)
     state = _load_state()
     models = catalog["models"]
 
@@ -367,6 +369,41 @@ def select_next_model() -> dict[str, Any] | None:
         state.get("next_rotation_group_index", 0)
     ) % group_count
 
+
+    # Start a new round before selecting confirmed models.
+    # This happens only when all ordinary providers have no untested models.
+    ordinary_models_exhausted = not any(
+        _provider_has_untested_model(catalog, provider)
+        for provider in PROVIDER_ORDER
+    )
+
+    if ordinary_models_exhausted:
+        failed_models = [
+            model
+            for model in catalog["models"]
+            if model.get("test_status") == "failed"
+            and model.get("confirmed") is not True
+        ]
+
+        if failed_models:
+            for model in failed_models:
+                model["test_status"] = "untested"
+                model["failure_at"] = None
+
+            state["round_number"] = int(state.get("round_number", 1)) + 1
+            state["round_total"] = len(failed_models)
+            state["round_completed"] = 0
+            state["current_model_key"] = None
+            state["finished"] = False
+            state["next_rotation_group_index"] = 0
+            state["next_provider_index"] = 0
+
+            _save_catalog(catalog)
+            _save_state(state)
+
+            return select_next_model()
+
+    
     # Examine at most one complete rotation. Empty groups are skipped.
     for offset in range(group_count):
         group_index = (start_group + offset) % group_count
@@ -404,38 +441,7 @@ def select_next_model() -> dict[str, Any] | None:
         if model is not None:
             return model
 
-    # No group has an untested/available model.
-    # Retry only ordinary failures, preserving prior behavior.
-    failed_models = [
-        model
-        for model in models
-        if (
-            model.get("test_status") == "failed"
-            and model.get("confirmed") is not True
-        )
-    ]
-
-    if failed_models:
-        for model in failed_models:
-            model["test_status"] = "untested"
-            model["failure_at"] = None
-
-        state["round_number"] = int(
-            state.get("round_number", 1)
-        ) + 1
-        state["round_total"] = len(failed_models)
-        state["round_completed"] = 0
-        state["current_model_key"] = None
-        state["finished"] = False
-
-        # Begin the retry round at the first ordinary provider.
-        state["next_rotation_group_index"] = 0
-        state["next_provider_index"] = 0
-
-        _save_catalog(catalog)
-        _save_state(state)
-
-        return select_next_model()
+    
 
     state["current_model_key"] = None
     state["finished"] = True
