@@ -84,6 +84,12 @@ def _load_state() -> dict[str, Any]:
     state.setdefault("finished", False)
     state.setdefault("test_input_char_limit", DEFAULT_TEST_INPUT_CHAR_LIMIT)
 
+
+    state.setdefault("round_number", 1)
+    state.setdefault("round_total", 0)
+    state.setdefault("round_completed", 0)
+
+    
     return state
 
 
@@ -173,6 +179,19 @@ def select_next_model() -> dict[str, Any] | None:
     for model in models:
         _initialize_model_fields(model)
 
+
+
+    # سازگاری با فایل وضعیت قدیمی و آغاز اولیهٔ شمارنده‌ها
+    if int(state.get("round_total", 0)) <= 0:
+        state["round_total"] = len(models)
+        state["round_completed"] = sum(
+            1 for model in models
+            if model.get("test_status") in {"tested", "failed"}
+        )
+        _save_state(state)
+
+    
+
     current_key = state.get("current_model_key")
 
     if current_key:
@@ -220,6 +239,33 @@ def select_next_model() -> dict[str, Any] | None:
 
             return model     
     
+
+    
+    
+    # اگر مدل ناموفقی باقی مانده، دور بعد را فقط با همان مدل‌ها آغاز کن.
+    failed_models = [
+        model for model in models
+        if model.get("test_status") == "failed"
+    ]
+
+    if failed_models:
+        for model in failed_models:
+            model["test_status"] = "untested"
+            model["failure_at"] = None
+
+        state["round_number"] = int(
+            state.get("round_number", 1)
+        ) + 1
+        state["round_total"] = len(failed_models)
+        state["round_completed"] = 0
+        state["current_model_key"] = None
+        state["finished"] = False
+
+        _save_catalog(catalog)
+        _save_state(state)
+
+        # انتخاب اولین مدل دور جدید
+        return select_next_model()
 
     state["current_model_key"] = None
     state["finished"] = True
@@ -271,6 +317,8 @@ def record_request_result(
 
     _initialize_model_fields(model)
 
+    previous_status = model.get("test_status")
+
     input_chars = max(0, int(input_chars))
     output_chars = max(0, int(output_chars))
 
@@ -316,7 +364,23 @@ def record_request_result(
 
             if str(state.get("current_model_key")) == result_key:
                 state["current_model_key"] = None
-        
+         # هر مدل فقط یک بار در هر دور به‌عنوان تمام‌شده شمرده می‌شود.
+    
+    
+    
+    
+    
+    terminal_statuses = {"tested", "failed"}
+    if (
+        previous_status not in terminal_statuses
+        and model.get("test_status") in terminal_statuses
+    ):
+        state["round_completed"] = int(
+            state.get("round_completed", 0)
+        ) + 1
+
+
+    
 
     _save_catalog(catalog)
     _save_state(state)
@@ -360,8 +424,15 @@ def get_rotation_status() -> dict[str, Any]:
         else:
             untested += 1
 
-
+    round_number = int(state.get("round_number", 1))
+    round_total = int(state.get("round_total", total))
+    round_completed = int(state.get("round_completed", 0))
+    
     return {
+        "round_number": round_number,
+        "round_total": round_total,
+        "round_completed": round_completed,
+        
         "total": total,
         "tested": tested,
         "failed": failed,
