@@ -291,9 +291,47 @@ function getModelStatus(model) {
     return "untested";
 }
 
-
 /* =========================================================
-   4. نمایش جدول مدل‌ها
+   4. دریافت وضعیت گردش مدل‌ها
+   ========================================================= */
+
+async function loadRotationStatus() {
+    const roundElement =
+        document.getElementById("rotation-round");
+
+    if (!roundElement) {
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/rotation/status");
+
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+
+        const status = await response.json();
+        const roundNumber = Number(status.round_number);
+
+        roundElement.textContent =
+            "شماره دور: " +
+            (
+                Number.isFinite(roundNumber) && roundNumber > 0
+                    ? roundNumber.toLocaleString("fa-IR")
+                    : "نامشخص"
+            );
+
+    } catch (error) {
+        console.error(
+            "خطا در دریافت وضعیت گردش مدل‌ها:",
+            error
+        );
+
+        roundElement.textContent = "شماره دور: نامشخص";
+    }
+}
+/* =========================================================
+   5. نمایش جدول مدل‌ها
    ========================================================= */
 
 function renderRotationPanel() {
@@ -320,9 +358,6 @@ function renderRotationPanel() {
     const remainingCount = largeCatalogModels.filter(
         model => getModelStatus(model) === "untested"
     ).length;
-
-    // شماره دور از داده‌های فعلی قابل تعیین نیست.
-    roundElement.textContent = "شماره دور: —";
 
     countElement.textContent =
         "تعداد مدل‌های باقی‌مانده: " +
@@ -371,12 +406,16 @@ function renderRotationPanel() {
 
 
 /* =========================================================
-   5. راه‌اندازی صفحه
+   6. راه‌اندازی صفحه
    ========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
     loadProviders();
     loadLargeCatalog();
+    loadRotationStatus();
+
+    // تازه‌سازی شماره دور هر ۵ ثانیه
+    window.setInterval(loadRotationStatus, 500000);
 });
 </script>
 
