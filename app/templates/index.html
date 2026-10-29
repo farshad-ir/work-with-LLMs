@@ -117,216 +117,166 @@
 </main>
 
 
+
 <script>
+"use strict";
+
 const providerNames = {
-  nvidia: "NVIDIA NIM",
-  openrouter: "OpenRouter",
-  token_router: "Token Router"
+    nvidia: "NVIDIA NIM",
+    openrouter: "OpenRouter",
+    token_router: "Token Router"
 };
 
-async function loadProviders() {
-  const status = document.getElementById("status");
-  const container = document.getElementById("providers");
-
-  try {
-    const response = await fetch("/api/providers");
-    if (!response.ok) throw new Error("HTTP " + response.status);
-
-    const providers = await response.json();
-    container.replaceChildren();
-
-    for (const [key, provider] of Object.entries(providers)) {
-      const card = document.createElement("div");
-      card.className = "card";
-
-      const title = document.createElement("h3");
-      title.textContent = providerNames[key] || key;
-
-      const state = document.createElement("p");
-      state.textContent = provider.enabled ? "فعال" : "غیرفعال";
-
-      const count = document.createElement("div");
-      count.className = "count";
-      count.textContent = provider.model_count ?? 0;
-
-      const label = document.createElement("p");
-      label.textContent = "مدل ثبت‌شده";
-
-      const button = document.createElement("button");
-      button.textContent = "دریافت مدل‌ها";
-
-      const message = document.createElement("div");
-      message.className = "message muted";
-
-      button.addEventListener("click", async () => {
-        button.disabled = true;
-        message.textContent = "در حال دریافت فهرست مدل‌ها...";
-
-        try {
-          const result = await fetch(
-            `/api/providers/${encodeURIComponent(key)}/refresh-models`,
-            { method: "POST" }
-          );
-
-          const data = await result.json();
-
-          if (!result.ok) {
-            throw new Error(data.detail || "خطای نامشخص");
-          }
-
-          count.textContent = data.model_count;
-          state.textContent = "فعال";
-          message.textContent =
-            `${data.model_count} مدل با موفقیت دریافت شد.`;
-        } catch (error) {
-          message.textContent = "خطا: " + error.message;
-        } finally {
-          button.disabled = false;
-        }
-      });
-
-      card.append(title, state, count, label, button, message);
-      container.appendChild(card);
-    }
-
-    status.textContent = "اطلاعات با موفقیت دریافت شد.";
-  } catch (error) {
-    status.textContent = "دریافت اطلاعات ناموفق بود: " + error.message;
-  }
-}
-
-loadProviders();
-
-
-
+/*
+ * فهرست مدل‌هایی که از دفتر مدل‌ها دریافت می‌شود.
+ */
 let largeCatalogModels = [];
 
+
+/* =========================================================
+   1. ارائه‌دهندگان مدل
+   ========================================================= */
+
+async function loadProviders() {
+    const statusElement = document.getElementById("status");
+    const container = document.getElementById("providers");
+
+    try {
+        const response = await fetch("/api/providers");
+
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+
+        const providers = await response.json();
+
+        container.replaceChildren();
+
+        for (const [key, provider] of Object.entries(providers)) {
+            const card = document.createElement("div");
+            card.className = "card";
+
+            const title = document.createElement("h3");
+            title.textContent = providerNames[key] || key;
+
+            const state = document.createElement("p");
+            state.textContent = provider.enabled ? "فعال" : "غیرفعال";
+
+            const count = document.createElement("div");
+            count.className = "count";
+            count.textContent = provider.model_count ?? 0;
+
+            const label = document.createElement("p");
+            label.textContent = "مدل ثبت‌شده";
+
+            const button = document.createElement("button");
+            button.textContent = "دریافت مدل‌ها";
+
+            const message = document.createElement("div");
+            message.className = "message muted";
+
+            button.addEventListener("click", async () => {
+                button.disabled = true;
+                message.textContent = "در حال دریافت فهرست مدل‌ها...";
+
+                try {
+                    const result = await fetch(
+                        `/api/providers/${encodeURIComponent(key)}/refresh-models`,
+                        { method: "POST" }
+                    );
+
+                    const data = await result.json();
+
+                    if (!result.ok) {
+                        throw new Error(data.detail || "خطای نامشخص");
+                    }
+
+                    count.textContent = data.model_count ?? 0;
+                    state.textContent = "فعال";
+
+                    message.textContent =
+                        `${data.model_count} مدل با موفقیت دریافت شد.`;
+
+                    // پس از به‌روزرسانی ارائه‌دهنده، جدول را هم تازه کن.
+                    await loadLargeCatalog();
+
+                } catch (error) {
+                    message.textContent = "خطا: " + error.message;
+                } finally {
+                    button.disabled = false;
+                }
+            });
+
+            card.append(title, state, count, label, button, message);
+            container.appendChild(card);
+        }
+
+        statusElement.textContent = "اطلاعات با موفقیت دریافت شد.";
+
+    } catch (error) {
+        statusElement.textContent =
+            "دریافت اطلاعات ناموفق بود: " + error.message;
+    }
+}
+
+
+/* =========================================================
+   2. دریافت فهرست مدل‌ها
+   ========================================================= */
+
 async function loadLargeCatalog() {
-    const countElement = document.getElementById("large-catalog-count");
-    const statusElement = document.getElementById("large-catalog-status");
+    const tableBody = document.getElementById("rotation-models-body");
 
     try {
         const response = await fetch("/api/thinker-room/catalog");
 
         if (!response.ok) {
-            throw new Error("خطا در دریافت دفتر بزرگ");
+            throw new Error("خطا در دریافت فهرست مدل‌ها: HTTP " + response.status);
         }
 
         const catalog = await response.json();
 
-        largeCatalogModels = catalog.models || [];
+        largeCatalogModels = Array.isArray(catalog.models)
+            ? catalog.models
+            : [];
 
-        countElement.textContent = catalog.model_count ?? largeCatalogModels.length;
-
-        statusElement.textContent = catalog.updated_at
-            ? "آخرین به‌روزرسانی: " +
-              new Date(catalog.updated_at).toLocaleString()
-            : "دفتر بزرگ هنوز ساخته نشده است.";
-
-        renderLargeCatalog();
         renderRotationPanel();
-      
+
     } catch (error) {
-        statusElement.textContent = error.message;
+        console.error("خطا در دریافت فهرست مدل‌ها:", error);
+
+        if (tableBody) {
+            tableBody.replaceChildren();
+
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+
+            cell.colSpan = 3;
+            cell.style.padding = "8px";
+            cell.textContent =
+                "دریافت فهرست مدل‌ها ناموفق بود: " + error.message;
+
+            row.appendChild(cell);
+            tableBody.appendChild(row);
+        }
     }
 }
 
-function renderLargeCatalog() {
-    const listElement = document.getElementById("large-catalog-list");
-    const searchElement = document.getElementById("large-catalog-search");
-    const query = searchElement.value.trim().toLowerCase();
 
-    // مرتب‌سازی فقط برای نمایش است و اطلاعات ذخیره‌شده را تغییر نمی‌دهد.
-    const sorted = [...largeCatalogModels].sort((a, b) => {
-        const charsA = Number(a.lifetime_chars) || 0;
-        const charsB = Number(b.lifetime_chars) || 0;
+/* =========================================================
+   3. تعیین وضعیت مدل
+   ========================================================= */
 
-        return charsB - charsA;
-    });
-
-    const filtered = sorted.filter(model =>
-        `${model.provider || ""} ${model.id || ""} ${model.name || ""}`
-            .toLowerCase()
-            .includes(query)
-    );
-
-    listElement.replaceChildren();
-
-    if (filtered.length === 0) {
-        listElement.textContent = "مدلی برای نمایش وجود ندارد.";
-        return;
-    }
-
-    const fragment = document.createDocumentFragment();
-
-    for (const model of filtered) {
-        const row = document.createElement("div");
-
-        row.style.cssText = [
-            "padding:12px 0",
-            "border-bottom:1px solid #ddd",
-            "overflow-wrap:anywhere"
-        ].join(";");
-
-        const title = document.createElement("strong");
-        title.textContent = model.name || model.id || "مدل بدون نام";
-
-        const details = document.createElement("div");
-        details.className = "muted";
-        details.textContent =
-            `${providerNames[model.provider] || model.provider || "نامشخص"} — ${model.id || ""}`;
-
-        const chars = document.createElement("div");
-        const lifetimeChars = Number(model.lifetime_chars) || 0;
-        chars.textContent =
-            `کاراکترهای ورودی موفق: ${lifetimeChars.toLocaleString()}`;
-
-        const requests = document.createElement("div");
-        requests.className = "muted";
-        requests.textContent =
-            `درخواست موفق: ${Number(model.successful_requests) || 0} | ` +
-            `درخواست ناموفق: ${Number(model.failed_requests) || 0}`;
-
-        const status = document.createElement("div");
-        status.className = "muted";
-
-        const testStatus = model.test_status || model.status || "untested";
-
-        const statusNames = {
-            tested: "آزمایش‌شده",
-            completed: "آزمایش‌شده",
-            in_progress: "در حال آزمایش",
-            testing: "در حال آزمایش",
-            failed: "ناموفق",
-            untested: "آزمایش‌نشده",
-            pending: "آزمایش‌نشده"
-        };
-
-        status.textContent =
-            `وضعیت: ${statusNames[testStatus] || testStatus}`;
-
-        row.append(title, details, chars, requests, status);
-        fragment.appendChild(row);
-    }
-
-    listElement.appendChild(fragment);
-}
-
-document
-    .getElementById("large-catalog-search")
-    .addEventListener("input", renderLargeCatalog);
-
-loadLargeCatalog();
-
-
-//new  
 function getModelStatus(model) {
     const current = model.test_status ?? "untested";
 
+    // مدل ناموفق هیچ‌گاه در فهرست موفق‌ها قرار نمی‌گیرد.
     if (current === "failed") {
         return "failed";
     }
 
+    // همان معیار موفقیت توافق‌شده:
+    // وضعیت tested یا داشتن lifetime_chars غیر null.
     if (
         current === "tested" ||
         model.lifetime_chars != null
@@ -341,6 +291,11 @@ function getModelStatus(model) {
     return "untested";
 }
 
+
+/* =========================================================
+   4. نمایش جدول مدل‌ها
+   ========================================================= */
+
 function renderRotationPanel() {
     const roundElement =
         document.getElementById("rotation-round");
@@ -352,62 +307,78 @@ function renderRotationPanel() {
         document.getElementById("rotation-models-body");
 
     if (!roundElement || !countElement || !tableBody) {
+        console.error("عناصر جدول مدل‌ها در HTML پیدا نشدند.");
         return;
     }
 
+    // همه مدل‌های موفق؛ بدون محدودیت تعداد ردیف.
     const successfulModels = largeCatalogModels.filter(
         model => getModelStatus(model) === "tested"
     );
 
+    // تعداد مدل‌هایی که هنوز آزمایش نشده‌اند.
     const remainingCount = largeCatalogModels.filter(
         model => getModelStatus(model) === "untested"
     ).length;
 
+    // شماره دور از داده‌های فعلی قابل تعیین نیست.
     roundElement.textContent = "شماره دور: —";
 
     countElement.textContent =
-        `تعداد مدل‌های باقی‌مانده: ${
-            remainingCount.toLocaleString("fa-IR")
-        }`;
+        "تعداد مدل‌های باقی‌مانده: " +
+        remainingCount.toLocaleString("fa-IR");
+
+    tableBody.replaceChildren();
 
     if (successfulModels.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="3" style="padding: 8px;">
-                    هنوز مدل موفقی ثبت نشده است.
-                </td>
-            </tr>
-        `;
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+
+        cell.colSpan = 3;
+        cell.style.padding = "8px";
+        cell.textContent = "هنوز مدل موفقی ثبت نشده است.";
+
+        row.appendChild(cell);
+        tableBody.appendChild(row);
         return;
     }
 
-    tableBody.innerHTML = successfulModels.map(
-        (model, index) => `
-            <tr>
-                <td style="padding: 8px;">
-                    ${index + 1}
-                </td>
-                <td style="padding: 8px;">
-                    ${escapeHtml(model.name || model.id || "?")}
-                </td>
-                <td style="padding: 8px;">
-                    ${escapeHtml(model.provider || "?")}
-                </td>
-            </tr>
-        `
-    ).join("");
+    const fragment = document.createDocumentFragment();
+
+    successfulModels.forEach((model, index) => {
+        const row = document.createElement("tr");
+
+        const rowNumber = document.createElement("td");
+        rowNumber.style.padding = "8px";
+        rowNumber.textContent = (index + 1).toLocaleString("fa-IR");
+
+        const modelName = document.createElement("td");
+        modelName.style.padding = "8px";
+        modelName.style.overflowWrap = "anywhere";
+        modelName.textContent = model.name || model.id || "بدون نام";
+
+        const interfaceName = document.createElement("td");
+        interfaceName.style.padding = "8px";
+        interfaceName.textContent =
+            providerNames[model.provider] || model.provider || "نامشخص";
+
+        row.append(rowNumber, modelName, interfaceName);
+        fragment.appendChild(row);
+    });
+
+    tableBody.appendChild(fragment);
 }
 
-function escapeHtml(value) {
-    return String(value).replace(/[&<>"']/g, char => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-    })[char]);
-}
 
+/* =========================================================
+   5. راه‌اندازی صفحه
+   ========================================================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadProviders();
+    loadLargeCatalog();
+});
 </script>
+
 </body>
 </html>
