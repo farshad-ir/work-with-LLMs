@@ -523,6 +523,15 @@ async def codex_responses(request: Request):
                 if isinstance(arguments, str):
                     output_chars += len(arguments)
 
+            print(
+                "[STREAM DEBUG] "
+                f"model={model_key} "
+                f"completed={stream_completed} "
+                f"error={stream_error!r} "
+                f"text_chars={len(converter.text)} "
+                f"tool_calls={len(converter.tool_calls)}"
+            )
+            
             _record_rotation_result(
                 model_key=model_key,
                 input_chars=input_chars,
