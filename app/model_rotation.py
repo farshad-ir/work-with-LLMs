@@ -1,3 +1,4 @@
+```python
 from __future__ import annotations
 
 import json
@@ -25,18 +26,8 @@ ROTATION_GROUP_ORDER = [
     "confirmed_models",
 ]
 
-
-
-# مجموع کاراکترهای ورودی درخواست‌های موفق برای پایان دورهٔ آزمایش مدل.
-
-# سقف مرحلهٔ عادی
 DEFAULT_TEST_INPUT_CHAR_LIMIT = 100_000
 CONFIRMED_MODEL_ENTRY_CHARS = 50_000
-
-# حداقل کاراکتر برای ورود به گروه مدل‌های تأییدشده
-CONFIRMED_MODEL_ENTRY_CHARS = 50_000
-
-# سقف مرحلهٔ مدل‌های تأییدشده
 CONFIRMED_MODEL_CHAR_LIMIT = 500_000
 
 
@@ -59,6 +50,7 @@ def _write_json(path: Path, data: Any) -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     temporary_path = path.with_suffix(path.suffix + ".tmp")
+
     with temporary_path.open("w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=2)
         file.write("\n")
@@ -98,18 +90,18 @@ def _load_state() -> dict[str, Any]:
 
     state.setdefault("next_rotation_group_index", 0)
     state.setdefault("confirmed_model_key", None)
-    state.setdefault("next_provider_index", 0)
     state.setdefault("confirmed_model_index", 0)
+    state.setdefault("next_provider_index", 0)
     state.setdefault("current_model_key", None)
     state.setdefault("finished", False)
-    state.setdefault("test_input_char_limit", DEFAULT_TEST_INPUT_CHAR_LIMIT)
-
-
+    state.setdefault(
+        "test_input_char_limit",
+        DEFAULT_TEST_INPUT_CHAR_LIMIT,
+    )
     state.setdefault("round_number", 1)
     state.setdefault("round_total", 0)
     state.setdefault("round_completed", 0)
 
-    
     return state
 
 
@@ -131,6 +123,7 @@ def _provider_key(provider: str) -> str:
 
 def _model_key(model: dict[str, Any]) -> str:
     existing_key = model.get("key")
+
     if existing_key:
         return str(existing_key)
 
@@ -141,7 +134,6 @@ def _model_key(model: dict[str, Any]) -> str:
 
 
 def _initialize_model_fields(model: dict[str, Any]) -> None:
-    # None یعنی هنوز دورهٔ آزمایش مدل تمام نشده و نتیجه‌ای ثبت نشده است.
     model.setdefault("lifetime_chars", None)
     model.setdefault("successful_requests", 0)
     model.setdefault("failed_requests", 0)
@@ -153,29 +145,6 @@ def _initialize_model_fields(model: dict[str, Any]) -> None:
     model.setdefault("failure_at", None)
     model.setdefault("confirmed", False)
 
-
-
-def _confirmed_models(
-    catalog: dict[str, Any],
-) -> list[dict[str, Any]]:
-    """Return models that have earned confirmed-group membership."""
-    confirmed = []
-
-    for model in catalog["models"]:
-        _initialize_model_fields(model)
-
-        # Preserve membership even when lifetime_chars is reset.
-        if model.get("confirmed") is True:
-            confirmed.append(model)
-            continue
-
-        chars = model.get("lifetime_chars")
-
-        if chars is not None and int(chars) >= CONFIRMED_MODEL_ENTRY_CHARS:
-            model["confirmed"] = True
-            confirmed.append(model)
-
-    return confirmed
 
 def _find_model(
     catalog: dict[str, Any],
@@ -191,17 +160,18 @@ def _find_model(
 def _confirmed_models(
     catalog: dict[str, Any],
 ) -> list[dict[str, Any]]:
-    result = []
+    """Return models with persistent confirmed-group membership."""
+    confirmed = []
 
     for model in catalog["models"]:
-        chars = model.get("lifetime_chars")
+        _initialize_model_fields(model)
 
-        if chars is not None and int(chars) >= CONFIRMED_MODEL_ENTRY_CHARS:
-            result.append(model)
+        # Membership is permanent once earned.
+        # lifetime_chars may be reset for each confirmed turn.
+        if model.get("confirmed") is True:
+            confirmed.append(model)
 
-    return result
-
-
+    return confirmed
 
 
 def _provider_has_untested_model(
@@ -221,199 +191,218 @@ def _provider_has_untested_model(
 
     return False
 
-def _confirmed_models(
-    catalog: dict[str, Any],
-) -> list[dict[str, Any]]:
-    """Return models that have earned confirmed-group membership."""
-    confirmed = []
 
+def _select_confirmed_model(
+    catalog: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    """
+    Start the next confirmed-model turn.
+
+    confirmed_model_key is the persistent cursor. If it no longer
+    exists in the confirmed group, selection starts with the first
+    confirmed model.
+    """
+    confirmed = _confirmed_models(catalog)
+
+    if not confirmed:
+        state["confirmed_model_key"] = None
+        state["confirmed_model_index"] = 0
+        _save_catalog(catalog)
+        _save_state(state)
+        return None
+
+    previous_key = state.get("confirmed_model_key")
+    start_index = 0
+
+    if previous_key:
+        matching_index = next(
+            (
+                index
+                for index, model in enumerate(confirmed)
+                if _model_key(model) == str(previous_key)
+            ),
+            None,
+        )
+
+        if matching_index is not None:
+            start_index = (matching_index + 1) % len(confirmed)
+
+    model = confirmed[start_index]
+    model_key = _model_key(model)
+
+    model["key"] = model_key
+    model["lifetime_chars"] = 0
+    model["test_status"] = "confirmed_in_progress"
+    model["last_tested_at"] = _now()
+    model["last_error_type"] = None
+    model["last_error_message"] = None
+
+    state["current_model_key"] = model_key
+    state["confirmed_model_key"] = model_key
+    state["confirmed_model_index"] = start_index
+    state["finished"] = False
+
+    _save_catalog(catalog)
+    _save_state(state)
+
+    return model
+
+
+def _advance_rotation_group(state: dict[str, Any]) -> None:
+    group_count = len(ROTATION_GROUP_ORDER)
+
+    if group_count == 0:
+        state["next_rotation_group_index"] = 0
+        return
+
+    current_index = int(
+        state.get("next_rotation_group_index", 0)
+    )
+
+    state["next_rotation_group_index"] = (
+        current_index + 1
+    ) % group_count
+
+
+def _select_ordinary_model(
+    catalog: dict[str, Any],
+    state: dict[str, Any],
+    provider: str,
+    provider_index: int,
+) -> dict[str, Any] | None:
+    """Select the first untested model for a provider."""
     for model in catalog["models"]:
         _initialize_model_fields(model)
 
-        if model.get("confirmed") is True:
-            confirmed.append(model)
+        if _provider_key(str(model.get("provider", ""))) != provider:
             continue
 
-        chars = model.get("lifetime_chars")
+        if model.get("test_status") != "untested":
+            continue
 
-        if chars is not None and int(chars) >= CONFIRMED_MODEL_ENTRY_CHARS:
-            model["confirmed"] = True
-            confirmed.append(model)
+        model_key = _model_key(model)
+        model["key"] = model_key
+        model["test_status"] = "in_progress"
+        model["last_tested_at"] = _now()
 
-    return confirmed
+        state["current_model_key"] = model_key
+        state["next_provider_index"] = (
+            provider_index + 1
+        ) % len(PROVIDER_ORDER)
+        state["finished"] = False
 
+        _advance_rotation_group(state)
 
-
-
-def _select_confirmed_model(
-    catalog: dict[str, Any],
-    state: dict[str, Any],
-) -> dict[str, Any] | None:
-    """انتخاب مدل تأییدشده بر اساس نشانگر پایدار مدل."""
-
-    confirmed_models = _confirmed_models(catalog)
-
-    if not confirmed_models:
-        state["confirmed_model_key"] = None
         _save_catalog(catalog)
         _save_state(state)
-        return None
 
-    current_key = state.get("confirmed_model_key")
-    start_index = 0
+        return model
 
-    if current_key:
-        for index, model in enumerate(confirmed_models):
-            if _model_key(model) == str(current_key):
-                start_index = (index + 1) % len(confirmed_models)
-                break
-
-    model = confirmed_models[start_index]
-    model_key = _model_key(model)
-    model["key"] = model_key
-
-    model["lifetime_chars"] = 0
-    model["test_status"] = "confirmed_in_progress"
-    model["last_tested_at"] = _now()
-
-    state["current_model_key"] = model_key
-    state["confirmed_model_key"] = model_key
-    state["finished"] = False
-
-    _save_catalog(catalog)
-    _save_state(state)
-
-    return model
-    
-def _select_confirmed_model(
-    catalog: dict[str, Any],
-    state: dict[str, Any],
-) -> dict[str, Any] | None:
-    """Select the next confirmed model using a persistent model key."""
-    confirmed_models = _confirmed_models(catalog)
-
-    if not confirmed_models:
-        state["confirmed_model_key"] = None
-        _save_catalog(catalog)
-        _save_state(state)
-        return None
-
-    current_key = state.get("confirmed_model_key")
-    start_index = 0
-
-    if current_key:
-        for index, model in enumerate(confirmed_models):
-            if _model_key(model) == str(current_key):
-                start_index = (index + 1) % len(confirmed_models)
-                break
-
-    model = confirmed_models[start_index]
-    model_key = _model_key(model)
-    model["key"] = model_key
-
-    # lifetime_chars is the counter for this confirmed turn.
-    model["lifetime_chars"] = 0
-    model["test_status"] = "confirmed_in_progress"
-    model["last_tested_at"] = _now()
-
-    state["current_model_key"] = model_key
-    state["confirmed_model_key"] = model_key
-    state["finished"] = False
-
-    _save_catalog(catalog)
-    _save_state(state)
-
-    return model
+    return None
 
 
 def select_next_model() -> dict[str, Any] | None:
     """
-    مدل جاری را حفظ می‌کند تا دورهٔ آزمایش آن تمام شود.
+    Select the next model according to:
+    openrouter -> nvidia -> token_router -> confirmed_models.
 
-    در نبود مدل جاری، ارائه‌دهندهٔ نوبت‌دار را انتخاب می‌کند و از ابتدای
-    دفتر بزرگ به دنبال اولین مدل آزمایش‌نشدهٔ همان ارائه‌دهنده می‌گردد.
-
-    اگر همهٔ مدل‌ها آزمایش شده باشند، None برمی‌گرداند.
+    An in-progress request survives process restarts because its
+    current_model_key is persisted. Empty groups are skipped safely.
     """
     catalog = _load_catalog()
     state = _load_state()
-
     models = catalog["models"]
+
+    if not models:
+        state["current_model_key"] = None
+        state["finished"] = True
+        _save_state(state)
+        return None
 
     for model in models:
         _initialize_model_fields(model)
 
-
-
-    # سازگاری با فایل وضعیت قدیمی و آغاز اولیهٔ شمارنده‌ها
     if int(state.get("round_total", 0)) <= 0:
         state["round_total"] = len(models)
         state["round_completed"] = sum(
-            1 for model in models
+            1
+            for model in models
             if model.get("test_status") in {"tested", "failed"}
         )
         _save_state(state)
-
-    
 
     current_key = state.get("current_model_key")
 
     if current_key:
         current_model = _find_model(catalog, str(current_key))
 
+        if current_model is not None and current_model.get(
+            "test_status"
+        ) in {"in_progress", "confirmed_in_progress"}:
+            return current_model
 
-        if current_model is not None:
-            if current_model.get("test_status") in {
-                "in_progress",
-                "confirmed_in_progress",
-            }:
-                return current_model
-
-        # مدل جاری دیگر در دفتر نیست یا وضعیت آن معتبر نیست.
         state["current_model_key"] = None
 
+    # Preserve the ordinary failed-model retry behavior.
+    #
+    # Retry failed ordinary models only after all ordinary providers
+    # have no untested models. Confirmed models are not failed out of
+    # their group by ordinary retry handling.
     provider_index = int(state.get("next_provider_index", 0))
     provider_index %= len(PROVIDER_ORDER)
 
-    # هر ارائه‌دهنده حداکثر یک بار در این جست‌وجو بررسی می‌شود.
-    for offset in range(len(PROVIDER_ORDER)):
-        index = (provider_index + offset) % len(PROVIDER_ORDER)
-        provider = PROVIDER_ORDER[index]
+    group_count = len(ROTATION_GROUP_ORDER)
+    start_group = int(
+        state.get("next_rotation_group_index", 0)
+    ) % group_count
+
+    # Examine at most one complete rotation. Empty groups are skipped.
+    for offset in range(group_count):
+        group_index = (start_group + offset) % group_count
+        group = ROTATION_GROUP_ORDER[group_index]
+
+        if group == "confirmed_models":
+            confirmed = _confirmed_models(catalog)
+
+            if not confirmed:
+                continue
+
+            # The cursor points to the next group after selection.
+            model = _select_confirmed_model(catalog, state)
+
+            if model is not None:
+                _advance_rotation_group(state)
+                _save_state(state)
+                return model
+
+            continue
+
+        provider = group
 
         if not _provider_has_untested_model(catalog, provider):
             continue
 
-        # ترتیب دفتر بزرگ حفظ می‌شود؛ هیچ مرتب‌سازی تازه‌ای انجام نمی‌شود.
-        for model in models:
-            if _provider_key(str(model.get("provider", ""))) != provider:
-                continue
+        index = PROVIDER_ORDER.index(provider)
+        model = _select_ordinary_model(
+            catalog,
+            state,
+            provider,
+            index,
+        )
 
-            if model.get("test_status") != "untested":
-                continue
+        if model is not None:
+            return model
 
-            model_key = _model_key(model)
-            model["key"] = model_key
-            model["test_status"] = "in_progress"
-            model["last_tested_at"] = _now()
-
-            state["current_model_key"] = model_key
-            state["next_provider_index"] = (
-                index + 1
-            ) % len(PROVIDER_ORDER)
-            state["finished"] = False
-
-            _save_catalog(catalog)
-            _save_state(state)
-
-            return model     
-    
-
-    
-    
-    # اگر مدل ناموفقی باقی مانده، دور بعد را فقط با همان مدل‌ها آغاز کن.
+    # No group has an untested/available model.
+    # Retry only ordinary failures, preserving prior behavior.
     failed_models = [
-        model for model in models
-        if model.get("test_status") == "failed"
+        model
+        for model in models
+        if (
+            model.get("test_status") == "failed"
+            and model.get("confirmed") is not True
+        )
     ]
 
     if failed_models:
@@ -429,10 +418,13 @@ def select_next_model() -> dict[str, Any] | None:
         state["current_model_key"] = None
         state["finished"] = False
 
+        # Begin the retry round at the first ordinary provider.
+        state["next_rotation_group_index"] = 0
+        state["next_provider_index"] = 0
+
         _save_catalog(catalog)
         _save_state(state)
 
-        # انتخاب اولین مدل دور جدید
         return select_next_model()
 
     state["current_model_key"] = None
@@ -454,28 +446,24 @@ def record_request_result(
     error_message: str | None = None,
 ) -> dict[str, Any]:
     """
-    نتیجهٔ یک درخواست را برای مدل جاری ثبت می‌کند.
+    Record one request result.
 
-    موفقیت:
-      - input_chars به lifetime_chars اضافه می‌شود.
-      - output_chars و successful_requests افزایش می‌یابند.
+    Ordinary models:
+      - Accumulate successful input characters.
+      - Become confirmed at 50,000 successful input characters.
+      - Finish ordinary testing at the configured limit or when the
+        caller reports a terminal result.
 
-    شکست:
-      - failed_requests افزایش می‌یابد.
-      - خطای موقت به‌تنهایی مدل را از چرخه خارج نمی‌کند.
-      - شکست نهایی باید با ends_model_test=True مشخص شود.
-
-    توجه:
-      این تابع خودش نوع خطا را تشخیص نمی‌دهد؛ فراخواننده باید مشخص کند
-      آیا شکست نهایی مدل است یا خطای موقت شبکه/درگاه.
+    Confirmed models:
+      - lifetime_chars measures the current confirmed turn only.
+      - Finish the turn at 500,000 successful input characters or
+        a terminal error.
+      - Remain confirmed after the turn ends.
     """
     catalog = _load_catalog()
     state = _load_state()
-    # نتیجه متعلق به مدل همین درخواست است، نه لزوماً مدل جاری.
-    
-    current_key = state.get("current_model_key")
-    result_key = str(model_key)
 
+    result_key = str(model_key)
     model = _find_model(catalog, result_key)
 
     if model is None:
@@ -486,13 +474,13 @@ def record_request_result(
     _initialize_model_fields(model)
 
     previous_status = model.get("test_status")
+    was_confirmed_turn = previous_status == "confirmed_in_progress"
 
     input_chars = max(0, int(input_chars))
     output_chars = max(0, int(output_chars))
 
     if success:
         previous_chars = model.get("lifetime_chars")
-
         if previous_chars is None:
             previous_chars = 0
 
@@ -503,42 +491,69 @@ def record_request_result(
         model["last_error_type"] = None
         model["last_error_message"] = None
 
-        limit = int(
-            state.get(
-                "test_input_char_limit",
-                DEFAULT_TEST_INPUT_CHAR_LIMIT,
+        if not was_confirmed_turn:
+            # Confirmation is triggered immediately by successful
+            # ordinary input accumulation. Failed requests add nothing.
+            if (
+                model.get("confirmed") is not True
+                and model["lifetime_chars"] >= CONFIRMED_MODEL_ENTRY_CHARS
+            ):
+                model["confirmed"] = True
+
+            limit = int(
+                state.get(
+                    "test_input_char_limit",
+                    DEFAULT_TEST_INPUT_CHAR_LIMIT,
+                )
             )
-        )
 
-        reached_limit = model["lifetime_chars"] >= limit
+            reached_limit = model["lifetime_chars"] >= limit
 
-        if ends_model_test or reached_limit:
-            model["test_status"] = "tested"
+            if ends_model_test or reached_limit:
+                model["test_status"] = (
+                    "confirmed_ready"
+                    if model.get("confirmed") is True
+                    else "tested"
+                )
 
-            if str(state.get("current_model_key")) == result_key:
-                state["current_model_key"] = None
-        
+                if state.get("current_model_key") == result_key:
+                    state["current_model_key"] = None
 
+        else:
+            # The counter is scoped to this confirmed turn.
+            reached_confirmed_limit = (
+                model["lifetime_chars"] >= CONFIRMED_MODEL_CHAR_LIMIT
+            )
+
+            if ends_model_test or reached_confirmed_limit:
+                model["test_status"] = "confirmed_ready"
+
+                # Keep confirmed membership and the persistent cursor.
+                if state.get("current_model_key") == result_key:
+                    state["current_model_key"] = None
 
     else:
         model["failed_requests"] += 1
         model["last_tested_at"] = _now()
         model["last_error_type"] = error_type
         model["last_error_message"] = error_message
-        
-        if ends_model_test:
-            model["test_status"] = "failed"
-            model["failure_at"] = _now()
 
-            if str(state.get("current_model_key")) == result_key:
+        if ends_model_test:
+            if was_confirmed_turn or model.get("confirmed") is True:
+                # A terminal error ends this confirmed turn only.
+                model["test_status"] = "confirmed_ready"
+            else:
+                model["test_status"] = "failed"
+                model["failure_at"] = _now()
+
+            if state.get("current_model_key") == result_key:
                 state["current_model_key"] = None
-         # هر مدل فقط یک بار در هر دور به‌عنوان تمام‌شده شمرده می‌شود.
-    
-    
-    
-    
-    
+
+        # A temporary failure leaves the model in its current state.
+        # It does not add characters or end the confirmed turn.
+
     terminal_statuses = {"tested", "failed"}
+
     if (
         previous_status not in terminal_statuses
         and model.get("test_status") in terminal_statuses
@@ -547,9 +562,7 @@ def record_request_result(
             state.get("round_completed", 0)
         ) + 1
 
-
-    
-
+    # Confirmed turns do not contribute to ordinary round completion.
     _save_catalog(catalog)
     _save_state(state)
 
@@ -561,6 +574,7 @@ def record_request_result(
         "failed_requests": model.get("failed_requests", 0),
         "output_chars": model.get("output_chars", 0),
         "test_status": model.get("test_status"),
+        "confirmed": model.get("confirmed", False),
         "current_model_key": state.get("current_model_key"),
         "finished": state.get("finished", False),
     }
@@ -569,7 +583,6 @@ def record_request_result(
 def get_rotation_status() -> dict[str, Any]:
     catalog = _load_catalog()
     state = _load_state()
-
     models = catalog["models"]
 
     total = len(models)
@@ -577,36 +590,59 @@ def get_rotation_status() -> dict[str, Any]:
     failed = 0
     untested = 0
     in_progress = 0
+    confirmed_count = 0
+    confirmed_in_progress = 0
 
     for model in models:
         _initialize_model_fields(model)
-
         status = model.get("test_status")
-        
+
+        if model.get("confirmed") is True:
+            confirmed_count += 1
+
         if status == "failed":
             failed += 1
-        elif status == "tested" or model.get("lifetime_chars") is not None:
-            tested += 1
         elif status == "in_progress":
             in_progress += 1
+        elif status == "confirmed_in_progress":
+            confirmed_in_progress += 1
+        elif status in {"tested", "confirmed_ready"}:
+            tested += 1
+        elif status == "untested":
+            untested += 1
         else:
             untested += 1
 
     round_number = int(state.get("round_number", 1))
     round_total = int(state.get("round_total", total))
     round_completed = int(state.get("round_completed", 0))
-    
+
+    group_count = len(ROTATION_GROUP_ORDER)
+    next_group_index = (
+        int(state.get("next_rotation_group_index", 0)) % group_count
+        if group_count
+        else 0
+    )
+
     return {
         "round_number": round_number,
         "round_total": round_total,
         "round_completed": round_completed,
-        
         "total": total,
         "tested": tested,
         "failed": failed,
         "untested": untested,
         "in_progress": in_progress,
+        "confirmed_count": confirmed_count,
+        "confirmed_in_progress": confirmed_in_progress,
         "current_model_key": state.get("current_model_key"),
+        "confirmed_model_key": state.get("confirmed_model_key"),
+        "next_rotation_group_index": next_group_index,
+        "next_rotation_group": (
+            ROTATION_GROUP_ORDER[next_group_index]
+            if group_count
+            else None
+        ),
         "finished": bool(state.get("finished", False)),
         "test_input_char_limit": int(
             state.get(
@@ -614,22 +650,23 @@ def get_rotation_status() -> dict[str, Any]:
                 DEFAULT_TEST_INPUT_CHAR_LIMIT,
             )
         ),
+        "confirmed_entry_char_limit": CONFIRMED_MODEL_ENTRY_CHARS,
+        "confirmed_turn_char_limit": CONFIRMED_MODEL_CHAR_LIMIT,
     }
 
 
 def set_test_input_char_limit(limit: int) -> dict[str, Any]:
-    """
-    تنظیم حد کاراکترهای ورودی برای هر مدل.
-    فقط مقدار مثبت پذیرفته می‌شود.
-    """
+    """Set the ordinary per-model successful-input character limit."""
     limit = int(limit)
 
     if limit <= 0:
-        raise ValueError("The character limit must be greater than zero.")
+        raise ValueError(
+            "The character limit must be greater than zero."
+        )
 
     state = _load_state()
     state["test_input_char_limit"] = limit
     _save_state(state)
 
     return get_rotation_status()
-
+```
