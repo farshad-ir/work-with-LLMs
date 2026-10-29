@@ -29,6 +29,7 @@ from app.thinker_room import (
 from app.model_rotation import (
     select_next_model,
     record_request_result,
+    get_rotation_status,
 )
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -96,6 +97,9 @@ async def providers():
 async def large_catalog():
     return load_large_catalog()
 
+@app.get("/api/rotation/status")
+async def rotation_status():
+    return get_rotation_status()
 
 @app.post("/api/providers/{provider_name}/refresh-models")
 async def refresh_models(provider_name: str):
