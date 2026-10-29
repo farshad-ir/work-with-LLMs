@@ -410,13 +410,6 @@ def select_next_model() -> dict[str, Any] | None:
         group = ROTATION_GROUP_ORDER[group_index]
 
         if group == "confirmed_models":
-            ordinary_models_remain = any(
-                _provider_has_untested_model(catalog, provider)
-                for provider in PROVIDER_ORDER
-            )
-
-            if ordinary_models_remain:
-                continue
 
             confirmed = _confirmed_models(catalog)
 
