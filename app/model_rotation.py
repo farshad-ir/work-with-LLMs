@@ -18,9 +18,26 @@ PROVIDER_ORDER = [
     "token_router",
 ]
 
+ROTATION_GROUP_ORDER = [
+    "openrouter",
+    "nvidia",
+    "token_router",
+    "confirmed_models",
+]
+
+
+
 # مجموع کاراکترهای ورودی درخواست‌های موفق برای پایان دورهٔ آزمایش مدل.
-# مقدار را می‌توان بعداً از تنظیمات پروژه خواند.
+
+# سقف مرحلهٔ عادی
 DEFAULT_TEST_INPUT_CHAR_LIMIT = 100_000
+CONFIRMED_MODEL_ENTRY_CHARS = 50_000
+
+# حداقل کاراکتر برای ورود به گروه مدل‌های تأییدشده
+CONFIRMED_MODEL_ENTRY_CHARS = 50_000
+
+# سقف مرحلهٔ مدل‌های تأییدشده
+CONFIRMED_MODEL_CHAR_LIMIT = 500_000
 
 
 def _now() -> str:
@@ -79,7 +96,10 @@ def _load_state() -> dict[str, Any]:
     if not isinstance(state, dict):
         state = {}
 
+    state.setdefault("next_rotation_group_index", 0)
+    state.setdefault("confirmed_model_key", None)
     state.setdefault("next_provider_index", 0)
+    state.setdefault("confirmed_model_index", 0)
     state.setdefault("current_model_key", None)
     state.setdefault("finished", False)
     state.setdefault("test_input_char_limit", DEFAULT_TEST_INPUT_CHAR_LIMIT)
@@ -131,7 +151,31 @@ def _initialize_model_fields(model: dict[str, Any]) -> None:
     model.setdefault("last_error_type", None)
     model.setdefault("last_error_message", None)
     model.setdefault("failure_at", None)
+    model.setdefault("confirmed", False)
 
+
+
+def _confirmed_models(
+    catalog: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Return models that have earned confirmed-group membership."""
+    confirmed = []
+
+    for model in catalog["models"]:
+        _initialize_model_fields(model)
+
+        # Preserve membership even when lifetime_chars is reset.
+        if model.get("confirmed") is True:
+            confirmed.append(model)
+            continue
+
+        chars = model.get("lifetime_chars")
+
+        if chars is not None and int(chars) >= CONFIRMED_MODEL_ENTRY_CHARS:
+            model["confirmed"] = True
+            confirmed.append(model)
+
+    return confirmed
 
 def _find_model(
     catalog: dict[str, Any],
@@ -142,6 +186,23 @@ def _find_model(
             return model
 
     return None
+
+
+def _confirmed_models(
+    catalog: dict[str, Any],
+) -> list[dict[str, Any]]:
+    result = []
+
+    for model in catalog["models"]:
+        chars = model.get("lifetime_chars")
+
+        if chars is not None and int(chars) >= CONFIRMED_MODEL_ENTRY_CHARS:
+            result.append(model)
+
+    return result
+
+
+
 
 def _provider_has_untested_model(
     catalog: dict[str, Any],
@@ -160,6 +221,109 @@ def _provider_has_untested_model(
 
     return False
 
+def _confirmed_models(
+    catalog: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Return models that have earned confirmed-group membership."""
+    confirmed = []
+
+    for model in catalog["models"]:
+        _initialize_model_fields(model)
+
+        if model.get("confirmed") is True:
+            confirmed.append(model)
+            continue
+
+        chars = model.get("lifetime_chars")
+
+        if chars is not None and int(chars) >= CONFIRMED_MODEL_ENTRY_CHARS:
+            model["confirmed"] = True
+            confirmed.append(model)
+
+    return confirmed
+
+
+
+
+def _select_confirmed_model(
+    catalog: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    """انتخاب مدل تأییدشده بر اساس نشانگر پایدار مدل."""
+
+    confirmed_models = _confirmed_models(catalog)
+
+    if not confirmed_models:
+        state["confirmed_model_key"] = None
+        _save_catalog(catalog)
+        _save_state(state)
+        return None
+
+    current_key = state.get("confirmed_model_key")
+    start_index = 0
+
+    if current_key:
+        for index, model in enumerate(confirmed_models):
+            if _model_key(model) == str(current_key):
+                start_index = (index + 1) % len(confirmed_models)
+                break
+
+    model = confirmed_models[start_index]
+    model_key = _model_key(model)
+    model["key"] = model_key
+
+    model["lifetime_chars"] = 0
+    model["test_status"] = "confirmed_in_progress"
+    model["last_tested_at"] = _now()
+
+    state["current_model_key"] = model_key
+    state["confirmed_model_key"] = model_key
+    state["finished"] = False
+
+    _save_catalog(catalog)
+    _save_state(state)
+
+    return model
+    
+def _select_confirmed_model(
+    catalog: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Select the next confirmed model using a persistent model key."""
+    confirmed_models = _confirmed_models(catalog)
+
+    if not confirmed_models:
+        state["confirmed_model_key"] = None
+        _save_catalog(catalog)
+        _save_state(state)
+        return None
+
+    current_key = state.get("confirmed_model_key")
+    start_index = 0
+
+    if current_key:
+        for index, model in enumerate(confirmed_models):
+            if _model_key(model) == str(current_key):
+                start_index = (index + 1) % len(confirmed_models)
+                break
+
+    model = confirmed_models[start_index]
+    model_key = _model_key(model)
+    model["key"] = model_key
+
+    # lifetime_chars is the counter for this confirmed turn.
+    model["lifetime_chars"] = 0
+    model["test_status"] = "confirmed_in_progress"
+    model["last_tested_at"] = _now()
+
+    state["current_model_key"] = model_key
+    state["confirmed_model_key"] = model_key
+    state["finished"] = False
+
+    _save_catalog(catalog)
+    _save_state(state)
+
+    return model
 
 
 def select_next_model() -> dict[str, Any] | None:
@@ -197,8 +361,12 @@ def select_next_model() -> dict[str, Any] | None:
     if current_key:
         current_model = _find_model(catalog, str(current_key))
 
+
         if current_model is not None:
-            if current_model.get("test_status") == "in_progress":
+            if current_model.get("test_status") in {
+                "in_progress",
+                "confirmed_in_progress",
+            }:
                 return current_model
 
         # مدل جاری دیگر در دفتر نیست یا وضعیت آن معتبر نیست.
