@@ -1,4 +1,3 @@
-```python
 from __future__ import annotations
 
 import json
@@ -301,6 +300,16 @@ def _select_ordinary_model(
 
     return None
 
+def refresh_confirmed_models(catalog):
+    """Refresh confirmation without touching models in ordinary testing."""
+    for model in catalog["models"]:
+        if model.get("test_status") == "in_progress":
+            continue
+
+        model["confirmed"] = (
+            (model.get("lifetime_chars") or 0)
+            >= CONFIRMED_MODEL_ENTRY_CHARS
+        )
 
 def select_next_model() -> dict[str, Any] | None:
     """
@@ -311,6 +320,7 @@ def select_next_model() -> dict[str, Any] | None:
     current_model_key is persisted. Empty groups are skipped safely.
     """
     catalog = _load_catalog()
+    refresh_confirmed_models(catalog)
     state = _load_state()
     models = catalog["models"]
 
@@ -669,4 +679,4 @@ def set_test_input_char_limit(limit: int) -> dict[str, Any]:
     _save_state(state)
 
     return get_rotation_status()
-```
+
