@@ -79,32 +79,41 @@
   </section>
 
   <section class="card">
-    <h2>مسیریابی مدل‌ها</h2>
-    <p>مدل اصلی: هنوز انتخاب نشده</p>
-    <p>مدل‌های پشتیبان: ۰ از ۳</p>
-    <p class="muted">
-      انتخاب مدل اصلی و پشتیبان را در مرحله بعد اضافه می‌کنیم.
+
+    <h2>مدل‌ها</h2>
+
+    <p id="rotation-round">
+        شماره دور: —
     </p>
+
+    <p id="rotation-count">
+        تعداد مدل‌های باقی‌مانده: —
+    </p>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align: left; padding: 8px;">Row</th>
+                    <th style="text-align: left; padding: 8px;">Model Name</th>
+                    <th style="text-align: left; padding: 8px;">Interface</th>
+                </tr>
+            </thead>
+
+            <tbody id="rotation-models-body">
+                <tr>
+                    <td colspan="3" style="padding: 8px;">
+                        در حال بارگذاری مدل‌ها...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
   </section>
 
 
-  <section class="card" id="large-catalog-card" dir="rtl">
-    <h2>دفتر بزرگ مدل‌ها</h2>
-    <p>
-        تعداد مدل‌های فعال:
-        <strong id="large-catalog-count">در حال بارگذاری...</strong>
-    </p>
-    <p id="large-catalog-status">در حال خواندن دفتر بزرگ...</p>
 
-    <input
-        id="large-catalog-search"
-        type="search"
-        placeholder="جست‌وجوی نام یا شناسه مدل..."
-        style="width:100%; box-sizing:border-box; margin-bottom:12px;"
-    >
-
-    <div id="large-catalog-list"></div>
-  </section>
 </main>
 
 
@@ -215,6 +224,8 @@ async function loadLargeCatalog() {
             : "دفتر بزرگ هنوز ساخته نشده است.";
 
         renderLargeCatalog();
+        renderRotationPanel();
+      
     } catch (error) {
         statusElement.textContent = error.message;
     }
@@ -307,6 +318,95 @@ document
 
 loadLargeCatalog();
 
+
+//new  
+function getModelStatus(model) {
+    const current = model.test_status ?? "untested";
+
+    if (current === "failed") {
+        return "failed";
+    }
+
+    if (
+        current === "tested" ||
+        model.lifetime_chars != null
+    ) {
+        return "tested";
+    }
+
+    if (current === "in_progress") {
+        return "in_progress";
+    }
+
+    return "untested";
+}
+
+function renderRotationPanel() {
+    const roundElement =
+        document.getElementById("rotation-round");
+
+    const countElement =
+        document.getElementById("rotation-count");
+
+    const tableBody =
+        document.getElementById("rotation-models-body");
+
+    if (!roundElement || !countElement || !tableBody) {
+        return;
+    }
+
+    const successfulModels = largeCatalogModels.filter(
+        model => getModelStatus(model) === "tested"
+    );
+
+    const remainingCount = largeCatalogModels.filter(
+        model => getModelStatus(model) === "untested"
+    ).length;
+
+    roundElement.textContent = "شماره دور: —";
+
+    countElement.textContent =
+        `تعداد مدل‌های باقی‌مانده: ${
+            remainingCount.toLocaleString("fa-IR")
+        }`;
+
+    if (successfulModels.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="3" style="padding: 8px;">
+                    هنوز مدل موفقی ثبت نشده است.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tableBody.innerHTML = successfulModels.map(
+        (model, index) => `
+            <tr>
+                <td style="padding: 8px;">
+                    ${index + 1}
+                </td>
+                <td style="padding: 8px;">
+                    ${escapeHtml(model.name || model.id || "?")}
+                </td>
+                <td style="padding: 8px;">
+                    ${escapeHtml(model.provider || "?")}
+                </td>
+            </tr>
+        `
+    ).join("");
+}
+
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
 
 </script>
 </body>
