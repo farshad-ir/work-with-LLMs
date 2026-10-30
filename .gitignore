@@ -12,3 +12,6 @@ build/
 *.egg-info/
 
 config.json
+
+data/rotation.log
+data/rotation_state.json

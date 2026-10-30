@@ -278,21 +278,24 @@ def _select_confirmed_model(
     return model
 
 
-def _advance_rotation_group(state: dict[str, Any]) -> None:
+def _advance_rotation_group(
+    state: dict[str, Any],
+    selected_group: str,
+) -> None:
     group_count = len(ROTATION_GROUP_ORDER)
 
     if group_count == 0:
         state["next_rotation_group_index"] = 0
         return
 
-    current_index = int(
-        state.get("next_rotation_group_index", 0)
-    )
+    try:
+        selected_index = ROTATION_GROUP_ORDER.index(selected_group)
+    except ValueError:
+        return
 
     state["next_rotation_group_index"] = (
-        current_index + 1
+        selected_index + 1
     ) % group_count
-
 
 def _select_ordinary_model(
     catalog: dict[str, Any],
@@ -325,20 +328,7 @@ def _select_ordinary_model(
             state.get("next_rotation_group_index", 0)
         )
 
-        _advance_rotation_group(state)
-
-        new_pointer = int(
-            state.get("next_rotation_group_index", 0)
-        )
-
-        if old_pointer != new_pointer:
-            _log_event(
-                "PTR",
-                GROUP_CODE[provider],
-                f"{old_pointer}>{new_pointer}",
-            )
-
-        
+        _advance_rotation_group(state, provider)
 
         new_pointer = int(
             state.get("next_rotation_group_index", 0)
@@ -352,14 +342,27 @@ def _select_ordinary_model(
             )
 
 
-        
+
+        new_pointer = int(
+            state.get("next_rotation_group_index", 0)
+        )
+
+        if old_pointer != new_pointer:
+            _log_event(
+                "PTR",
+                GROUP_CODE[provider],
+                f"{old_pointer}>{new_pointer}",
+            )
+
+
+
 
         _save_catalog(catalog)
         _save_state(state)
 
 
         _log_event("SEL", GROUP_CODE[provider], model_key)
-        
+
         return model
 
     return None
@@ -498,7 +501,7 @@ def select_next_model() -> dict[str, Any] | None:
                     state.get("next_rotation_group_index", 0)
                 )
 
-                _advance_rotation_group(state)
+                _advance_rotation_group(state, "confirmed_models")
 
                 new_pointer = int(
                     state.get("next_rotation_group_index", 0)
