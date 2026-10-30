@@ -686,3 +686,14 @@ def set_test_input_char_limit(limit: int) -> dict[str, Any]:
 
     return get_rotation_status()
 
+import sys
+
+def _log_event(event_code: str, group_code: str, detail: str) -> None:
+    try:
+        timestamp = datetime.now().strftime('%H:%M:%S')
+        line = f'{timestamp} | {event_code} | {group_code} | {detail}\n'
+        with open('C:\\Users\\Rezvan\\work\\codex\\work-with-LLMs\\data\\rotation.log', 'a', encoding='utf-8') as f:
+            f.write(line)
+    except Exception:
+        # never let logging affect model selection
+        pass
