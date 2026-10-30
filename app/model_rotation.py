@@ -27,7 +27,7 @@ ROTATION_GROUP_ORDER = [
 
 DEFAULT_TEST_INPUT_CHAR_LIMIT = 100_000
 CONFIRMED_MODEL_ENTRY_CHARS = 50_000
-CONFIRMED_MODEL_CHAR_LIMIT = 500_000
+CONFIRMED_MODEL_CHAR_LIMIT = 110_000
 
 
 def _now() -> str:
@@ -234,6 +234,10 @@ def _select_confirmed_model(
     """
     confirmed = _confirmed_models(catalog)
 
+
+
+
+
     if not confirmed:
         state["confirmed_model_key"] = None
         state["confirmed_model_index"] = 0
@@ -241,8 +245,11 @@ def _select_confirmed_model(
         _save_state(state)
         return None
 
+
     previous_key = state.get("confirmed_model_key")
-    start_index = 0
+    previous_index = int(state.get("confirmed_model_index") or 0)
+    start_index = previous_index % len(confirmed)
+
 
     if previous_key:
         matching_index = next(
@@ -253,12 +260,13 @@ def _select_confirmed_model(
             ),
             None,
         )
-
         if matching_index is not None:
             start_index = (matching_index + 1) % len(confirmed)
 
     model = confirmed[start_index]
     model_key = _model_key(model)
+
+
 
     model["key"] = model_key
     model["lifetime_chars"] = 0
@@ -370,7 +378,10 @@ def _select_ordinary_model(
 def refresh_confirmed_models(catalog):
     """Refresh confirmation without touching models in ordinary testing."""
     for model in catalog["models"]:
-        if model.get("test_status") == "in_progress":
+        if model.get("test_status") in (
+            "in_progress",
+            "confirmed_in_progress",
+        ):
             continue
 
         model["confirmed"] = (
