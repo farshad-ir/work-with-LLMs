@@ -321,12 +321,22 @@ def _select_ordinary_model(
         ) % len(PROVIDER_ORDER)
         state["finished"] = False
 
-        _advance_rotation_group(state)
-
-
-                old_pointer = int(
+        old_pointer = int(
             state.get("next_rotation_group_index", 0)
         )
+
+        _advance_rotation_group(state)
+
+        new_pointer = int(
+            state.get("next_rotation_group_index", 0)
+        )
+
+        if old_pointer != new_pointer:
+            _log_event(
+                "PTR",
+                GROUP_CODE[provider],
+                f"{old_pointer}>{new_pointer}",
+            )
 
         
 
