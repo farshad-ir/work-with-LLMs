@@ -107,6 +107,36 @@ def _load_state() -> dict[str, Any]:
 def _save_state(state: dict[str, Any]) -> None:
     _write_json(ROTATION_STATE_PATH, state)
 
+# ------------------------------------------------------------------
+# Rotation event logger
+# ------------------------------------------------------------------
+
+GROUP_CODE = {
+    "openrouter": "OPR",
+    "nvidia": "NVD",
+    "token_router": "TKR",
+    "confirmed_models": "CFM",
+}
+
+
+def _log_event(event_code: str, group_code: str, detail: str) -> None:
+    """Append one rotation event without affecting selection."""
+    try:
+        log_path = DATA_DIR / "rotation.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        line = (
+            f"{timestamp} | {event_code} | "
+            f"{group_code} | {detail}\n"
+        )
+
+        with log_path.open("a", encoding="utf-8") as file:
+            file.write(line)
+
+    except Exception:
+        pass
+
 
 def _provider_key(provider: str) -> str:
     aliases = {
@@ -293,9 +323,33 @@ def _select_ordinary_model(
 
         _advance_rotation_group(state)
 
+
+                old_pointer = int(
+            state.get("next_rotation_group_index", 0)
+        )
+
+        
+
+        new_pointer = int(
+            state.get("next_rotation_group_index", 0)
+        )
+
+        if old_pointer != new_pointer:
+            _log_event(
+                "PTR",
+                GROUP_CODE[provider],
+                f"{old_pointer}>{new_pointer}",
+            )
+
+
+        
+
         _save_catalog(catalog)
         _save_state(state)
 
+
+        _log_event("SEL", GROUP_CODE[provider], model_key)
+        
         return model
 
     return None
@@ -401,6 +455,13 @@ def select_next_model() -> dict[str, Any] | None:
             _save_catalog(catalog)
             _save_state(state)
 
+            _log_event(
+                "RST",
+                "ALL",
+                f"ROUND={state['round_number']} "
+                f"RETRY_MODELS={len(failed_models)}",
+            )
+            
             return select_next_model()
 
     
@@ -414,20 +475,46 @@ def select_next_model() -> dict[str, Any] | None:
             confirmed = _confirmed_models(catalog)
 
             if not confirmed:
+                _log_event("SKP", "CFM", "NO_CONFIRMED_MODELS")
                 continue
 
             model = _select_confirmed_model(catalog, state)
 
+
             if model is not None:
+                _log_event("SEL", "CFM", model["key"])
+
+                old_pointer = int(
+                    state.get("next_rotation_group_index", 0)
+                )
+
                 _advance_rotation_group(state)
+
+                new_pointer = int(
+                    state.get("next_rotation_group_index", 0)
+                )
+
+                if old_pointer != new_pointer:
+                    _log_event(
+                        "PTR",
+                        "CFM",
+                        f"{old_pointer}>{new_pointer}",
+                    )
+
                 _save_state(state)
                 return model
+
 
             continue
 
         provider = group
 
         if not _provider_has_untested_model(catalog, provider):
+            _log_event(
+                "SKP",
+                GROUP_CODE[provider],
+                "NO_UNTESTED_MODELS",
+            )
             continue
 
         index = PROVIDER_ORDER.index(provider)
@@ -448,7 +535,9 @@ def select_next_model() -> dict[str, Any] | None:
 
     _save_catalog(catalog)
     _save_state(state)
-
+    
+    _log_event("END", "ALL", "NO_MODEL_SELECTED")
+    
     return None
 
 
@@ -686,14 +775,3 @@ def set_test_input_char_limit(limit: int) -> dict[str, Any]:
 
     return get_rotation_status()
 
-import sys
-
-def _log_event(event_code: str, group_code: str, detail: str) -> None:
-    try:
-        timestamp = datetime.now().strftime('%H:%M:%S')
-        line = f'{timestamp} | {event_code} | {group_code} | {detail}\n'
-        with open('C:\\Users\\Rezvan\\work\\codex\\work-with-LLMs\\data\\rotation.log', 'a', encoding='utf-8') as f:
-            f.write(line)
-    except Exception:
-        # never let logging affect model selection
-        pass
