@@ -1,4 +1,4 @@
-﻿import json
+import json
 import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -247,9 +247,15 @@ def test_f_no_enabled_providers(isolated_data_dir, mock_config, monkeypatch):
     model = select_next_model()
     assert model is None
     
-    # With confirmed models, they should be selectable
+    # Confirmed models remain selectable with every ordinary provider disabled.
     catalog = _make_catalog([
-        _make_model("nvidia", "confirmed-model", confirmed=True, test_status="confirmed_ready"),
+        _make_model(
+            "any-provider",
+            "confirmed-model",
+            confirmed=True,
+            test_status="confirmed_ready",
+            lifetime_chars=CONFIRMED_MODEL_ENTRY_CHARS,
+        ),
     ])
     _save_catalog(catalog)
     
@@ -417,8 +423,15 @@ def test_g_state_migration_only_confirmed(isolated_data_dir, mock_config, monkey
     }
     _save_state(stale_state)
     
+    # Confirmed models remain selectable with every ordinary provider disabled.
     catalog = _make_catalog([
-        _make_model("nvidia", "confirmed-1", confirmed=True, test_status="confirmed_ready"),
+        _make_model(
+            "any-provider",
+            "confirmed-1",
+            confirmed=True,
+            test_status="confirmed_ready",
+            lifetime_chars=CONFIRMED_MODEL_ENTRY_CHARS,
+        ),
     ])
     _save_catalog(catalog)
     
@@ -530,10 +543,15 @@ def test_i_failed_retry_only_after_enabled_exhausted(isolated_data_dir, mock_con
     m4 = select_next_model()
     assert m4 is not None
     
-    # Failed models should be reset to untested
+    # Failed models should be reset to untested (one will be marked in_progress by selection)
     cat = _load_catalog()
+    untested_count = sum(1 for m in cat["models"] if m["test_status"] == "untested")
+    in_progress_count = sum(1 for m in cat["models"] if m["test_status"] == "in_progress")
+    # All 3 failed models were reset to untested, then selection marked one in_progress
+    assert untested_count == 2
+    assert in_progress_count == 1
+    assert untested_count + in_progress_count == 3
     for m in cat["models"]:
-        assert m["test_status"] == "untested"
         assert m["failure_at"] is None
 
 
@@ -549,6 +567,7 @@ def test_i_disabled_provider_failures_not_reintroduced(isolated_data_dir, mock_c
     
     catalog = _make_catalog([
         _make_model("nvidia", "model-1"),
+        _make_model("nvidia", "model-2"),
         _make_model("openrouter", "failed-model", test_status="failed"),
     ])
     _save_catalog(catalog)
@@ -557,17 +576,22 @@ def test_i_disabled_provider_failures_not_reintroduced(isolated_data_dir, mock_c
     m1 = select_next_model()
     record_request_result(m1["key"], 100, 50, success=False, ends_model_test=True, error_type="test")
     
-    # Retry round - openrouter failed model must NOT be reset
     m2 = select_next_model()
-    assert m2 is not None
+    record_request_result(m2["key"], 100, 50, success=False, ends_model_test=True, error_type="test")
+    
+    # Retry round - openrouter failed model must NOT be reset
+    m3 = select_next_model()
+    assert m3 is not None
     
     cat = _load_catalog()
     failed_openrouter = next(m for m in cat["models"] if m["id"] == "failed-model")
-    assert failed_openrouter["test_status"] == "failed"  # NOT reset
+    assert failed_openrouter["test_status"] == "failed"  # NOT reset - disabled provider excluded
     
-    # But nvidia failed model should be reset
-    failed_nvidia = next(m for m in cat["models"] if m["id"] == "model-1")
-    assert failed_nvidia["test_status"] == "untested"
+    # But nvidia failed models should be reset (one selected -> in_progress, other untested)
+    failed_nvidia_1 = next(m for m in cat["models"] if m["id"] == "model-1")
+    failed_nvidia_2 = next(m for m in cat["models"] if m["id"] == "model-2")
+    nvidia_statuses = {failed_nvidia_1["test_status"], failed_nvidia_2["test_status"]}
+    assert nvidia_statuses == {"untested", "in_progress"}  # one reset, one selected"
 
 
 # ----------------------------------------------------------------------
@@ -638,11 +662,13 @@ def test_pointer_sync_after_selection(isolated_data_dir, mock_config, monkeypatc
     
     record_request_result(m2["key"], 100, 50, success=True, ends_model_test=True)
     
-    # Third selection (confirmed_models - empty, so wraps to nvidia)
+    # Third selection: all ordinary groups are empty, so selection ends safely
+    # without advancing the pointer past the last selected group.
     m3 = select_next_model()
+    assert m3 is None
     state = _load_state()
-    assert state["next_rotation_group"] == "nvidia"
-    assert state["next_rotation_group_index"] == 0
+    assert state["next_rotation_group"] == "confirmed_models"
+    assert state["next_rotation_group_index"] == 2
 
 
 # ----------------------------------------------------------------------
@@ -692,6 +718,120 @@ def test_round_number_increments_on_retry(isolated_data_dir, mock_config, monkey
     assert state["round_number"] == 2
     assert state["round_total"] == 1
     assert state["round_completed"] == 0
+
+
+
+# ----------------------------------------------------------------------
+# Additional: removed-provider failures must not be reintroduced
+# ----------------------------------------------------------------------
+
+def test_removed_provider_failures_not_reintroduced(isolated_data_dir, mock_config, monkeypatch):
+    """Failed models from removed (no-longer-in-config) providers must not be retried."""
+    config = mock_config({
+        "nvidia": {"enabled": True, "models": [], "base_url": "", "api_key_env": ""},
+        "openrouter": {"enabled": True, "models": [], "base_url": "", "api_key_env": ""},
+    })
+    
+    import app.model_rotation as mr
+    monkeypatch.setattr(mr, "load_config", lambda: config)
+    
+    catalog = _make_catalog([
+        _make_model("nvidia", "model-1"),
+        _make_model("openrouter", "model-2"),
+        # This provider was removed from config - its failed model must NOT be retried
+        _make_model("token_router", "failed-removed-model", test_status="failed"),
+    ])
+    _save_catalog(catalog)
+    
+    # Exhaust nvidia
+    m1 = select_next_model()
+    record_request_result(m1["key"], 100, 50, success=False, ends_model_test=True, error_type="test")
+    
+    # Exhaust openrouter
+    m2 = select_next_model()
+    record_request_result(m2["key"], 100, 50, success=False, ends_model_test=True, error_type="test")
+    
+    # Retry round - token_router failed model must NOT be reset (provider removed from config)
+    m3 = select_next_model()
+    assert m3 is not None
+    
+    cat = _load_catalog()
+    failed_removed = next(m for m in cat["models"] if m["id"] == "failed-removed-model")
+    assert failed_removed["test_status"] == "failed"  # NOT reset - provider no longer in config
+    
+    # But nvidia and openrouter failed models should be reset
+    failed_nvidia = next(m for m in cat["models"] if m["id"] == "model-1")
+    failed_openrouter = next(m for m in cat["models"] if m["id"] == "model-2")
+    nvidia_statuses = {
+        failed_nvidia["test_status"],
+        failed_openrouter["test_status"],
+    }
+    assert nvidia_statuses == {"untested", "in_progress"}
+
+
+# ----------------------------------------------------------------------
+# Additional: exactly one PTR event per pointer transition
+# ----------------------------------------------------------------------
+
+def test_single_ptr_event_per_transition(isolated_data_dir, mock_config, monkeypatch):
+    """Each rotation pointer transition produces exactly one PTR log entry."""
+    config = mock_config({
+        "nvidia": {"enabled": True, "models": [], "base_url": "", "api_key_env": ""},
+        "openrouter": {"enabled": True, "models": [], "base_url": "", "api_key_env": ""},
+    })
+    
+    import app.model_rotation as mr
+    monkeypatch.setattr(mr, "load_config", lambda: config)
+    
+    catalog = _make_catalog([
+        _make_model("nvidia", "model-1"),
+        _make_model("openrouter", "model-2"),
+    ])
+    _save_catalog(catalog)
+    
+    # Read initial log
+    import os
+    log_path = mr.DATA_DIR / "rotation.log"
+    def read_log():
+        if not log_path.exists():
+            return []
+        return log_path.read_text(encoding="utf-8").strip().split("\n")
+    
+    # First selection: nvidia -> openrouter (PTR event)
+    m1 = select_next_model()
+    record_request_result(m1["key"], 100, 50, success=True, ends_model_test=True)
+    logs = read_log()
+    ptr_lines = [l for l in logs if " | PTR | " in l]
+    assert len(ptr_lines) == 1, f"Expected 1 PTR after first transition, got {len(ptr_lines)}: {ptr_lines}"
+    assert "NVD" in ptr_lines[0]
+    
+    # Second selection: openrouter -> confirmed_models (PTR event)
+    m2 = select_next_model()
+    record_request_result(m2["key"], 100, 50, success=True, ends_model_test=True)
+    logs = read_log()
+    ptr_lines = [l for l in logs if " | PTR | " in l]
+    assert len(ptr_lines) == 2, f"Expected 2 PTR total, got {len(ptr_lines)}: {ptr_lines}"
+    assert "OPR" in ptr_lines[1]
+    
+    # Third selection: confirmed_models empty -> wraps to nvidia (PTR event)
+    # After 2 models tested, no untested models remain, so selection ends
+    m3 = select_next_model()
+    # m3 may be None if both models are now tested and confirmed is empty
+    logs = read_log()
+    ptr_lines = [l for l in logs if " | PTR | " in l]
+    # We already have 2 PTR events (nvidia -> openrouter, openrouter -> confirmed)
+    # This third call should not add another PTR since no model was selected
+    assert len(ptr_lines) == 2, f"Expected 2 PTR total after third call, got {len(ptr_lines)}: {ptr_lines}"
+    
+    # Verify no duplicate PTR events for the same transition
+    # Each transition must appear exactly once
+    transition_counts = {}
+    for line in ptr_lines:
+        detail = line.split(" | ")[-1]  # "0>1" or "1>2" etc
+        transition_counts[detail] = transition_counts.get(detail, 0) + 1
+    
+    for detail, count in transition_counts.items():
+        assert count == 1, f"Duplicate PTR for transition {detail}: count={count}"
 
 
 if __name__ == "__main__":

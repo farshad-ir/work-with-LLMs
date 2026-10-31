@@ -403,20 +403,6 @@ def _select_ordinary_model(
             )
 
 
-        new_pointer = int(
-            state.get("next_rotation_group_index", 0)
-        )
-
-        if old_pointer != new_pointer:
-            _log_event(
-                "PTR",
-                _get_group_code(provider),
-                f"{old_pointer}>{new_pointer}",
-            )
-
-
-
-
         _save_catalog(catalog)
         _save_state(state)
 
@@ -536,6 +522,7 @@ def select_next_model() -> dict[str, Any] | None:
             for model in catalog["models"]
             if model.get("test_status") == "failed"
             and model.get("confirmed") is not True
+            and _provider_key(str(model.get("provider", ""))) in provider_groups
         ]
 
         if failed_models:
