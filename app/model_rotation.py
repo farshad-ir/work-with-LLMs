@@ -376,13 +376,12 @@ def _select_ordinary_model(
     return None
 
 def refresh_confirmed_models(catalog):
-    """Refresh confirmed membership and release demoted models for retesting."""
+    """Refresh confirmed membership and mark demoted models as failed."""
     changed = False
 
     for model in catalog["models"]:
         status = model.get("test_status")
 
-        # مدل‌هایی که هنوز در حال آزمایش هستند دست‌نخورده بمانند.
         if status in ("in_progress", "confirmed_in_progress"):
             continue
 
@@ -395,18 +394,15 @@ def refresh_confirmed_models(catalog):
 
         model["confirmed"] = is_confirmed
 
-        # مدلی که قبلاً تأییدشده بود اما اکنون از تأیید خارج شده،
-        # برای آزمایش مجدد به صف مدل‌های آزمایش‌نشده برگردد.
-        if was_confirmed and not is_confirmed:
-            model["test_status"] = "untested"
-            model["failure_at"] = None
+        if status == "confirmed_ready" and not is_confirmed:
+            model["test_status"] = "failed"
+            model["failure_at"] = _now()
             changed = True
 
         if was_confirmed != is_confirmed:
             changed = True
 
     return changed
-
 
 
 
