@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.config import load_config
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -12,6 +14,7 @@ DATA_DIR = BASE_DIR / "data"
 CATALOG_PATH = DATA_DIR / "large_catalog.json"
 ROTATION_STATE_PATH = DATA_DIR / "rotation_state.json"
 
+# Kept for backward compatibility but no longer authoritative.
 PROVIDER_ORDER = [
     "openrouter",
     "nvidia",
@@ -88,6 +91,7 @@ def _load_state() -> dict[str, Any]:
         state = {}
 
     state.setdefault("next_rotation_group_index", 0)
+    state.setdefault("next_rotation_group", None)
     state.setdefault("confirmed_model_key", None)
     state.setdefault("confirmed_model_index", 0)
     state.setdefault("next_provider_index", 0)
@@ -106,6 +110,55 @@ def _load_state() -> dict[str, Any]:
 
 def _save_state(state: dict[str, Any]) -> None:
     _write_json(ROTATION_STATE_PATH, state)
+
+
+def _get_dynamic_provider_order() -> list[str]:
+    """Return the ordered list of enabled providers from config.json.
+
+    Providers are iterated in their configuration order, filtered by
+    enabled == True, normalized via _provider_key(), and deduplicated.
+    """
+    config = load_config()
+    providers = config.get("providers", {})
+    ordered: list[str] = []
+    seen: set[str] = set()
+
+    for name, provider_config in providers.items():
+        if not isinstance(provider_config, dict):
+            continue
+        if provider_config.get("enabled") is not True:
+            continue
+        normalized = _provider_key(name)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        ordered.append(normalized)
+
+    return ordered
+
+
+def _get_rotation_groups() -> list[str]:
+    """Build the complete rotation group list dynamically.
+
+    Order: enabled providers in config order, then confirmed_models.
+    """
+    providers = _get_dynamic_provider_order()
+    return providers + ["confirmed_models"]
+
+
+def _get_group_code(group: str) -> str:
+    """Safe group code lookup for logging.
+
+    Returns the static GROUP_CODE for known groups, a deterministic
+    generic code for unknown providers, and CFM for confirmed_models.
+    """
+    if group == "confirmed_models":
+        return "CFM"
+    if group in GROUP_CODE:
+        return GROUP_CODE[group]
+    # Deterministic generic code from first 3 letters (uppercase).
+    return group[:3].upper()
+
 
 # ------------------------------------------------------------------
 # Rotation event logger
@@ -235,9 +288,6 @@ def _select_confirmed_model(
     confirmed = _confirmed_models(catalog)
 
 
-
-
-
     if not confirmed:
         state["confirmed_model_key"] = None
         state["confirmed_model_index"] = 0
@@ -267,7 +317,6 @@ def _select_confirmed_model(
     model_key = _model_key(model)
 
 
-
     model["key"] = model_key
     model["lifetime_chars"] = 0
     model["test_status"] = "confirmed_in_progress"
@@ -290,20 +339,24 @@ def _advance_rotation_group(
     state: dict[str, Any],
     selected_group: str,
 ) -> None:
-    group_count = len(ROTATION_GROUP_ORDER)
+    groups = _get_rotation_groups()
+    group_count = len(groups)
 
     if group_count == 0:
         state["next_rotation_group_index"] = 0
+        state["next_rotation_group"] = None
         return
 
+    # Prefer the authoritative group-name pointer.
     try:
-        selected_index = ROTATION_GROUP_ORDER.index(selected_group)
+        selected_index = groups.index(selected_group)
     except ValueError:
-        return
+        # Fall back to numeric index if group name is stale.
+        selected_index = int(state.get("next_rotation_group_index", 0)) % group_count
 
-    state["next_rotation_group_index"] = (
-        selected_index + 1
-    ) % group_count
+    state["next_rotation_group_index"] = (selected_index + 1) % group_count
+    state["next_rotation_group"] = groups[state["next_rotation_group_index"]]
+
 
 def _select_ordinary_model(
     catalog: dict[str, Any],
@@ -327,9 +380,9 @@ def _select_ordinary_model(
         model["last_tested_at"] = _now()
 
         state["current_model_key"] = model_key
-        state["next_provider_index"] = (
-            provider_index + 1
-        ) % len(PROVIDER_ORDER)
+        # Keep next_provider_index in sync for backward compatibility.
+        groups = _get_rotation_groups()
+        state["next_provider_index"] = (provider_index + 1) % max(1, len(groups) - 1)
         state["finished"] = False
 
         old_pointer = int(
@@ -345,10 +398,9 @@ def _select_ordinary_model(
         if old_pointer != new_pointer:
             _log_event(
                 "PTR",
-                GROUP_CODE[provider],
+                _get_group_code(provider),
                 f"{old_pointer}>{new_pointer}",
             )
-
 
 
         new_pointer = int(
@@ -358,7 +410,7 @@ def _select_ordinary_model(
         if old_pointer != new_pointer:
             _log_event(
                 "PTR",
-                GROUP_CODE[provider],
+                _get_group_code(provider),
                 f"{old_pointer}>{new_pointer}",
             )
 
@@ -369,11 +421,12 @@ def _select_ordinary_model(
         _save_state(state)
 
 
-        _log_event("SEL", GROUP_CODE[provider], model_key)
+        _log_event("SEL", _get_group_code(provider), model_key)
 
         return model
 
     return None
+
 
 def refresh_confirmed_models(catalog):
     """Refresh confirmed membership and mark demoted models as failed."""
@@ -405,14 +458,12 @@ def refresh_confirmed_models(catalog):
     return changed
 
 
-
 def select_next_model() -> dict[str, Any] | None:
     """
-    Select the next model according to:
-    openrouter -> nvidia -> token_router -> confirmed_models.
+    Select the next model according to dynamic rotation order.
 
-    An in-progress request survives process restarts because its
-    current_model_key is persisted. Empty groups are skipped safely.
+    The order is derived from config.json enabled providers, then
+    confirmed_models. Empty groups are skipped safely.
     """
     catalog = _load_catalog()
     
@@ -456,20 +507,27 @@ def select_next_model() -> dict[str, Any] | None:
     # Retry failed ordinary models only after all ordinary providers
     # have no untested models. Confirmed models are not failed out of
     # their group by ordinary retry handling.
-    provider_index = int(state.get("next_provider_index", 0))
-    provider_index %= len(PROVIDER_ORDER)
+    groups = _get_rotation_groups()
+    provider_groups = groups[:-1]  # all except confirmed_models
 
-    group_count = len(ROTATION_GROUP_ORDER)
-    start_group = int(
-        state.get("next_rotation_group_index", 0)
-    ) % group_count
-
+    # Resolve rotation pointer: prefer group name, fall back to index.
+    next_group_name = state.get("next_rotation_group")
+    start_group = 0
+    group_count = len(groups)
+    
+    if next_group_name and next_group_name in groups:
+        try:
+            start_group = groups.index(next_group_name)
+        except ValueError:
+            start_group = int(state.get("next_rotation_group_index", 0)) % group_count
+    else:
+        start_group = int(state.get("next_rotation_group_index", 0)) % group_count
 
     # Start a new round before selecting confirmed models.
     # This happens only when all ordinary providers have no untested models.
     ordinary_models_exhausted = not any(
         _provider_has_untested_model(catalog, provider)
-        for provider in PROVIDER_ORDER
+        for provider in provider_groups
     )
 
     if ordinary_models_exhausted:
@@ -491,6 +549,7 @@ def select_next_model() -> dict[str, Any] | None:
             state["current_model_key"] = None
             state["finished"] = False
             state["next_rotation_group_index"] = 0
+            state["next_rotation_group"] = groups[0] if groups else None
             state["next_provider_index"] = 0
 
             _save_catalog(catalog)
@@ -509,7 +568,7 @@ def select_next_model() -> dict[str, Any] | None:
     # Examine at most one complete rotation. Empty groups are skipped.
     for offset in range(group_count):
         group_index = (start_group + offset) % group_count
-        group = ROTATION_GROUP_ORDER[group_index]
+        group = groups[group_index]
 
         if group == "confirmed_models":
 
@@ -553,24 +612,28 @@ def select_next_model() -> dict[str, Any] | None:
         if not _provider_has_untested_model(catalog, provider):
             _log_event(
                 "SKP",
-                GROUP_CODE[provider],
+                _get_group_code(provider),
                 "NO_UNTESTED_MODELS",
             )
             continue
 
-        index = PROVIDER_ORDER.index(provider)
+        # For provider_index, use dynamic index within enabled providers.
+        try:
+            provider_index = provider_groups.index(provider)
+        except ValueError:
+            provider_index = 0
+
         model = _select_ordinary_model(
             catalog,
             state,
             provider,
-            index,
+            provider_index,
         )
 
         if model is not None:
             return model
 
     
-
     state["current_model_key"] = None
     state["finished"] = True
 
@@ -591,21 +654,6 @@ def record_request_result(
     error_type: str | None = None,
     error_message: str | None = None,
 ) -> dict[str, Any]:
-    """
-    Record one request result.
-
-    Ordinary models:
-      - Accumulate successful input characters.
-      - Become confirmed at 50,000 successful input characters.
-      - Finish ordinary testing at the configured limit or when the
-        caller reports a terminal result.
-
-    Confirmed models:
-      - lifetime_chars measures the current confirmed turn only.
-      - Finish the turn at 500,000 successful input characters or
-        a terminal error.
-      - Remain confirmed after the turn ends.
-    """
     catalog = _load_catalog()
     state = _load_state()
 
@@ -763,7 +811,8 @@ def get_rotation_status() -> dict[str, Any]:
     round_total = int(state.get("round_total", total))
     round_completed = int(state.get("round_completed", 0))
 
-    group_count = len(ROTATION_GROUP_ORDER)
+    groups = _get_rotation_groups()
+    group_count = len(groups)
     next_group_index = (
         int(state.get("next_rotation_group_index", 0)) % group_count
         if group_count
@@ -785,7 +834,7 @@ def get_rotation_status() -> dict[str, Any]:
         "confirmed_model_key": state.get("confirmed_model_key"),
         "next_rotation_group_index": next_group_index,
         "next_rotation_group": (
-            ROTATION_GROUP_ORDER[next_group_index]
+            groups[next_group_index]
             if group_count
             else None
         ),
@@ -815,4 +864,3 @@ def set_test_input_char_limit(limit: int) -> dict[str, Any]:
     _save_state(state)
 
     return get_rotation_status()
-
