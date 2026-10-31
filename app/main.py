@@ -1,6 +1,8 @@
 import json
 import os
 import asyncio
+import re
+from datetime import datetime, timezone
 
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -30,7 +32,24 @@ from app.model_rotation import (
     select_next_model,
     record_request_result,
     get_rotation_status,
+    _provider_key,
 )
+
+
+# Aliases for provider normalization
+def _normalize_provider_name(name: str) -> str:
+    """Normalize provider name the same way the catalog does."""
+    name = str(name).strip().lower()
+    if not name:
+        return name
+    # These are the same aliases as in thinker_room._normalize_provider
+    aliases = {
+        "nvidia_nim": "nvidia",
+        "nvidia-nim": "nvidia",
+        "tokenrouter": "token_router",
+        "token-router": "token_router",
+    }
+    return aliases.get(name, name)
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -91,6 +110,132 @@ async def public_config():
 async def providers():
     return get_public_config()["providers"]
 
+
+@app.post("/api/providers")
+async def add_provider(request: Request):
+    """Add a new provider to the configuration."""
+    try:
+        body = await request.json()
+    except (ValueError, Exception):
+        raise HTTPException(status_code=400, detail="Request body must be a valid JSON object.")
+
+    provider_id = str(body.get("provider_id", "")).strip()
+    if not provider_id:
+        raise HTTPException(status_code=400, detail="provider_id is required")
+
+    if not re.match(r"^[a-zA-Z0-9_]+$", provider_id):
+        raise HTTPException(
+            status_code=400,
+            detail="provider_id must contain only alphanumeric characters and underscores",
+        )
+
+    display_name = str(body.get("display_name", "")).strip()
+    if not display_name:
+        display_name = provider_id.replace("_", " ").title()
+
+    base_url = str(body.get("base_url", "")).strip().rstrip("/")
+    if not base_url:
+        raise HTTPException(status_code=400, detail="base_url is required")
+
+    if not base_url.startswith(("http://", "https://")):
+        raise HTTPException(
+            status_code=400,
+            detail="base_url must be a valid HTTP or HTTPS URL",
+        )
+
+    api_key_env = str(body.get("api_key_env", "")).strip()
+    if not api_key_env:
+        raise HTTPException(status_code=400, detail="api_key_env is required")
+
+    if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", api_key_env):
+        raise HTTPException(
+            status_code=400,
+            detail="api_key_env must be a valid environment variable name",
+        )
+
+    enabled = bool(body.get("enabled", True))
+
+    config = load_config()
+
+    if provider_id in config["providers"]:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Provider '{provider_id}' already exists",
+        )
+
+    config["providers"][provider_id] = {
+        "display_name": display_name,
+        "base_url": base_url,
+        "api_key_env": api_key_env,
+        "enabled": enabled,
+        "models": [],
+    }
+
+    save_config(config)
+
+    return {
+        "success": True,
+        "provider": {
+            "id": provider_id,
+            "display_name": display_name,
+            "base_url": base_url,
+            "api_key_env": api_key_env,
+            "enabled": enabled,
+            "model_count": 0,
+        },
+    }
+
+
+@app.delete("/api/providers/{provider_name}")
+async def remove_provider(provider_name: str):
+    """Remove a provider and all its associated data."""
+    config = load_config()
+
+    if provider_name not in config["providers"]:
+        raise HTTPException(status_code=404, detail=f"Provider '{provider_name}' not found")
+
+    # Get models belonging to this provider for reporting
+    provider_models = config["providers"].get(provider_name, {}).get("models", [])
+    removed_model_count = len(provider_models)
+
+    # Remove provider from config
+    del config["providers"][provider_name]
+    save_config(config)
+
+    # Remove models from large catalog
+    catalog_path = Path(__file__).resolve().parent.parent / "data" / "large_catalog.json"
+
+    try:
+        with catalog_path.open("r", encoding="utf-8") as f:
+            catalog = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        catalog = {"model_count": 0, "updated_at": None, "models": []}
+
+    models = catalog.get("models", [])
+    normalized_provider = _normalize_provider_name(provider_name)
+    provider_key_prefix = normalized_provider + ":"
+
+    remaining_models = []
+    for m in models:
+        key = m.get("key", "")
+        if key and key.startswith(provider_key_prefix):
+            continue
+        remaining_models.append(m)
+
+    catalog["models"] = remaining_models
+    catalog["model_count"] = len(remaining_models)
+    catalog["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+    with catalog_path.open("w", encoding="utf-8") as f:
+        json.dump(catalog, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+    return {
+        "success": True,
+        "removed_provider": provider_name,
+        "removed_model_count": removed_model_count,
+        "catalog_model_count": len(remaining_models),
+    }
 
 
 @app.get("/api/thinker-room/catalog")
@@ -449,6 +594,7 @@ async def codex_responses(request: Request):
                 model_key=model_key,
                 input_chars=input_chars,
                 success=False,
+                ends_model_test=True,
                 error_type="invalid_provider_response",
                 error_message=str(exc)[:500],
             )
