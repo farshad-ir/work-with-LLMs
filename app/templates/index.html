@@ -252,7 +252,7 @@
       </div>
       <div class="count-item">
         <div class="count count-small" id="catalog-tested">0</div>
-        <div class="label">مدل‌های تست‌شده با موفقیت</div>
+        <div class="label">مدل‌های تعیین‌تکلیف‌ شده</div>
       </div>
       <div class="count-item">
         <div class="count count-small" id="catalog-confirmed">0</div>
@@ -427,10 +427,19 @@ function updateCatalogCounts(models) {
     let confirmed = 0;
 
     models.forEach(model => {
-        const status = getModelStatus(model);
-        if (status === "tested") tested++;
-        if (status === "untested") untested++;
-        if (model.confirmed === true) confirmed++;
+        const status = model.test_status;
+
+        if (status === "confirmed" || status === "failed") {
+            tested++;
+        }
+
+        if (status === "untested") {
+            untested++;
+        }
+
+        if (status === "confirmed") {
+            confirmed++;
+        }
     });
 
     document.getElementById("catalog-total").textContent = total.toLocaleString("fa-IR");
@@ -482,20 +491,29 @@ function renderCatalogTable(models) {
 }
 
 function getModelStatus(model) {
-    if (model.test_status === "tested" || model.test_status === "confirmed_ready") {
-        return "tested";
-    }
-    if (model.test_status === "in_progress" || model.test_status === "confirmed_in_progress") {
+    const status = model.test_status;
+
+    if (status === "confirmed") return "confirmed";
+    if (status === "failed") return "failed";
+
+    if (
+        status === "in_progress" ||
+        status === "confirmed_in_progress"
+    ) {
         return "in_progress";
     }
+
     return "untested";
 }
 
 function getModelStatusText(model) {
-    const s = getModelStatus(model);
-    if (s === "tested") return "تست شده";
-    if (s === "in_progress") return "در حال است";
-    return "تست نشده";
+    const status = getModelStatus(model);
+
+    if (status === "confirmed") return "تأییدشده";
+    if (status === "failed") return "ناموفق";
+    if (status === "in_progress") return "در حال آزمون";
+
+    return "تست‌نشده";
 }
 
 /* =========================================================
