@@ -277,10 +277,7 @@ function getModelStatus(model) {
 
     // همان معیار موفقیت توافق‌شده:
     // وضعیت tested یا داشتن lifetime_chars غیر null.
-    if (
-        current === "tested" ||
-        model.lifetime_chars != null
-    ) {
+    if ((model.lifetime_chars ?? 0) >= 50000) {
         return "tested";
     }
 
