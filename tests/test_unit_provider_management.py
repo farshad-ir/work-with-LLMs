@@ -254,63 +254,44 @@ def test_preserve_other_providers():
     
     print("Test 9 PASSED: Other providers' models and history preserved")
 
-
-# Test 10: Preserving .env byte-for-byte during removal
+# Test 10:
 def test_env_preserved_on_removal():
     tmp_path, config_file, catalog_file, env_file = make_temp_config()
-    
-    env_before = env_file.read_text(encoding="utf-8")
-    
-    # Simulate removal - do NOT touch .env
-    config = load_config()
-    if "nvidia" in config["providers"]:
+
+    env_before = env_file.read_bytes()
+
+    with patch("app.config.CONFIG_PATH", config_file):
+        config = load_config()
         del config["providers"]["nvidia"]
         save_config(config)
-    
-    env_after = env_file.read_text(encoding="utf-8")
+
+    env_after = env_file.read_bytes()
     assert env_before == env_after, ".env was modified!"
-    
+
     print("Test 10 PASSED: .env preserved byte-for-byte")
 
 
-# Test 11: Ensuring removed models cannot enter rotation
+# Test 11:
 def test_removed_models_not_in_rotation():
     tmp_path, config_file, catalog_file, env_file = make_temp_config()
-    
-    # Remove nvidia from config
-    config = load_config()
-    if "nvidia" in config["providers"]:
+
+    with patch("app.config.CONFIG_PATH", config_file):
+        config = load_config()
         del config["providers"]["nvidia"]
         save_config(config)
-    
-    # Mock _get_dynamic_provider_order to read from temp config
-    def mock_get_dynamic_provider_order():
-        import app.config as cfg_mod
-        with patch.object(cfg_mod, "CONFIG_PATH", config_file):
-            cfg = cfg_mod.load_config()
-            providers = []
-            seen = set()
-            for name, provider_config in cfg["providers"].items():
-                if not isinstance(provider_config, dict):
-                    continue
-                if provider_config.get("enabled") is not True:
-                    continue
-                normalized = _provider_key(name)
-                if normalized in seen:
-                    continue
-                seen.add(normalized)
-                providers.append(normalized)
-            return providers
-    
-    providers = mock_get_dynamic_provider_order()
+
+        # Test the actual rotation functions, not a mock.
+        providers = _get_dynamic_provider_order()
+        groups = _get_rotation_groups()
+
     assert "nvidia" not in providers
     assert "openrouter" in providers
-    
-    # Verify rotation groups don't include nvidia (build groups manually)
-    groups = providers + ["confirmed_models"]
+
     assert "nvidia" not in groups
-    
+    assert groups == ["openrouter", "confirmed_models"]
+
     print("Test 11 PASSED: Removed models cannot enter rotation")
+
 
 
 # Test 12: Ensuring removed models cannot enter Confirmed selection
