@@ -510,49 +510,88 @@ def test_h_confirmed_entry_and_turn_limits(isolated_data_dir, mock_config, monke
 # Test I — Failed retry regression
 # ----------------------------------------------------------------------
 
-def test_i_failed_retry_only_after_enabled_exhausted(isolated_data_dir, mock_config, monkeypatch):
-    """Failed ordinary models retried only after enabled providers exhausted."""
+def test_i_failed_retry_only_after_enabled_exhausted(
+    isolated_data_dir,
+    mock_config,
+    monkeypatch,
+):
+    """Failed models are retried only after all enabled providers are exhausted."""
     config = mock_config({
-        "nvidia": {"enabled": True, "models": [], "base_url": "", "api_key_env": ""},
-        "openrouter": {"enabled": True, "models": [], "base_url": "", "api_key_env": ""},
+        "nvidia": _provider_config(),
+        "openrouter": _provider_config(),
     })
-    
+
     import app.model_rotation as mr
     monkeypatch.setattr(mr, "load_config", lambda: config)
-    
-    catalog = _make_catalog([
+
+    _save_catalog(_make_catalog([
         _make_model("nvidia", "model-1"),
         _make_model("nvidia", "model-2"),
         _make_model("openrouter", "model-3"),
-    ])
-    _save_catalog(catalog)
-    
-    # Test nvidia:model-1, mark failed
+    ]))
+
+    # First rotation: NVIDIA model 1.
     m1 = select_next_model()
-    record_request_result(m1["key"], 100, 50, success=False, ends_model_test=True, error_type="test")
-    
-    # Test nvidia:model-2, mark failed
+    assert m1["id"] == "model-1"
+
+    record_request_result(
+        m1["key"], 100, 50,
+        success=False,
+        ends_model_test=True,
+        error_type="test",
+    )
+
+    # Rotation advances to OpenRouter.
     m2 = select_next_model()
-    record_request_result(m2["key"], 100, 50, success=False, ends_model_test=True, error_type="test")
-    
-    # Test openrouter:model-3, mark failed
+    assert m2["id"] == "model-3"
+
+    record_request_result(
+        m2["key"], 100, 50,
+        success=False,
+        ends_model_test=True,
+        error_type="test",
+    )
+
+    # Rotation returns to NVIDIA and selects its second model.
     m3 = select_next_model()
-    record_request_result(m3["key"], 100, 50, success=False, ends_model_test=True, error_type="test")
-    
-    # All providers exhausted -> retry round should start
+    assert m3["id"] == "model-2"
+
+    record_request_result(
+        m3["key"], 100, 50,
+        success=False,
+        ends_model_test=True,
+        error_type="test",
+    )
+
+    # All enabled ordinary models are now failed.
+    # The retry round resets them and selects the first one.
     m4 = select_next_model()
     assert m4 is not None
-    
-    # Failed models should be reset to untested (one will be marked in_progress by selection)
+    assert m4["id"] == "model-1"
+
     cat = _load_catalog()
-    untested_count = sum(1 for m in cat["models"] if m["test_status"] == "untested")
-    in_progress_count = sum(1 for m in cat["models"] if m["test_status"] == "in_progress")
-    # All 3 failed models were reset to untested, then selection marked one in_progress
+
+    untested_count = sum(
+        1 for m in cat["models"]
+        if m["test_status"] == "untested"
+    )
+
+    in_progress_count = sum(
+        1 for m in cat["models"]
+        if m["test_status"] == "in_progress"
+    )
+
     assert untested_count == 2
     assert in_progress_count == 1
     assert untested_count + in_progress_count == 3
-    for m in cat["models"]:
-        assert m["failure_at"] is None
+
+    for model in cat["models"]:
+        assert model["failure_at"] is None
+
+    state = _load_state()
+    assert state["round_number"] == 2
+    assert state["round_total"] == 3
+    assert state["round_completed"] == 0
 
 
 def test_i_disabled_provider_failures_not_reintroduced(isolated_data_dir, mock_config, monkeypatch):
