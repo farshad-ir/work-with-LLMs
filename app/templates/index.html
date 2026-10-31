@@ -474,54 +474,57 @@ document.getElementById("catalog-toggle").addEventListener("click", function() {
    ========================================================= */
 
 async function loadProviders() {
+    const container = document.getElementById("providers-container");
+    const select = document.getElementById("remove-provider-select");
+
     try {
         const response = await fetch("/api/providers");
         if (!response.ok) throw new Error("HTTP " + response.status);
+
         const providers = await response.json();
 
-        // Remove provider select
-        const select = document.getElementById("remove-provider-select");
+        // هر بار نمایش را از نو می‌سازیم.
+        container.replaceChildren();
         select.replaceChildren();
 
         const keys = Object.keys(providers);
+
         keys.forEach(key => {
             const p = providers[key];
 
-            // Add provider cards (existing cards)
-            const container = document.getElementById("providers-container");
-            if (container) {
-                const card = document.createElement("div");
-                card.className = "provider-card";
+            // Provider card
+            const card = document.createElement("div");
+            card.className = "provider-card";
 
-                const title = document.createElement("h4");
-                title.textContent = p.display_name || key;
+            const title = document.createElement("h4");
+            title.textContent = p.display_name || key;
 
-                const status = document.createElement("div");
-                status.className = "status";
-                status.textContent = p.enabled ? "فعال" : "غیرفعال";
+            const status = document.createElement("div");
+            status.className = "status";
+            status.textContent = p.enabled ? "فعال" : "غیرفعال";
 
-                const count = document.createElement("div");
-                count.className = "muted";
-                count.textContent = (p.model_count ?? 0) + " مدل";
+            const count = document.createElement("div");
+            count.className = "muted";
+            count.textContent = (p.model_count ?? 0) + " مدل";
 
-                card.append(title, status, count);
-                container.appendChild(card);
-            }
+            card.append(title, status, count);
+            container.appendChild(card);
 
-            // Remove provider dropdown
+            // Remove-provider dropdown
             const option = document.createElement("option");
             option.value = key;
-            option.textContent = (p.display_name || key) + " (" + key + ")";
+            option.textContent =
+                (p.display_name || key) + " (" + key + ")";
+
             select.appendChild(option);
         });
 
-        // Show/hide dropdown based on whether there are providers
-        const removeCard = document.getElementById("remove-provider-card");
-        if (keys.length === 0) {
-            removeCard.style.display = "none";
-        } else {
-            removeCard.style.display = "block";
-        }
+        // اگر ارائه‌دهنده‌ای وجود ندارد، بخش حذف مخفی شود.
+        document.getElementById("remove-provider-card").style.display =
+            keys.length === 0 ? "none" : "block";
+
+        // اطلاعات ارائه‌دهندهٔ انتخاب‌شده را نیز تازه کن.
+        await updateProviderInfo();
 
     } catch (error) {
         console.error("Error loading providers:", error);
@@ -748,7 +751,6 @@ document.addEventListener("DOMContentLoaded", () => {
     loadRotationStatus();
 
     window.setInterval(loadRotationStatus, 500000);
-    window.setInterval(loadProviders, 100000);
 });
 </script>
 </body>
