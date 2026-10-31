@@ -74,10 +74,12 @@ def get_public_config() -> dict[str, Any]:
     for name, provider in config["providers"].items():
         models = provider.get("models", [])
         providers[name] = {
+            "display_name": provider.get("display_name", name.replace("_", " ").title()),
             "base_url": provider.get("base_url", ""),
             "enabled": bool(provider.get("enabled", False)),
             "models": models,
             "model_count": len(models),
+            "api_key_env": provider.get("api_key_env", ""),
         }
 
     return {

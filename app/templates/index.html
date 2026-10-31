@@ -28,6 +28,10 @@
       border-radius: 14px;
       box-shadow: 0 4px 18px #1720330c;
     }
+    .card h2 {
+      margin-top: 0;
+      font-size: 18px;
+    }
     .badge {
       display: inline-block;
       padding: 5px 12px;
@@ -41,10 +45,21 @@
       font-weight: bold;
       margin: 12px 0;
     }
+    .count-small {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 8px 0;
+    }
     .muted {
       color: #64748b;
       font-size: 14px;
       overflow-wrap: anywhere;
+    }
+    .label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #64748b;
+      margin-top: 10px;
     }
     button {
       border: 0;
@@ -59,64 +74,267 @@
       opacity: .6;
       cursor: wait;
     }
+    button.secondary {
+      background: #64748b;
+    }
+    button.outline {
+      background: transparent;
+      border: 1px solid #2563eb;
+      color: #2563eb;
+    }
     .message {
       min-height: 24px;
       margin-top: 12px;
       font-size: 14px;
+    }
+    .message.success {
+      color: #166534;
+    }
+    .message.error {
+      color: #dc2626;
+    }
+    .form-group {
+      margin-top: 12px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+    .toggle-btn {
+      background: transparent;
+      border: 1px solid #2563eb;
+      color: #2563eb;
+      text-align: right;
+      padding: 8px 14px;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    .collapsed {
+      display: none;
+    }
+    .manage-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .provider-card {
+      background: #f8fafc;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+    }
+    .provider-card h4 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+    }
+    .provider-card .status {
+      font-size: 12px;
+      margin: 6px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: right;
+      padding: 8px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    .confirm-dialog {
+      display: none;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      margin: 20px 0;
+      border: 1px solid #e2e8f0;
+    }
+    .confirm-dialog h3 {
+      margin-top: 0;
+    }
+    .confirm-actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
     }
   </style>
 </head>
 <body>
 <main>
   <h1>MyCode Gateway</h1>
-  <p>پنل مدیریت اتصال به مدل‌های هوش مصنوعی</p>
+  <p>angular -انبار مدل‌ها و مدیریت ارائه‌دهندگان</p>
 
-  <section class="card">
-    <span class="badge">سرویس فعال است</span>
-    <h2>ارائه‌دهندگان مدل</h2>
-    <p id="status">در حال دریافت اطلاعات...</p>
-    <div class="providers" id="providers"></div>
+  <!-- =========================================================
+       1. Model Catalog Summary and Table (TOP)
+       ========================================================= -->
+  <section class="card" id="catalog-section">
+    <h2>أنبار مدل‌ها و جداول</h2>
+    <div class="counts">
+      <div class="count-item">
+        <div class="count" id="catalog-total">0</div>
+        <div class="label">مجموع مدل‌ها</div>
+      </div>
+      <div class="count-item">
+        <div class="count count-small" id="catalog-remaining">0</div>
+        <div class="label">مدل‌های باقی‌مانده برای تست</div>
+      </div>
+      <div class="count-item">
+        <div class="count count-small" id="catalog-tested">0</div>
+        <div class="label">مدل‌های تست‌شده با موفقیت</div>
+      </div>
+      <div class="count-item">
+        <div class="count count-small" id="catalog-confirmed">0</div>
+        <div class="label">مدل‌های تاییدشده</div>
+      </div>
+    </div>
+    <button id="catalog-toggle" class="toggle-btn">نمایش دایرهٔ مدل‌ها</button>
+    <div id="catalog-table" class="collapsed">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align: right; padding: 8px;">No</th>
+            <th style="text-align: right; padding: 8px;">Model Name</th>
+            <th style="text-align: right; padding: 8px;">Provider</th>
+            <th style="text-align: right; padding: 8px;">Status</th>
+          </tr>
+        </thead>
+        <tbody id="catalog-table-body">
+          <tr>
+            <td colspan="4" style="padding: 8px;">در حال دریافت...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="catalog-message" class="message"></div>
   </section>
 
-  <section class="card">
+  <!-- =========================================================
+       2. Provider Management Cards (MIDDLE)
+       ========================================================= -->
+  <section class="card" id="provider-management-section">
+    <h2>مدیریت ارائه‌دهندگان</h2>
+    <div id="providers-container" class="providers"></div>
+    <div class="manage-grid">
+      <!-- Add Provider Card -->
+      <div class="card" id="add-provider-card">
+        <h3>افزودن ارائه‌دهنده</h3>
+        <form id="add-provider-form">
+          <div class="form-group">
+            <label>شناسه ارائه‌دهنده</label>
+            <input type="text" id="add-provider-id" placeholder="مثلاً: openrouter, nvidia" required>
+          </div>
+          <div class="form-group">
+            <label>نام نمایشی</label>
+            <input type="text" id="add-display-name" placeholder="مثلاً: OpenRouter">
+          </div>
+          <div class="form-group">
+            <label>آدرس پایه API</label>
+            <input type="url" id="add-base-url" placeholder="https://api.example.com" required>
+          </div>
+          <div class="form-group">
+            <label>متغیر محیطی کلید API</label>
+            <input type="text" id="add-api-key-env" placeholder="مثلاً: OPENROUTER_API_KEY" required>
+          </div>
+          <div class="form-group">
+            <label>فعال است</label>
+            <select id="add-enabled">
+              <option value="true">بله</option>
+              <option value="false">خیر</option>
+            </select>
+          </div>
+          <button type="button" id="add-provider-btn">افزودن ارائه‌دهنده</button>
+          <div id="add-provider-message" class="message"></div>
+        </form>
+      </div>
+      <!-- Remove Provider Card -->
+      <div class="card" id="remove-provider-card">
+        <h3>حذف ارائه‌دهنده</h3>
+        <form id="remove-provider-form">
+          <div class="form-group">
+            <label>انتخاب ارائه‌دهنده</label>
+            <select id="remove-provider-select"></select>
+          </div>
+          <div id="remove-provider-info" style="margin-top: 10px;">
+            <div class="status" id="remove-provider-name"></div>
+            <div class="muted" id="remove-provider-models"></div>
+            <div class="muted" id="remove-provider-confirmed"></div>
+          </div>
+          <button type="button" id="remove-provider-btn" class="outline">حذف ارائه‌دهنده</button>
+          <div id="remove-provider-message" class="message"></div>
+        </form>
+        <div id="remove-confirm-dialog" class="confirm-dialog">
+          <h3>تایید حذف</h3>
+          <p id="confirm-text">حذف این ارائه‌دهنده تمام پیکربندی، مدل‌های انبار، و تاریخچه و آمار مدل‌ها را به صورت دائمی حذف می‌کند. متغیر محیطی کلید API در فایل .env حذف یا تغییر نمی‌شود.</p>
+          <div class="confirm-actions">
+            <button type="button" id="confirm-cancel-btn" class="secondary">لغو</button>
+            <button type="button" id="confirm-remove-btn" class="outline">حذف شود</button>
+          </div>
+        </div>
+        <div id="remove-provider-message" class="message"></div>
+      </div>
+    </div>
+    <div id="provider-message" class="message"></div>
+  </section>
 
-    <h2>مدل‌ها</h2>
-
+  <!-- =========================================================
+       3. Confirmed Models / Rotation (BOTTOM)
+       ========================================================= -->
+  <section class="card" id="rotation-section">
+    <h2>مدل‌های تاییدشده</h2>
     <p id="rotation-round">
-        شماره دور: —
+        دور فعلی: â€”
     </p>
-
     <p id="rotation-count">
-        تعداد مدل‌های باقی‌مانده: —
+        تعداد مدل‌های باقی‌مانده برای تست: â€”
     </p>
-
     <div style="overflow-x: auto;">
         <table style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
-                    <th style="text-align: right; padding: 8px;">Row</th>
-                    <th style="text-align: right; padding: 8px;">Model Name</th>
-                    <th style="text-align: right; padding: 8px;">Interface</th>
+                    <th style="text-align: right; padding: 8px;">ردیف</th>
+                    <th style="text-align: right; padding: 8px;">نام مدل</th>
+                    <th style="text-align: right; padding: 8px;">رابط</th>
+                    <th style="text-align: right; padding: 8px;">وضعیت</th>
                 </tr>
             </thead>
-
             <tbody id="rotation-models-body">
                 <tr>
-                    <td colspan="3" style="padding: 8px;">
-                        در حال بارگذاری مدل‌ها...
-                    </td>
+                    <td colspan="4" style="padding: 8px;">در حال دریافت...</td>
                 </tr>
             </tbody>
         </table>
     </div>
-
+    <div id="rotation-message" class="message"></div>
   </section>
 
-
-
 </main>
-
-
 
 <script>
 "use strict";
@@ -127,237 +345,357 @@ const providerNames = {
     token_router: "Token Router"
 };
 
-/*
- * فهرست مدل‌هایی که از دفتر مدل‌ها دریافت می‌شود.
- */
-let largeCatalogModels = [];
-
+let catalogModels = [];
+let catalogExpanded = false;
 
 /* =========================================================
-   1. ارائه‌دهندگان مدل
+   1. Model Catalog Summary and Table
    ========================================================= */
 
-async function loadProviders() {
-    const statusElement = document.getElementById("status");
-    const container = document.getElementById("providers");
-
-    try {
-        const response = await fetch("/api/providers");
-
-        if (!response.ok) {
-            throw new Error("HTTP " + response.status);
-        }
-
-        const providers = await response.json();
-
-        container.replaceChildren();
-
-        for (const [key, provider] of Object.entries(providers)) {
-            const card = document.createElement("div");
-            card.className = "card";
-
-            const title = document.createElement("h3");
-            title.textContent = providerNames[key] || key;
-
-            const state = document.createElement("p");
-            state.textContent = provider.enabled ? "فعال" : "غیرفعال";
-
-            const count = document.createElement("div");
-            count.className = "count";
-            count.textContent = provider.model_count ?? 0;
-
-            const label = document.createElement("p");
-            label.textContent = "مدل ثبت‌شده";
-
-            const button = document.createElement("button");
-            button.textContent = "دریافت مدل‌ها";
-
-            const message = document.createElement("div");
-            message.className = "message muted";
-
-            button.addEventListener("click", async () => {
-                button.disabled = true;
-                message.textContent = "در حال دریافت فهرست مدل‌ها...";
-
-                try {
-                    const result = await fetch(
-                        `/api/providers/${encodeURIComponent(key)}/refresh-models`,
-                        { method: "POST" }
-                    );
-
-                    const data = await result.json();
-
-                    if (!result.ok) {
-                        throw new Error(data.detail || "خطای نامشخص");
-                    }
-
-                    count.textContent = data.model_count ?? 0;
-                    state.textContent = "فعال";
-
-                    message.textContent =
-                        `${data.model_count} مدل با موفقیت دریافت شد.`;
-
-                    // پس از به‌روزرسانی ارائه‌دهنده، جدول را هم تازه کن.
-                    await loadLargeCatalog();
-
-                } catch (error) {
-                    message.textContent = "خطا: " + error.message;
-                } finally {
-                    button.disabled = false;
-                }
-            });
-
-            card.append(title, state, count, label, button, message);
-            container.appendChild(card);
-        }
-
-        statusElement.textContent = "اطلاعات با موفقیت دریافت شد.";
-
-    } catch (error) {
-        statusElement.textContent =
-            "دریافت اطلاعات ناموفق بود: " + error.message;
-    }
-}
-
-
-/* =========================================================
-   2. دریافت فهرست مدل‌ها
-   ========================================================= */
-
-async function loadLargeCatalog() {
-    const tableBody = document.getElementById("rotation-models-body");
-
+async function loadCatalog() {
     try {
         const response = await fetch("/api/thinker-room/catalog");
-
-        if (!response.ok) {
-            throw new Error("خطا در دریافت فهرست مدل‌ها: HTTP " + response.status);
-        }
-
+        if (!response.ok) throw new Error("HTTP " + response.status);
         const catalog = await response.json();
 
-        largeCatalogModels = Array.isArray(catalog.models)
-            ? catalog.models
-            : [];
+        const models = Array.isArray(catalog.models) ? catalog.models : [];
+        catalogModels = models;
 
-        renderRotationPanel();
+        updateCatalogCounts(models);
+        renderCatalogTable(models);
+
+        // Refresh rotation status too
+        await loadRotationStatus();
 
     } catch (error) {
-        console.error("خطا در دریافت فهرست مدل‌ها:", error);
-
-        if (tableBody) {
-            tableBody.replaceChildren();
-
-            const row = document.createElement("tr");
-            const cell = document.createElement("td");
-
-            cell.colSpan = 3;
-            cell.style.padding = "8px";
-            cell.textContent =
-                "دریافت فهرست مدل‌ها ناموفق بود: " + error.message;
-
-            row.appendChild(cell);
-            tableBody.appendChild(row);
-        }
+        console.error("Error loading catalog:", error);
+        document.getElementById("catalog-message").textContent = "خطا در دریافت جدول مدل‌ها: " + error.message;
+        document.getElementById("catalog-message").className = "message error";
     }
 }
 
+function updateCatalogCounts(models) {
+    const total = models.length;
+    let tested = 0;
+    let untested = 0;
+    let confirmed = 0;
 
-/* =========================================================
-   3. تعیین وضعیت مدل
-   ========================================================= */
+    models.forEach(model => {
+        const status = getModelStatus(model);
+        if (status === "tested") tested++;
+        if (status === "untested") untested++;
+        if (model.confirmed === true) confirmed++;
+    });
 
-function getModelStatus(model) {
-    const current = model.test_status ?? "untested";
-
-    // مدل ناموفق هیچ‌گاه در فهرست موفق‌ها قرار نمی‌گیرد.
-    if (current === "failed") {
-        return "failed";
-    }
-
-    // همان معیار موفقیت توافق‌شده:
-    // وضعیت tested یا داشتن lifetime_chars غیر null.
-    if ((model.lifetime_chars ?? 0) >= 50000) {
-        return "tested";
-    }
-
-    if (current === "in_progress") {
-        return "in_progress";
-    }
-
-    return "untested";
+    document.getElementById("catalog-total").textContent = total.toLocaleString("fa-IR");
+    document.getElementById("catalog-remaining").textContent = untested.toLocaleString("fa-IR");
+    document.getElementById("catalog-tested").textContent = tested.toLocaleString("fa-IR");
+    document.getElementById("catalog-confirmed").textContent = confirmed.toLocaleString("fa-IR");
 }
 
-/* =========================================================
-   4. دریافت وضعیت گردش مدل‌ها
-   ========================================================= */
+function renderCatalogTable(models) {
+    const body = document.getElementById("catalog-table-body");
+    body.replaceChildren();
 
-async function loadRotationStatus() {
-    const roundElement =
-        document.getElementById("rotation-round");
-
-    if (!roundElement) {
+    if (models.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 4;
+        cell.style.padding = "8px";
+        cell.textContent = "مدلی در انبار یافت نشد.";
+        row.appendChild(cell);
+        body.appendChild(row);
         return;
     }
 
-    try {
-        const response = await fetch("/api/rotation/status");
+    const fragment = document.createDocumentFragment();
+    models.forEach((model, index) => {
+        const row = document.createElement("tr");
 
-        if (!response.ok) {
-            throw new Error("HTTP " + response.status);
+        const num = document.createElement("td");
+        num.style.padding = "8px";
+        num.textContent = (index + 1).toLocaleString("fa-IR");
+
+        const name = document.createElement("td");
+        name.style.padding = "8px";
+        name.style.overflowWrap = "anywhere";
+        name.textContent = model.name || model.id || "نامشخص";
+
+        const prov = document.createElement("td");
+        prov.style.padding = "8px";
+        prov.textContent = providerNames[model.provider] || model.provider || "نامشخص";
+
+        const status = document.createElement("td");
+        status.style.padding = "8px";
+        status.textContent = getModelStatusText(model);
+
+        row.append(num, name, prov, status);
+        fragment.appendChild(row);
+    });
+    body.appendChild(fragment);
+}
+
+function getModelStatus(model) {
+    if (model.test_status === "tested" || model.test_status === "confirmed_ready") {
+        return "tested";
+    }
+    if (model.test_status === "in_progress" || model.test_status === "confirmed_in_progress") {
+        return "in_progress";
+    }
+    return "untested";
+}
+
+function getModelStatusText(model) {
+    const s = getModelStatus(model);
+    if (s === "tested") return "تست شده";
+    if (s === "in_progress") return "در حال است";
+    return "تست نشده";
+}
+
+/* =========================================================
+   Catalog Toggle
+   ========================================================= */
+
+document.getElementById("catalog-toggle").addEventListener("click", function() {
+    catalogExpanded = !catalogExpanded;
+    const table = document.getElementById("catalog-table");
+    const btn = document.getElementById("catalog-toggle");
+    if (catalogExpanded) {
+        table.classList.remove("collapsed");
+        btn.textContent = "مخفی کردن دایرهٔ مدل‌ها";
+    } else {
+        table.classList.add("collapsed");
+        btn.textContent = "نمایش دایرهٔ مدل‌ها";
+    }
+});
+
+/* =========================================================
+   2. Providers List and Management Cards
+   ========================================================= */
+
+async function loadProviders() {
+    try {
+        const response = await fetch("/api/providers");
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const providers = await response.json();
+
+        // Remove provider select
+        const select = document.getElementById("remove-provider-select");
+        select.replaceChildren();
+
+        const keys = Object.keys(providers);
+        keys.forEach(key => {
+            const p = providers[key];
+
+            // Add provider cards (existing cards)
+            const container = document.getElementById("providers-container");
+            if (container) {
+                const card = document.createElement("div");
+                card.className = "provider-card";
+
+                const title = document.createElement("h4");
+                title.textContent = p.display_name || key;
+
+                const status = document.createElement("div");
+                status.className = "status";
+                status.textContent = p.enabled ? "فعال" : "غیرفعال";
+
+                const count = document.createElement("div");
+                count.className = "muted";
+                count.textContent = (p.model_count ?? 0) + " مدل";
+
+                card.append(title, status, count);
+                container.appendChild(card);
+            }
+
+            // Remove provider dropdown
+            const option = document.createElement("option");
+            option.value = key;
+            option.textContent = (p.display_name || key) + " (" + key + ")";
+            select.appendChild(option);
+        });
+
+        // Show/hide dropdown based on whether there are providers
+        const removeCard = document.getElementById("remove-provider-card");
+        if (keys.length === 0) {
+            removeCard.style.display = "none";
+        } else {
+            removeCard.style.display = "block";
         }
 
+    } catch (error) {
+        console.error("Error loading providers:", error);
+    }
+}
+
+async function updateProviderInfo() {
+    const select = document.getElementById("remove-provider-select");
+    const key = select.value;
+    if (!key) return;
+
+    try {
+        const response = await fetch("/api/providers");
+        if (!response.ok) return;
+        const providers = await response.json();
+        const p = providers[key];
+
+        document.getElementById("remove-provider-name").textContent = (p.display_name || key) + " — " + key;
+        document.getElementById("remove-provider-models").textContent = "مدل‌ها: " + (p.model_count ?? 0);
+        document.getElementById("remove-provider-confirmed").textContent = "مدل‌های تاییدشده: در حال بارگذاری...";
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+/* =========================================================
+   Add Provider Form
+   ========================================================= */
+
+document.getElementById("add-provider-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("add-provider-btn");
+    const message = document.getElementById("add-provider-message");
+    message.textContent = "";
+    message.className = "message";
+
+    btn.disabled = true;
+    btn.textContent = "در حال پردازش...";
+
+    try {
+        const provider_id = document.getElementById("add-provider-id").value.trim();
+        const display_name = document.getElementById("add-display-name").value.trim();
+        const base_url = document.getElementById("add-base-url").value.trim();
+        const api_key_env = document.getElementById("add-api-key-env").value.trim();
+        const enabled = document.getElementById("add-enabled").value === "true";
+
+        const body = { provider_id, display_name, base_url, api_key_env, enabled };
+
+        const response = await fetch("/api/providers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || "خطای نامشخص");
+        }
+
+        message.textContent = "ارائه‌دهنده با موفقیت افزوده شد.";
+        message.className = "message success";
+
+        // Reset form
+        document.getElementById("add-provider-form").reset();
+
+        // Reload providers and catalog
+        await loadProviders();
+        await loadCatalog();
+
+    } catch (error) {
+        message.textContent = "خطا: " + error.message;
+        message.className = "message error";
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "افزودن ارائه‌دهنده";
+    }
+});
+
+/* =========================================================
+   Remove Provider Form
+   ========================================================= */
+
+document.getElementById("remove-provider-select").addEventListener("change", updateProviderInfo);
+
+document.getElementById("remove-provider-btn").addEventListener("click", function() {
+    document.getElementById("remove-confirm-dialog").style.display = "block";
+});
+
+document.getElementById("confirm-cancel-btn").addEventListener("click", function() {
+    document.getElementById("remove-confirm-dialog").style.display = "none";
+});
+
+document.getElementById("confirm-remove-btn").addEventListener("click", async () => {
+    const select = document.getElementById("remove-provider-select");
+    const providerName = select.value;
+    const btn = document.getElementById("confirm-remove-btn");
+    const message = document.getElementById("remove-provider-message");
+    message.textContent = "";
+    message.className = "message";
+
+    btn.disabled = true;
+    btn.textContent = "در حال حذف...";
+
+    try {
+        const response = await fetch("/api/providers/" + encodeURIComponent(providerName), {
+            method: "DELETE"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || "خطای نامشخص");
+        }
+
+        message.textContent = "ارائه‌دهنده با موفقیت حذف شد.";
+        message.className = "message success";
+
+        document.getElementById("remove-confirm-dialog").style.display = "none";
+
+        // Reload everything
+        await loadProviders();
+        await loadCatalog();
+
+    } catch (error) {
+        message.textContent = "خطا: " + error.message;
+        message.className = "message error";
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "حذف شود";
+    }
+});
+
+/* =========================================================
+   Rotation Panel
+   ========================================================= */
+
+async function loadRotationStatus() {
+    const roundElement = document.getElementById("rotation-round");
+    if (!roundElement) return;
+
+    try {
+        const response = await fetch("/api/rotation/status");
+        if (!response.ok) throw new Error("HTTP " + response.status);
         const status = await response.json();
         const roundNumber = Number(status.round_number);
 
         roundElement.textContent =
-            "شماره دور: " +
-            (
-                Number.isFinite(roundNumber) && roundNumber > 0
-                    ? roundNumber.toLocaleString("fa-IR")
-                    : "نامشخص"
-            );
-
+            "دور فعلی: " +
+            (Number.isFinite(roundNumber) && roundNumber > 0
+                ? roundNumber.toLocaleString("fa-IR")
+                : "نامشخص");
     } catch (error) {
-        console.error(
-            "خطا در دریافت وضعیت گردش مدل‌ها:",
-            error
-        );
-
-        roundElement.textContent = "شماره دور: نامشخص";
+        console.error("Error loading rotation status:", error);
+        roundElement.textContent = "دور فعلی: نامشخص";
     }
 }
-/* =========================================================
-   5. نمایش جدول مدل‌ها
-   ========================================================= */
 
 function renderRotationPanel() {
-    const roundElement =
-        document.getElementById("rotation-round");
+    const roundElement = document.getElementById("rotation-round");
+    const countElement = document.getElementById("rotation-count");
+    const tableBody = document.getElementById("rotation-models-body");
 
-    const countElement =
-        document.getElementById("rotation-count");
+    if (!roundElement || !countElement || !tableBody) return;
 
-    const tableBody =
-        document.getElementById("rotation-models-body");
-
-    if (!roundElement || !countElement || !tableBody) {
-        console.error("عناصر جدول مدل‌ها در HTML پیدا نشدند.");
-        return;
-    }
-
-    // همه مدل‌های موفق؛ بدون محدودیت تعداد ردیف.
-    const successfulModels = largeCatalogModels.filter(
+    const successfulModels = catalogModels.filter(
         model => getModelStatus(model) === "tested"
     );
 
-    // تعداد مدل‌هایی که هنوز آزمایش نشده‌اند.
-    const remainingCount = largeCatalogModels.filter(
+    const remainingCount = catalogModels.filter(
         model => getModelStatus(model) === "untested"
     ).length;
 
     countElement.textContent =
-        "تعداد مدل‌های باقی‌مانده: " +
+        "تعداد مدل‌های باقی‌مانده برای تست: " +
         remainingCount.toLocaleString("fa-IR");
 
     tableBody.replaceChildren();
@@ -365,56 +703,53 @@ function renderRotationPanel() {
     if (successfulModels.length === 0) {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
-
-        cell.colSpan = 3;
+        cell.colSpan = 4;
         cell.style.padding = "8px";
-        cell.textContent = "هنوز مدل موفقی ثبت نشده است.";
-
+        cell.textContent = "هیچ مدلی هنوز تست نشده است.";
         row.appendChild(cell);
         tableBody.appendChild(row);
         return;
     }
 
     const fragment = document.createDocumentFragment();
-
     successfulModels.forEach((model, index) => {
         const row = document.createElement("tr");
 
-        const rowNumber = document.createElement("td");
-        rowNumber.style.padding = "8px";
-        rowNumber.textContent = (index + 1).toLocaleString("fa-IR");
+        const num = document.createElement("td");
+        num.style.padding = "8px";
+        num.textContent = (index + 1).toLocaleString("fa-IR");
 
-        const modelName = document.createElement("td");
-        modelName.style.padding = "8px";
-        modelName.style.overflowWrap = "anywhere";
-        modelName.textContent = model.name || model.id || "بدون نام";
+        const name = document.createElement("td");
+        name.style.padding = "8px";
+        name.style.overflowWrap = "anywhere";
+        name.textContent = model.name || model.id || "نامشخص";
 
-        const interfaceName = document.createElement("td");
-        interfaceName.style.padding = "8px";
-        interfaceName.textContent =
-            providerNames[model.provider] || model.provider || "نامشخص";
+        const prov = document.createElement("td");
+        prov.style.padding = "8px";
+        prov.textContent = providerNames[model.provider] || model.provider || "نامشخص";
 
-        row.append(rowNumber, modelName, interfaceName);
+        const status = document.createElement("td");
+        status.style.padding = "8px";
+        status.textContent = getModelStatusText(model);
+
+        row.append(num, name, prov, status);
         fragment.appendChild(row);
     });
-
     tableBody.appendChild(fragment);
 }
 
-
 /* =========================================================
-   6. راه‌اندازی صفحه
+   Init
    ========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
+    loadCatalog();
     loadProviders();
-    loadLargeCatalog();
     loadRotationStatus();
 
-    // تازه‌سازی شماره دور هر ۵ ثانیه
     window.setInterval(loadRotationStatus, 500000);
+    window.setInterval(loadProviders, 100000);
 });
 </script>
-
 </body>
 </html>
