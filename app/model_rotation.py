@@ -225,7 +225,7 @@ def _initialize_model_fields(model: dict[str, Any]) -> None:
     model.setdefault("last_error_type", None)
     model.setdefault("last_error_message", None)
     model.setdefault("failure_at", None)
-    model.setdefault("confirmed", False)
+
 
 
 def _find_model(
@@ -239,18 +239,13 @@ def _find_model(
     return None
 
 
-def _confirmed_models(
-    catalog: dict[str, Any],
-) -> list[dict[str, Any]]:
-    """Return models with persistent confirmed-group membership."""
+def _confirmed_models(catalog):
     confirmed = []
 
     for model in catalog["models"]:
         _initialize_model_fields(model)
 
-        # Membership is permanent once earned.
-        # lifetime_chars may be reset for each confirmed turn.
-        if model.get("confirmed") is True:
+        if model.get("test_status") == "confirmed":
             confirmed.append(model)
 
     return confirmed
@@ -414,36 +409,6 @@ def _select_ordinary_model(
     return None
 
 
-def refresh_confirmed_models(catalog):
-    """Refresh confirmed membership and mark demoted models as failed."""
-    changed = False
-
-    for model in catalog["models"]:
-        status = model.get("test_status")
-
-        if status in ("in_progress", "confirmed_in_progress"):
-            continue
-
-        was_confirmed = model.get("confirmed") is True
-
-        is_confirmed = (
-            (model.get("lifetime_chars") or 0)
-            >= CONFIRMED_MODEL_ENTRY_CHARS
-        )
-
-        model["confirmed"] = is_confirmed
-
-        if status == "confirmed_ready" and not is_confirmed:
-            model["test_status"] = "failed"
-            model["failure_at"] = _now()
-            changed = True
-
-        if was_confirmed != is_confirmed:
-            changed = True
-
-    return changed
-
-
 def select_next_model() -> dict[str, Any] | None:
     """
     Select the next model according to dynamic rotation order.
@@ -453,8 +418,7 @@ def select_next_model() -> dict[str, Any] | None:
     """
     catalog = _load_catalog()
     
-    if refresh_confirmed_models(catalog):
-        _save_catalog(catalog)
+
     state = _load_state()
     models = catalog["models"]
 
@@ -472,7 +436,7 @@ def select_next_model() -> dict[str, Any] | None:
         state["round_completed"] = sum(
             1
             for model in models
-            if model.get("test_status") in {"tested", "failed"}
+            if model.get("test_status") in {"confirmed", "failed"}
         )
         _save_state(state)
 
@@ -521,7 +485,6 @@ def select_next_model() -> dict[str, Any] | None:
             model
             for model in catalog["models"]
             if model.get("test_status") == "failed"
-            and model.get("confirmed") is not True
             and _provider_key(str(model.get("provider", ""))) in provider_groups
         ]
 
@@ -661,9 +624,7 @@ def record_request_result(
     output_chars = max(0, int(output_chars))
 
     if success:
-        previous_chars = model.get("lifetime_chars")
-        if previous_chars is None:
-            previous_chars = 0
+        previous_chars = model.get("lifetime_chars") or 0
 
         model["lifetime_chars"] = int(previous_chars) + input_chars
         model["output_chars"] += output_chars
@@ -672,78 +633,51 @@ def record_request_result(
         model["last_error_type"] = None
         model["last_error_message"] = None
 
-        if not was_confirmed_turn:
-            if ends_model_test or (
-                model["lifetime_chars"]
-                >= int(state.get("test_input_char_limit", DEFAULT_TEST_INPUT_CHAR_LIMIT))
-            ):
-                model["confirmed"] = (
-                    model["lifetime_chars"] >= CONFIRMED_MODEL_ENTRY_CHARS
-                )
-
-            limit = int(
-                state.get(
-                    "test_input_char_limit",
-                    DEFAULT_TEST_INPUT_CHAR_LIMIT,
-                )
-            )
-
-            reached_limit = model["lifetime_chars"] >= limit
-
-            if ends_model_test or reached_limit:
-                model["test_status"] = (
-                    "confirmed_ready"
-                    if model.get("confirmed") is True
-                    else "tested"
-                )
-
-                if state.get("current_model_key") == result_key:
-                    state["current_model_key"] = None
-
-        else:
-            # The counter is scoped to this confirmed turn.
-            reached_confirmed_limit = (
-                model["lifetime_chars"] >= CONFIRMED_MODEL_CHAR_LIMIT
-            )
-
-            if ends_model_test or reached_confirmed_limit:
-                model["test_status"] = "confirmed_ready"
-
-                # Keep confirmed membership and the persistent cursor.
-                if state.get("current_model_key") == result_key:
-                    state["current_model_key"] = None
-
     else:
         model["failed_requests"] += 1
         model["last_tested_at"] = _now()
         model["last_error_type"] = error_type
         model["last_error_message"] = error_message
 
-        if ends_model_test:
-            if was_confirmed_turn or model.get("confirmed") is True:
-                # A terminal error ends this confirmed turn only.
-                model["test_status"] = "confirmed_ready"
-            else:
-                model["test_status"] = "failed"
-                model["failure_at"] = _now()
+    if was_confirmed_turn:
+        test_limit = CONFIRMED_MODEL_CHAR_LIMIT
+    else:
+        test_limit = int(
+            state.get(
+                "test_input_char_limit",
+                DEFAULT_TEST_INPUT_CHAR_LIMIT,
+            )
+        )
 
-            if state.get("current_model_key") == result_key:
-                state["current_model_key"] = None
+    reached_limit = (
+        int(model.get("lifetime_chars") or 0) >= test_limit
+    )
 
-        # A temporary failure leaves the model in its current state.
-        # It does not add characters or end the confirmed turn.
+    test_finished = ends_model_test or reached_limit
 
-    terminal_statuses = {"tested", "failed"}
+    if test_finished:
+        if int(model.get("lifetime_chars") or 0) >= CONFIRMED_MODEL_ENTRY_CHARS:
+            model["test_status"] = "confirmed"
+            model["failure_at"] = None
+        else:
+            model["test_status"] = "failed"
+            model["failure_at"] = _now()
+
+        if state.get("current_model_key") == result_key:
+            state["current_model_key"] = None
+
+    # Only ordinary model tests contribute to ordinary round completion.
+    terminal_statuses = {"confirmed", "failed"}
 
     if (
-        previous_status not in terminal_statuses
+        not was_confirmed_turn
+        and previous_status not in terminal_statuses
         and model.get("test_status") in terminal_statuses
     ):
         state["round_completed"] = int(
             state.get("round_completed", 0)
         ) + 1
 
-    # Confirmed turns do not contribute to ordinary round completion.
     _save_catalog(catalog)
     _save_state(state)
 
@@ -755,7 +689,6 @@ def record_request_result(
         "failed_requests": model.get("failed_requests", 0),
         "output_chars": model.get("output_chars", 0),
         "test_status": model.get("test_status"),
-        "confirmed": model.get("confirmed", False),
         "current_model_key": state.get("current_model_key"),
         "finished": state.get("finished", False),
     }
@@ -778,7 +711,7 @@ def get_rotation_status() -> dict[str, Any]:
         _initialize_model_fields(model)
         status = model.get("test_status")
 
-        if model.get("confirmed") is True:
+        if status == "confirmed":
             confirmed_count += 1
 
         if status == "failed":
@@ -787,7 +720,7 @@ def get_rotation_status() -> dict[str, Any]:
             in_progress += 1
         elif status == "confirmed_in_progress":
             confirmed_in_progress += 1
-        elif status in {"tested", "confirmed_ready"}:
+        elif status == "confirmed":
             tested += 1
         elif status == "untested":
             untested += 1
