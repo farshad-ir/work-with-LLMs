@@ -594,6 +594,7 @@ async def codex_responses(request: Request):
                 model_key=model_key,
                 input_chars=input_chars,
                 success=False,
+                ends_model_test=True,
                 error_type="invalid_provider_response",
                 error_message=str(exc)[:500],
             )
