@@ -408,7 +408,8 @@ async function loadCatalog() {
 
         updateCatalogCounts(models);
         renderCatalogTable(models);
-
+        renderRotationPanel();
+      
         // Refresh rotation status too
         await loadRotationStatus();
 
