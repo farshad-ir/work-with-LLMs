@@ -368,77 +368,85 @@ async def discover_provider(request: Request):
 
 @app.post("/api/providers")
 async def add_provider(request: Request):
-    """Add a new provider to the configuration."""
+    """Add a provider after server-side discovery and validation."""
+
     try:
         body = await request.json()
-    except (ValueError, Exception):
-        raise HTTPException(status_code=400, detail="Request body must be a valid JSON object.")
-
-    provider_id = str(body.get("provider_id", "")).strip()
-    if not provider_id:
-        raise HTTPException(status_code=400, detail="provider_id is required")
-
-    if not re.match(r"^[a-zA-Z0-9_]+$", provider_id):
+    except Exception:
         raise HTTPException(
             status_code=400,
-            detail="provider_id must contain only alphanumeric characters and underscores",
+            detail="Request body must be valid JSON.",
         )
 
-    display_name = str(body.get("display_name", "")).strip()
-    if not display_name:
-        display_name = provider_id.replace("_", " ").title()
-
-    base_url = str(body.get("base_url", "")).strip().rstrip("/")
-    if not base_url:
-        raise HTTPException(status_code=400, detail="base_url is required")
-
-    if not base_url.startswith(("http://", "https://")):
+    if not isinstance(body, dict):
         raise HTTPException(
             status_code=400,
-            detail="base_url must be a valid HTTP or HTTPS URL",
+            detail="Request body must be a JSON object.",
         )
 
-    api_key_env = str(body.get("api_key_env", "")).strip()
-    if not api_key_env:
-        raise HTTPException(status_code=400, detail="api_key_env is required")
-
-    if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", api_key_env):
+    try:
+        spec = _validate_discovery_spec(body)
+    except ValueError as exc:
         raise HTTPException(
             status_code=400,
-            detail="api_key_env must be a valid environment variable name",
-        )
+            detail=str(exc),
+        ) from None
 
-    enabled = bool(body.get("enabled", True))
+    provider_id = spec["provider_id"]
 
     config = load_config()
 
     if provider_id in config["providers"]:
         raise HTTPException(
             status_code=409,
-            detail=f"Provider '{provider_id}' already exists",
+            detail=f"Provider '{provider_id}' already exists.",
         )
 
-    config["providers"][provider_id] = {
-        "display_name": display_name,
-        "base_url": base_url,
-        "api_key_env": api_key_env,
-        "enabled": enabled,
-        "models": [],
+    # Always rediscover models on the server.
+    # Never trust model data submitted by the browser.
+    result = await _discover_provider_models(spec)
+
+    models = result["models"]
+
+    if not models:
+        raise HTTPException(
+            status_code=400,
+            detail="Provider returned no valid models. Provider was not added.",
+        )
+
+    provider = {
+        "display_name": spec["display_name"],
+        "base_url": spec["base_url"],
+        "api_key_env": spec["api_key_env"],
+        "enabled": spec["enabled"],
+        "authentication": spec["authentication"],
+        "discovery": spec["discovery"],
+        "response_parser": spec["response_parser"],
+        "models": models,
     }
 
+    config["providers"][provider_id] = provider
+
     save_config(config)
+
+    catalog = rebuild_large_catalog(config)
 
     return {
         "success": True,
         "provider": {
             "id": provider_id,
-            "display_name": display_name,
-            "base_url": base_url,
-            "api_key_env": api_key_env,
-            "enabled": enabled,
-            "model_count": 0,
+            "display_name": spec["display_name"],
+            "base_url": spec["base_url"],
+            "api_key_env": spec["api_key_env"],
+            "enabled": spec["enabled"],
+            "model_count": len(models),
         },
+        "large_catalog_count": catalog["model_count"],
+        "large_catalog_updated_at": catalog["updated_at"],
     }
+
+
+
 
 
 @app.delete("/api/providers/{provider_name}")

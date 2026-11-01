@@ -67,19 +67,44 @@ def save_config(config: dict[str, Any]) -> None:
     )
 
 
+
+
 def get_public_config() -> dict[str, Any]:
     config = load_config()
     providers = {}
 
     for name, provider in config["providers"].items():
         models = provider.get("models", [])
+
         providers[name] = {
-            "display_name": provider.get("display_name", name.replace("_", " ").title()),
+            "display_name": provider.get(
+                "display_name",
+                name.replace("_", " ").title(),
+            ),
             "base_url": provider.get("base_url", ""),
             "enabled": bool(provider.get("enabled", False)),
             "models": models,
             "model_count": len(models),
             "api_key_env": provider.get("api_key_env", ""),
+            "authentication": provider.get(
+                "authentication",
+                {
+                    "mode": "bearer",
+                    "header_name": "Authorization",
+                },
+            ),
+            "discovery": provider.get(
+                "discovery",
+                {},
+            ),
+            "response_parser": provider.get(
+                "response_parser",
+                {
+                    "models_key": "data",
+                    "id_field": "id",
+                    "name_field": "name",
+                },
+            ),
         }
 
     return {
