@@ -253,13 +253,23 @@ async def _discover_provider_models(spec: dict) -> dict:
                     "error": f"HTTP {exc.response.status_code}",
                 }
 
-            except (httpx.HTTPError, ValueError):
+            
+            except ValueError as exc:
                 route_results[route_name] = {
                     "enabled": True,
                     "success": False,
                     "model_count": 0,
                     "samples": [],
-                    "error": "Request failed or response format was invalid.",
+                    "error": f"Parser error: {exc}",
+                }
+            
+            except httpx.HTTPError as exc:
+                route_results[route_name] = {
+                    "enabled": True,
+                    "success": False,
+                    "model_count": 0,
+                    "samples": [],
+                    "error": f"HTTP request error: {type(exc).__name__}: {exc}",
                 }
 
     models = list(all_models.values())
