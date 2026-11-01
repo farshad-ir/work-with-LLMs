@@ -335,6 +335,37 @@ async def providers():
     return get_public_config()["providers"]
 
 
+
+@app.post("/api/providers/discover")
+async def discover_provider(request: Request):
+    """Test provider discovery routes without saving configuration."""
+
+    try:
+        spec = await request.json()
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Request body must be valid JSON.",
+        )
+
+    if not isinstance(spec, dict):
+        raise HTTPException(
+            status_code=400,
+            detail="Request body must be a JSON object.",
+        )
+
+    try:
+        result = await _discover_provider_models(spec)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from None
+
+    return result
+
+
+
 @app.post("/api/providers")
 async def add_provider(request: Request):
     """Add a new provider to the configuration."""
