@@ -754,7 +754,7 @@ function renderRotationPanel() {
     if (!roundElement || !countElement || !tableBody) return;
 
     const successfulModels = catalogModels.filter(
-        model => getModelStatus(model) === "tested"
+        model => getModelStatus(model) === "confirmed"
     );
 
     const remainingCount = catalogModels.filter(
