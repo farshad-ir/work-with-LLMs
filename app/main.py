@@ -134,6 +134,7 @@ def _validate_discovery_spec(spec: dict) -> dict:
             "models_key": str(parser.get("models_key", "data")),
             "id_field": str(parser.get("id_field", "id")),
             "name_field": str(parser.get("name_field", "name")),
+            "items_mode": str(parser.get("items_mode", "list")),
         },
     }
 
@@ -149,6 +150,21 @@ def _extract_discovered_models(payload: object, parser: dict) -> list:
                 items = None
                 break
             items = items.get(key)
+
+    items_mode = parser.get("items_mode", "list")
+
+    if items_mode == "object_keys":
+        if not isinstance(items, dict):
+            raise ValueError("Model object was not found in the provider response.")
+
+        return [
+            {"id": str(key), "name": str(key)}
+            for key in items
+            if str(key).strip()
+        ]
+
+    if items_mode != "list":
+        raise ValueError(f"Unsupported items_mode: {items_mode}")
 
     if not isinstance(items, list):
         raise ValueError("Model list was not found in the provider response.")
