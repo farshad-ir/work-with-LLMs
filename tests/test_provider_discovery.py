@@ -1,3 +1,5 @@
+from fastapi.testclient import TestClient
+import app.main as main
 import asyncio
 import pytest
 import httpx
@@ -224,3 +226,183 @@ def test_no_valid_models_means_cannot_add(provider_spec, monkeypatch):
 
     assert result["unique_model_count"] == 0
     assert result["can_add"] is False
+
+def test_add_provider_rediscovers_models_on_server(
+    provider_spec,
+    monkeypatch,
+):
+    config = {
+        "providers": {},
+        "routing": {
+            "primary": None,
+            "fallbacks": [],
+        },
+    }
+
+    saved_configs = []
+    discovery_calls = []
+
+    async def mock_discover(spec):
+        discovery_calls.append(spec)
+        return {
+            "models": [
+                {"id": "server-model-a", "name": "Server Model A"},
+                {"id": "server-model-b", "name": "Server Model B"},
+            ],
+            "unique_model_count": 2,
+            "can_add": True,
+        }
+
+    monkeypatch.setattr(main, "load_config", lambda: config)
+    monkeypatch.setattr(
+        main,
+        "save_config",
+        lambda value: saved_configs.append(value.copy()),
+    )
+    monkeypatch.setattr(
+        main,
+        "_discover_provider_models",
+        mock_discover,
+    )
+    monkeypatch.setattr(
+        main,
+        "rebuild_large_catalog",
+        lambda value: {
+            "model_count": 2,
+            "updated_at": "test-timestamp",
+        },
+    )
+
+    # مدل‌های جعلی مرورگر نباید در config ذخیره شوند.
+    request_body = {
+        **provider_spec,
+        "models": [
+            {"id": "browser-fake-model", "name": "Fake Model"},
+        ],
+    }
+
+    client = TestClient(main.app)
+    response = client.post("/api/providers", json=request_body)
+
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+
+    assert len(discovery_calls) == 1
+    assert len(saved_configs) == 1
+
+    saved_provider = config["providers"]["test_provider"]
+
+    assert saved_provider["models"] == [
+        {"id": "server-model-a", "name": "Server Model A"},
+        {"id": "server-model-b", "name": "Server Model B"},
+    ]
+
+    assert all(
+        model["id"] != "browser-fake-model"
+        for model in saved_provider["models"]
+    )
+
+    assert response.json()["provider"]["model_count"] == 2
+    assert response.json()["large_catalog_count"] == 2
+
+
+def test_add_provider_rejects_empty_discovery_result(
+    provider_spec,
+    monkeypatch,
+):
+    config = {
+        "providers": {},
+        "routing": {
+            "primary": None,
+            "fallbacks": [],
+        },
+    }
+
+    saved_configs = []
+    catalog_calls = []
+
+    async def mock_discover(spec):
+        return {
+            "models": [],
+            "unique_model_count": 0,
+            "can_add": False,
+        }
+
+    monkeypatch.setattr(main, "load_config", lambda: config)
+    monkeypatch.setattr(
+        main,
+        "save_config",
+        lambda value: saved_configs.append(value),
+    )
+    monkeypatch.setattr(
+        main,
+        "_discover_provider_models",
+        mock_discover,
+    )
+    monkeypatch.setattr(
+        main,
+        "rebuild_large_catalog",
+        lambda value: catalog_calls.append(value),
+    )
+
+    client = TestClient(main.app)
+    response = client.post(
+        "/api/providers",
+        json=provider_spec,
+    )
+
+    assert response.status_code == 400
+    assert "no valid models" in response.json()["detail"].lower()
+
+    assert "test_provider" not in config["providers"]
+    assert saved_configs == []
+    assert catalog_calls == []
+
+
+def test_add_provider_rejects_duplicate_provider(
+    provider_spec,
+    monkeypatch,
+):
+    config = {
+        "providers": {
+            "test_provider": {
+                "display_name": "Existing Provider",
+                "models": [],
+            },
+        },
+        "routing": {
+            "primary": None,
+            "fallbacks": [],
+        },
+    }
+
+    discovery_calls = []
+    saved_configs = []
+
+    async def mock_discover(spec):
+        discovery_calls.append(spec)
+        return {"models": []}
+
+    monkeypatch.setattr(main, "load_config", lambda: config)
+    monkeypatch.setattr(
+        main,
+        "save_config",
+        lambda value: saved_configs.append(value),
+    )
+    monkeypatch.setattr(
+        main,
+        "_discover_provider_models",
+        mock_discover,
+    )
+
+    client = TestClient(main.app)
+    response = client.post(
+        "/api/providers",
+        json=provider_spec,
+    )
+
+    assert response.status_code == 409
+    assert "already exists" in response.json()["detail"].lower()
+
+    assert discovery_calls == []
+    assert saved_configs == []
