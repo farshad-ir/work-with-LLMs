@@ -51,6 +51,230 @@ def _normalize_provider_name(name: str) -> str:
     }
     return aliases.get(name, name)
 
+def _validate_discovery_spec(spec: dict) -> dict:
+    """Validate and normalize a provider discovery specification."""
+
+    if not isinstance(spec, dict):
+        raise ValueError("Provider specification must be a JSON object.")
+
+    provider_id = str(spec.get("provider_id", "")).strip()
+    if not re.fullmatch(r"[a-zA-Z0-9_]+", provider_id):
+        raise ValueError("Invalid provider_id.")
+
+    display_name = str(spec.get("display_name", "")).strip() or provider_id
+
+    base_url = str(spec.get("base_url", "")).strip().rstrip("/")
+    if not base_url.startswith(("http://", "https://")):
+        raise ValueError("base_url must be an HTTP or HTTPS URL.")
+
+    api_key_env = str(spec.get("api_key_env", "")).strip()
+    if api_key_env and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", api_key_env):
+        raise ValueError("Invalid api_key_env.")
+
+    authentication = spec.get("authentication", {})
+    if not isinstance(authentication, dict):
+        raise ValueError("authentication must be an object.")
+
+    auth_mode = authentication.get("mode", "bearer")
+    if auth_mode not in ("none", "bearer", "header"):
+        raise ValueError("Unsupported authentication mode.")
+
+    header_name = str(
+        authentication.get("header_name", "Authorization")
+    ).strip()
+
+    if auth_mode == "header" and not header_name:
+        raise ValueError("header_name is required for header authentication.")
+
+    discovery = spec.get("discovery", {})
+    if not isinstance(discovery, dict):
+        raise ValueError("discovery must be an object.")
+
+    normalized_routes = {}
+
+    for route_name in ("public", "authenticated"):
+        route = discovery.get(route_name, {})
+        if not isinstance(route, dict):
+            raise ValueError(f"discovery.{route_name} must be an object.")
+
+        enabled = bool(route.get("enabled", False))
+        path = str(route.get("path", "/models")).strip()
+
+        if enabled:
+            if not path.startswith("/") or path.startswith("//"):
+                raise ValueError(f"Invalid discovery path: {route_name}")
+
+            if route_name == "authenticated" and auth_mode != "none" and not api_key_env:
+                raise ValueError("api_key_env is required for authenticated discovery.")
+
+        normalized_routes[route_name] = {
+            "enabled": enabled,
+            "path": path,
+        }
+
+    if not any(route["enabled"] for route in normalized_routes.values()):
+        raise ValueError("At least one discovery route must be enabled.")
+
+    parser = spec.get("response_parser", {})
+    if not isinstance(parser, dict):
+        raise ValueError("response_parser must be an object.")
+
+    return {
+        "provider_id": provider_id,
+        "display_name": display_name,
+        "base_url": base_url,
+        "api_key_env": api_key_env,
+        "enabled": bool(spec.get("enabled", True)),
+        "authentication": {
+            "mode": auth_mode,
+            "header_name": header_name,
+        },
+        "discovery": normalized_routes,
+        "response_parser": {
+            "models_key": str(parser.get("models_key", "data")),
+            "id_field": str(parser.get("id_field", "id")),
+            "name_field": str(parser.get("name_field", "name")),
+        },
+    }
+
+
+def _extract_discovered_models(payload: object, parser: dict) -> list:
+    """Extract normalized model records from a provider response."""
+
+    items = payload
+
+    if parser["models_key"]:
+        for key in parser["models_key"].split("."):
+            if not isinstance(items, dict):
+                items = None
+                break
+            items = items.get(key)
+
+    if not isinstance(items, list):
+        raise ValueError("Model list was not found in the provider response.")
+
+    models = []
+    seen = set()
+
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+
+        model_id = item.get(parser["id_field"])
+        if not isinstance(model_id, str) or not model_id.strip():
+            continue
+
+        model_id = model_id.strip()
+        if model_id in seen:
+            continue
+
+        seen.add(model_id)
+
+        name = item.get(parser["name_field"])
+        models.append({
+            "id": model_id,
+            "name": name.strip() if isinstance(name, str) and name.strip() else model_id,
+        })
+
+    return models
+
+
+async def _discover_provider_models(spec: dict) -> dict:
+    """Test public and authenticated discovery routes independently."""
+
+    spec = _validate_discovery_spec(spec)
+
+    route_results = {}
+    all_models = {}
+    auth = spec["authentication"]
+
+    api_key = ""
+    if spec["api_key_env"]:
+        api_key = get_env_value(spec["api_key_env"])
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        for route_name, route in spec["discovery"].items():
+            if not route["enabled"]:
+                route_results[route_name] = {
+                    "enabled": False,
+                    "success": False,
+                    "model_count": 0,
+                    "samples": [],
+                    "error": "Disabled",
+                }
+                continue
+
+            headers = {}
+
+            if route_name == "authenticated" and auth["mode"] != "none":
+                if not api_key:
+                    route_results[route_name] = {
+                        "enabled": True,
+                        "success": False,
+                        "model_count": 0,
+                        "samples": [],
+                        "error": "API key is not configured on the server.",
+                    }
+                    continue
+
+                if auth["mode"] == "bearer":
+                    headers["Authorization"] = f"Bearer {api_key}"
+                elif auth["mode"] == "header":
+                    headers[auth["header_name"]] = api_key
+
+            url = spec["base_url"] + route["path"]
+
+            try:
+                response = await client.get(url, headers=headers)
+                response.raise_for_status()
+
+                models = _extract_discovered_models(
+                    response.json(),
+                    spec["response_parser"],
+                )
+
+                route_results[route_name] = {
+                    "enabled": True,
+                    "success": bool(models),
+                    "model_count": len(models),
+                    "samples": models[:3],
+                    "error": None if models else "No valid models were returned.",
+                }
+
+                for model in models:
+                    all_models.setdefault(model["id"], model)
+
+            except httpx.HTTPStatusError as exc:
+                route_results[route_name] = {
+                    "enabled": True,
+                    "success": False,
+                    "model_count": 0,
+                    "samples": [],
+                    "error": f"HTTP {exc.response.status_code}",
+                }
+
+            except (httpx.HTTPError, ValueError):
+                route_results[route_name] = {
+                    "enabled": True,
+                    "success": False,
+                    "model_count": 0,
+                    "samples": [],
+                    "error": "Request failed or response format was invalid.",
+                }
+
+    models = list(all_models.values())
+
+    return {
+        "provider_id": spec["provider_id"],
+        "display_name": spec["display_name"],
+        "routes": route_results,
+        "models": models,
+        "unique_model_count": len(models),
+        "can_add": len(models) > 0,
+    }
+
+
+
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 
