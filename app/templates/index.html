@@ -287,37 +287,86 @@
     <h2>مدیریت ارائه‌دهندگان</h2>
     <div id="providers-container" class="providers"></div>
     <div class="manage-grid">
-      <!-- Add Provider Card -->
-      <div class="card" id="add-provider-card">
-        <h3>افزودن ارائه‌دهنده</h3>
-        <form id="add-provider-form">
-          <div class="form-group">
-            <label>شناسه ارائه‌دهنده</label>
-            <input type="text" id="add-provider-id" placeholder="مثلاً: openrouter, nvidia" required>
-          </div>
-          <div class="form-group">
-            <label>نام نمایشی</label>
-            <input type="text" id="add-display-name" placeholder="مثلاً: OpenRouter">
-          </div>
-          <div class="form-group">
-            <label>آدرس پایه API</label>
-            <input type="url" id="add-base-url" placeholder="https://api.example.com" required>
-          </div>
-          <div class="form-group">
-            <label>متغیر محیطی کلید API</label>
-            <input type="text" id="add-api-key-env" placeholder="مثلاً: OPENROUTER_API_KEY" required>
-          </div>
-          <div class="form-group">
-            <label>فعال است</label>
-            <select id="add-enabled">
-              <option value="true">بله</option>
-              <option value="false">خیر</option>
-            </select>
-          </div>
-          <button type="button" id="add-provider-btn">افزودن ارائه‌دهنده</button>
-          <div id="add-provider-message" class="message"></div>
-        </form>
-      </div>
+      
+      
+<!-- Add Provider Card -->
+<div class="card" id="add-provider-card">
+  <h3>افزودن ارائه‌دهنده</h3>
+
+  <p class="muted">
+    مشخصات ارائه‌دهنده را به صورت JSON وارد کن. ابتدا مسیرهای کشف مدل را
+    آزمایش کن؛ سپس در صورت یافتن مدل معتبر، امکان افزودن فعال می‌شود.
+  </p>
+
+  <div class="form-group">
+    <label for="provider-spec-json">مشخصات Provider (JSON)</label>
+
+    <textarea
+      id="provider-spec-json"
+      rows="24"
+      spellcheck="false"
+      dir="ltr"
+      style="
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        resize: vertical;
+      "
+    >{
+  "provider_id": "example",
+  "display_name": "Example Provider",
+  "base_url": "https://api.example.com/v1",
+  "api_key_env": "EXAMPLE_API_KEY",
+  "enabled": true,
+  "authentication": {
+    "mode": "bearer",
+    "header_name": "Authorization"
+  },
+  "discovery": {
+    "public": {
+      "enabled": true,
+      "path": "/models"
+    },
+    "authenticated": {
+      "enabled": true,
+      "path": "/models"
+    }
+  },
+  "response_parser": {
+    "models_key": "data",
+    "id_field": "id",
+    "name_field": "name"
+  }
+}</textarea>
+  </div>
+
+  <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px;">
+    <button type="button" id="discover-provider-btn">
+      آزمایش و کشف مدل‌ها
+    </button>
+
+    <button
+      type="button"
+      id="add-provider-btn"
+      class="secondary"
+      disabled
+    >
+      افزودن Provider
+    </button>
+  </div>
+
+  <div id="provider-discovery-results" style="margin-top: 18px;"></div>
+
+  <div id="add-provider-message" class="message"></div>
+</div>
+
+
+      
       <!-- Remove Provider Card -->
       <div class="card" id="remove-provider-card">
         <h3>حذف ارائه‌دهنده</h3>
@@ -617,53 +666,323 @@ async function updateProviderInfo() {
 /* =========================================================
    Add Provider Form
    ========================================================= */
+/* =========================================================
+   Add Provider: JSON Editor, Discovery and Save
+   ========================================================= */
 
-document.getElementById("add-provider-btn").addEventListener("click", async () => {
-    const btn = document.getElementById("add-provider-btn");
-    const message = document.getElementById("add-provider-message");
-    message.textContent = "";
-    message.className = "message";
+let providerDiscoverySnapshot = null;
+
+const providerSpecEditor = document.getElementById("provider-spec-json");
+const discoverProviderBtn = document.getElementById("discover-provider-btn");
+const addProviderBtn = document.getElementById("add-provider-btn");
+const providerDiscoveryResults = document.getElementById("provider-discovery-results");
+const addProviderMessage = document.getElementById("add-provider-message");
+
+
+function setProviderMessage(message, type = "") {
+    addProviderMessage.textContent = message;
+    addProviderMessage.className = "message" + (type ? " " + type : "");
+}
+
+
+function invalidateProviderDiscovery() {
+    providerDiscoverySnapshot = null;
+    addProviderBtn.disabled = true;
+
+    providerDiscoveryResults.replaceChildren();
+    setProviderMessage("مشخصات تغییر کرده است؛ برای ادامه دوباره آزمایش کن.");
+}
+
+
+function createDiscoveryRoutePanel(title, route) {
+    const panel = document.createElement("div");
+
+    panel.style.cssText = `
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 14px;
+        margin-top: 10px;
+    `;
+
+    const heading = document.createElement("h4");
+    heading.textContent = title;
+    heading.style.margin = "0 0 8px 0";
+
+    const status = document.createElement("div");
+    status.textContent = !route.enabled
+        ? "غیرفعال"
+        : route.success
+            ? "موفق"
+            : "ناموفق";
+
+    status.style.color = !route.enabled
+        ? "#64748b"
+        : route.success
+            ? "#166534"
+            : "#dc2626";
+
+    const count = document.createElement("div");
+    count.className = "muted";
+    count.textContent =
+        "تعداد مدل‌های کشف‌شده: " +
+        Number(route.model_count || 0).toLocaleString("fa-IR");
+
+    panel.append(heading, status, count);
+
+    if (route.error) {
+        const error = document.createElement("div");
+        error.className = "muted";
+        error.textContent = "جزئیات: " + route.error;
+        panel.appendChild(error);
+    }
+
+    if (Array.isArray(route.samples) && route.samples.length > 0) {
+        const sampleTitle = document.createElement("div");
+        sampleTitle.style.marginTop = "10px";
+        sampleTitle.style.fontWeight = "600";
+        sampleTitle.textContent = "نمونه مدل‌ها:";
+
+        panel.appendChild(sampleTitle);
+
+        const list = document.createElement("ul");
+        list.style.direction = "ltr";
+        list.style.textAlign = "left";
+        list.style.overflowWrap = "anywhere";
+
+        route.samples.slice(0, 3).forEach(model => {
+            const item = document.createElement("li");
+            item.textContent = model.name || model.id || "Unknown model";
+            list.appendChild(item);
+        });
+
+        panel.appendChild(list);
+    }
+
+    return panel;
+}
+
+
+function renderProviderDiscovery(result) {
+    providerDiscoveryResults.replaceChildren();
+
+    const summary = document.createElement("div");
+    summary.style.cssText = `
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 12px;
+    `;
+
+    const providerName = document.createElement("div");
+    providerName.style.fontWeight = "700";
+    providerName.textContent =
+        result.display_name || result.provider_id || "Provider";
+
+    const uniqueCount = document.createElement("div");
+    uniqueCount.style.fontSize = "22px";
+    uniqueCount.style.fontWeight = "700";
+    uniqueCount.style.marginTop = "8px";
+
+    uniqueCount.textContent =
+        "مدل‌های یکتای کشف‌شده: " +
+        Number(result.unique_model_count || 0).toLocaleString("fa-IR");
+
+    summary.append(providerName, uniqueCount);
+    providerDiscoveryResults.appendChild(summary);
+
+    const routes = result.routes || {};
+
+    providerDiscoveryResults.appendChild(
+        createDiscoveryRoutePanel("مسیر Public", routes.public || {})
+    );
+
+    providerDiscoveryResults.appendChild(
+        createDiscoveryRoutePanel("مسیر Authenticated", routes.authenticated || {})
+    );
+}
+
+
+/* ---------------------------------------------------------
+   1. Any JSON edit invalidates the previous discovery result
+   --------------------------------------------------------- */
+
+providerSpecEditor.addEventListener("input", () => {
+    invalidateProviderDiscovery();
+});
+
+
+/* ---------------------------------------------------------
+   2. Discover Provider Models
+   --------------------------------------------------------- */
+
+discoverProviderBtn.addEventListener("click", async () => {
+    const btn = discoverProviderBtn;
 
     btn.disabled = true;
-    btn.textContent = "در حال پردازش...";
+    addProviderBtn.disabled = true;
+
+    providerDiscoverySnapshot = null;
+    providerDiscoveryResults.replaceChildren();
+    setProviderMessage("");
+
+    let spec;
 
     try {
-        const provider_id = document.getElementById("add-provider-id").value.trim();
-        const display_name = document.getElementById("add-display-name").value.trim();
-        const base_url = document.getElementById("add-base-url").value.trim();
-        const api_key_env = document.getElementById("add-api-key-env").value.trim();
-        const enabled = document.getElementById("add-enabled").value === "true";
+        spec = JSON.parse(providerSpecEditor.value);
+    } catch (error) {
+        setProviderMessage(
+            "JSON معتبر نیست: " + error.message,
+            "error"
+        );
 
-        const body = { provider_id, display_name, base_url, api_key_env, enabled };
+        btn.disabled = false;
+        return;
+    }
 
-        const response = await fetch("/api/providers", {
+    if (!spec || typeof spec !== "object" || Array.isArray(spec)) {
+        setProviderMessage(
+            "ریشه JSON باید یک Object باشد.",
+            "error"
+        );
+
+        btn.disabled = false;
+        return;
+    }
+
+    btn.textContent = "در حال آزمایش...";
+
+    try {
+        const response = await fetch("/api/providers/discover", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(spec)
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.detail || "خطای نامشخص");
+            throw new Error(data.detail || "Discovery failed.");
         }
 
-        message.textContent = "ارائه‌دهنده با موفقیت افزوده شد.";
-        message.className = "message success";
+        renderProviderDiscovery(data);
 
-        // Reset form
-        document.getElementById("add-provider-form").reset();
+        if (data.can_add && Number(data.unique_model_count) > 0) {
+            // Keep the exact tested specification.
+            providerDiscoverySnapshot = providerSpecEditor.value;
 
-        // Reload providers and catalog
+            addProviderBtn.disabled = false;
+
+            setProviderMessage(
+                "آزمایش موفق بود. می‌توانی Provider را اضافه کنی.",
+                "success"
+            );
+        } else {
+            setProviderMessage(
+                "هیچ مدل معتبری پیدا نشد؛ Provider قابل افزودن نیست.",
+                "error"
+            );
+        }
+
+    } catch (error) {
+        providerDiscoverySnapshot = null;
+        addProviderBtn.disabled = true;
+
+        setProviderMessage(
+            "خطا در آزمایش Provider: " + error.message,
+            "error"
+        );
+
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "آزمایش و کشف مدل‌ها";
+    }
+});
+
+
+/* ---------------------------------------------------------
+   3. Add Provider
+   --------------------------------------------------------- */
+
+addProviderBtn.addEventListener("click", async () => {
+    const btn = addProviderBtn;
+
+    setProviderMessage("");
+
+    if (
+        providerDiscoverySnapshot === null ||
+        providerDiscoverySnapshot !== providerSpecEditor.value
+    ) {
+        providerDiscoverySnapshot = null;
+        btn.disabled = true;
+
+        setProviderMessage(
+            "ابتدا مشخصات را دوباره آزمایش کن.",
+            "error"
+        );
+        return;
+    }
+
+    let spec;
+
+    try {
+        spec = JSON.parse(providerSpecEditor.value);
+    } catch (error) {
+        invalidateProviderDiscovery();
+
+        setProviderMessage(
+            "JSON معتبر نیست: " + error.message,
+            "error"
+        );
+        return;
+    }
+
+    btn.disabled = true;
+    discoverProviderBtn.disabled = true;
+    btn.textContent = "در حال افزودن...";
+
+    try {
+        const response = await fetch("/api/providers", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(spec)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || "Provider could not be added.");
+        }
+
+        providerDiscoverySnapshot = null;
+
+        setProviderMessage(
+            "Provider با موفقیت افزوده شد. تعداد مدل‌ها: " +
+            Number(data.provider.model_count || 0).toLocaleString("fa-IR"),
+            "success"
+        );
+
+        // Refresh the existing dashboard sections.
         await loadProviders();
         await loadCatalog();
 
     } catch (error) {
-        message.textContent = "خطا: " + error.message;
-        message.className = "message error";
+        setProviderMessage(
+            "خطا در افزودن Provider: " + error.message,
+            "error"
+        );
+
     } finally {
-        btn.disabled = false;
-        btn.textContent = "افزودن ارائه‌دهنده";
+        discoverProviderBtn.disabled = false;
+        btn.textContent = "افزودن Provider";
+
+        // A fresh discovery is required before another Add.
+        btn.disabled = true;
     }
 });
 
