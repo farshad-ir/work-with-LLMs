@@ -534,9 +534,7 @@ def select_next_model() -> dict[str, Any] | None:
             if model is not None:
                 _log_event("SEL", "CFM", model["key"])
 
-                old_pointer = int(
-                    state.get("next_rotation_group_index", 0)
-                )
+                old_pointer = group_index
 
                 _advance_rotation_group(state, "confirmed_models")
 
