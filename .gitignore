@@ -14,3 +14,7 @@ build/
 config.json
 
 data/
+
+# Local backup files
+*.bak
+*.bak-*

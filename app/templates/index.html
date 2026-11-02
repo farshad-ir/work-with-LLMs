@@ -135,6 +135,33 @@
       gap: 16px;
       margin-top: 12px;
     }
+    #add-provider-card {
+      display: none !important;
+    }
+    #remove-provider-card > h3 {
+      display: inline-block;
+      margin: 0 16px 0 0;
+      vertical-align: middle;
+    }
+    #remove-provider-form {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      vertical-align: middle;
+    }
+    #remove-provider-form .form-group {
+      margin-top: 0;
+      min-width: 210px;
+    }
+    #remove-provider-info {
+      margin-top: 0 !important;
+      min-width: 220px;
+    }
+    #remove-provider-form .message {
+      margin: 0;
+    }
+
     .provider-card {
       background: #f8fafc;
       padding: 16px;
@@ -455,6 +482,9 @@ async function loadCatalog() {
         const models = Array.isArray(catalog.models) ? catalog.models : [];
         catalogModels = models;
 
+        // Refresh provider-specific confirmed model count.
+        await updateProviderInfo();
+
         updateCatalogCounts(models);
         renderCatalogTable(models);
         renderRotationPanel();
@@ -657,7 +687,12 @@ async function updateProviderInfo() {
 
         document.getElementById("remove-provider-name").textContent = (p.display_name || key) + " — " + key;
         document.getElementById("remove-provider-models").textContent = "مدل‌ها: " + (p.model_count ?? 0);
-        document.getElementById("remove-provider-confirmed").textContent = "مدل‌های تاییدشده: در حال بارگذاری...";
+        const confirmedCount = catalogModels.filter(
+            model => model.provider === key && getModelStatus(model) === "confirmed"
+        ).length;
+
+        document.getElementById("remove-provider-confirmed").textContent =
+            "مدل‌های تاییدشده: " + confirmedCount.toLocaleString("fa-IR");
     } catch (error) {
         console.error(error);
     }
