@@ -673,6 +673,17 @@ def record_request_result(
             model["test_status"] = "failed"
             model["failure_at"] = _now()
 
+
+        if was_confirmed_turn:
+            _log_event(
+                "RES",
+                "CFM",
+                f"CONFIRMED_TEST_END | {result_key} | "
+                f"success={success} | "
+                f"lifetime_chars={model.get('lifetime_chars')} | "
+                f"final_status={model.get('test_status')}"
+            )
+
         if state.get("current_model_key") == result_key:
             state["current_model_key"] = None
 
