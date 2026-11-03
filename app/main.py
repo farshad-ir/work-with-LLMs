@@ -529,8 +529,6 @@ async def remove_provider(provider_name: str):
 
 @app.post("/api/mt5/ingest")
 async def mt5_ingest(request: Request):
-    """Receive arbitrary JSON from MetaTrader and print it on the server."""
-
     try:
         data = await request.json()
     except Exception:
@@ -538,11 +536,36 @@ async def mt5_ingest(request: Request):
             status_code=400,
             detail="Request body must be valid JSON.",
         )
-        
-    print(json.dumps(data, ensure_ascii=False, indent=2), flush=True)
+
+
+
+    if isinstance(data, dict) and isinstance(data.get("candles"), list):
+        symbol = data.get("symbol", "")
+        timeframe = data.get("timeframe", "")
+        candles = data["candles"]
+
+        print("Time, Symbol, Timeframe, Open, High, Low, Close", flush=True)
+
+        for candle in candles:
+            if not isinstance(candle, dict):
+                print(f"Invalid candle: {candle}", flush=True)
+                continue
+
+            print(
+                f"{candle.get('time', '')}, "
+                f"{symbol}, "
+                f"{timeframe}, "
+                f"{candle.get('open', '')}, "
+                f"{candle.get('high', '')}, "
+                f"{candle.get('low', '')}, "
+                f"{candle.get('close', '')}",
+                flush=True,
+            )
+    else:
+        print(json.dumps(data, ensure_ascii=False, indent=2), flush=True)
+
+
     return {"success": True}
-
-
 
 
 @app.get("/api/thinker-room/catalog")
