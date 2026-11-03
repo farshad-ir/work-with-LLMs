@@ -529,9 +529,8 @@ async def remove_provider(provider_name: str):
 
 @app.post("/api/mt5/ingest")
 async def mt5_ingest(request: Request):
-    """Receive OHLC data from MetaTrader 5 Expert Advisor via DLL."""
+    """Receive arbitrary JSON from MetaTrader and print it on the server."""
 
-    # Parse JSON body
     try:
         data = await request.json()
     except Exception:
@@ -539,114 +538,14 @@ async def mt5_ingest(request: Request):
             status_code=400,
             detail="Request body must be valid JSON.",
         )
+        
+    print(json.dumps(data, ensure_ascii=False, indent=2), flush=True)
+    return {"success": True}
 
-    if not isinstance(data, dict):
-        raise HTTPException(
-            status_code=400,
-            detail="Request body must be a JSON object.",
-        )
 
-    # ── Validate required fields ─────────────────────────────────────
-    required_fields = ["request_id", "symbol", "timeframe", "timestamp", "candle_count", "candles"]
-    missing = [field for field in required_fields if field not in data]
-    if missing:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Missing required fields: {', '.join(missing)}",
-        )
 
-    request_id = str(data["request_id"]).strip()
-    symbol = str(data["symbol"]).strip()
-    timeframe = str(data["timeframe"]).strip()
-    timestamp = str(data["timestamp"]).strip()
-    candle_count = data["candle_count"]
-    candles = data["candles"]
-
-    # Validate candle_count
-    if not isinstance(candle_count, int):
-        raise HTTPException(
-            status_code=400,
-            detail="candle_count must be an integer.",
-        )
-
-    # Validate candles array
-    if not isinstance(candles, list):
-        raise HTTPException(
-            status_code=400,
-            detail="candles must be an array.",
-        )
-
-    # Verify candle count matches
-    if len(candles) != candle_count:
-        raise HTTPException(
-            status_code=400,
-            detail=f"candle_count ({candle_count}) does not match actual candles length ({len(candles)}).",
-        )
-
-    # Verify exactly 10 candles
-    if candle_count != 10:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Expected exactly 10 candles, got {candle_count}.",
-        )
-
-    # Validate each candle
-    for i, candle in enumerate(candles):
-        if not isinstance(candle, dict):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Candle at index {i} must be an object.",
-            )
-
-        ohlc_fields = ["time", "open", "high", "low", "close"]
-        missing_ohlc = [field for field in ohlc_fields if field not in candle]
-        if missing_ohlc:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Candle at index {i} missing fields: {', '.join(missing_ohlc)}.",
-            )
-
-        # Validate numeric fields
-        for field in ["open", "high", "low", "close"]:
-            value = candle[field]
-            if not isinstance(value, (int, float)):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Candle {i} field '{field}' must be numeric.",
-                )
-
-        # Validate time field
-        time_value = candle["time"]
-        if not isinstance(time_value, str) or not time_value.strip():
-            raise HTTPException(
-                status_code=400,
-                detail=f"Candle {i} field 'time' must be a non-empty string.",
-            )
-
-    # ── Log successful reception ────────────────────────────────────
-    first_candle_time = candles[0].get("time", "unknown")
-    last_candle_time = candles[-1].get("time", "unknown")
-    reception_time = datetime.now(timezone.utc).isoformat()
-
-    print(
-        f"[MT5-INGEST] request_id={request_id} "
-        f"symbol={symbol} "
-        f"timeframe={timeframe} "
-        f"candle_count={candle_count} "
-        f"first_candle={first_candle_time} "
-        f"last_candle={last_candle_time} "
-        f"received_at={reception_time}"
-    )
-
-    # ── Return success response ────────────────────────────────────
-    return {
-        "success": True,
-        "request_id": request_id,
-        "received_candles": candle_count,
-    }
 
 @app.get("/api/thinker-room/catalog")
-async def large_catalog():@app.get("/api/thinker-room/catalog")
 async def large_catalog():
     return load_large_catalog()
 
