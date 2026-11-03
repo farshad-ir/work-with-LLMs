@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import asyncio
 import re
@@ -527,7 +527,126 @@ async def remove_provider(provider_name: str):
     }
 
 
+@app.post("/api/mt5/ingest")
+async def mt5_ingest(request: Request):
+    """Receive OHLC data from MetaTrader 5 Expert Advisor via DLL."""
+
+    # Parse JSON body
+    try:
+        data = await request.json()
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Request body must be valid JSON.",
+        )
+
+    if not isinstance(data, dict):
+        raise HTTPException(
+            status_code=400,
+            detail="Request body must be a JSON object.",
+        )
+
+    # ── Validate required fields ─────────────────────────────────────
+    required_fields = ["request_id", "symbol", "timeframe", "timestamp", "candle_count", "candles"]
+    missing = [field for field in required_fields if field not in data]
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing required fields: {', '.join(missing)}",
+        )
+
+    request_id = str(data["request_id"]).strip()
+    symbol = str(data["symbol"]).strip()
+    timeframe = str(data["timeframe"]).strip()
+    timestamp = str(data["timestamp"]).strip()
+    candle_count = data["candle_count"]
+    candles = data["candles"]
+
+    # Validate candle_count
+    if not isinstance(candle_count, int):
+        raise HTTPException(
+            status_code=400,
+            detail="candle_count must be an integer.",
+        )
+
+    # Validate candles array
+    if not isinstance(candles, list):
+        raise HTTPException(
+            status_code=400,
+            detail="candles must be an array.",
+        )
+
+    # Verify candle count matches
+    if len(candles) != candle_count:
+        raise HTTPException(
+            status_code=400,
+            detail=f"candle_count ({candle_count}) does not match actual candles length ({len(candles)}).",
+        )
+
+    # Verify exactly 10 candles
+    if candle_count != 10:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Expected exactly 10 candles, got {candle_count}.",
+        )
+
+    # Validate each candle
+    for i, candle in enumerate(candles):
+        if not isinstance(candle, dict):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Candle at index {i} must be an object.",
+            )
+
+        ohlc_fields = ["time", "open", "high", "low", "close"]
+        missing_ohlc = [field for field in ohlc_fields if field not in candle]
+        if missing_ohlc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Candle at index {i} missing fields: {', '.join(missing_ohlc)}.",
+            )
+
+        # Validate numeric fields
+        for field in ["open", "high", "low", "close"]:
+            value = candle[field]
+            if not isinstance(value, (int, float)):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Candle {i} field '{field}' must be numeric.",
+                )
+
+        # Validate time field
+        time_value = candle["time"]
+        if not isinstance(time_value, str) or not time_value.strip():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Candle {i} field 'time' must be a non-empty string.",
+            )
+
+    # ── Log successful reception ────────────────────────────────────
+    first_candle_time = candles[0].get("time", "unknown")
+    last_candle_time = candles[-1].get("time", "unknown")
+    reception_time = datetime.now(timezone.utc).isoformat()
+
+    print(
+        f"[MT5-INGEST] request_id={request_id} "
+        f"symbol={symbol} "
+        f"timeframe={timeframe} "
+        f"candle_count={candle_count} "
+        f"first_candle={first_candle_time} "
+        f"last_candle={last_candle_time} "
+        f"received_at={reception_time}"
+    )
+
+    # ── Return success response ────────────────────────────────────
+    return {
+        "success": True,
+        "request_id": request_id,
+        "received_candles": candle_count,
+    }
+
 @app.get("/api/thinker-room/catalog")
+async def large_catalog():@app.get("/api/thinker-room/catalog")
 async def large_catalog():
     return load_large_catalog()
 
@@ -613,7 +732,7 @@ def _record_rotation_result(
     error_type: str | None = None,
     error_message: str | None = None,
 ) -> None:
-    """ثبت نتیجه؛ خطای ثبت نباید پاسخ جاری Codex را خراب کند."""
+    """Ø«Ø¨Øª Ù†ØªÛŒØ¬Ù‡Ø› Ø®Ø·Ø§ÛŒ Ø«Ø¨Øª Ù†Ø¨Ø§ÛŒØ¯ Ù¾Ø§Ø³Ø® Ø¬Ø§Ø±ÛŒ Codex Ø±Ø§ Ø®Ø±Ø§Ø¨ Ú©Ù†Ø¯."""
     try:
         result = record_request_result(
             model_key=model_key,
@@ -636,7 +755,7 @@ def _record_rotation_result(
 
 
 def _is_permanent_model_error(status_code: int, content: bytes) -> bool:
-    """فقط خطاهایی که به‌وضوح به مدل ناموجود یا نامعتبر مربوط‌اند."""
+    """ÙÙ‚Ø· Ø®Ø·Ø§Ù‡Ø§ÛŒÛŒ Ú©Ù‡ Ø¨Ù‡â€ŒÙˆØ¶ÙˆØ­ Ø¨Ù‡ Ù…Ø¯Ù„ Ù†Ø§Ù…ÙˆØ¬ÙˆØ¯ ÛŒØ§ Ù†Ø§Ù…Ø¹ØªØ¨Ø± Ù…Ø±Ø¨ÙˆØ·â€ŒØ§Ù†Ø¯."""
     if status_code in (404, 410):
         return True
 
@@ -657,7 +776,7 @@ def _is_permanent_model_error(status_code: int, content: bytes) -> bool:
 
 
 def _response_output_char_count(response: dict) -> int:
-    """شمارش کاراکترهای متن خروجی و آرگومان‌های فراخوانی ابزارها."""
+    """Ø´Ù…Ø§Ø±Ø´ Ú©Ø§Ø±Ø§Ú©ØªØ±Ù‡Ø§ÛŒ Ù…ØªÙ† Ø®Ø±ÙˆØ¬ÛŒ Ùˆ Ø¢Ø±Ú¯ÙˆÙ…Ø§Ù†â€ŒÙ‡Ø§ÛŒ ÙØ±Ø§Ø®ÙˆØ§Ù†ÛŒ Ø§Ø¨Ø²Ø§Ø±Ù‡Ø§."""
     total = 0
 
     for item in response.get("output", []):
@@ -692,7 +811,7 @@ async def codex_responses(request: Request):
         ) from None
 
 
-    # تبدیل درخواست ورودی؛ محتوای درخواست در تمام تلاش‌ها ثابت می‌ماند.
+    # ØªØ¨Ø¯ÛŒÙ„ Ø¯Ø±Ø®ÙˆØ§Ø³Øª ÙˆØ±ÙˆØ¯ÛŒØ› Ù…Ø­ØªÙˆØ§ÛŒ Ø¯Ø±Ø®ÙˆØ§Ø³Øª Ø¯Ø± ØªÙ…Ø§Ù… ØªÙ„Ø§Ø´â€ŒÙ‡Ø§ Ø«Ø§Ø¨Øª Ù…ÛŒâ€ŒÙ…Ø§Ù†Ø¯.
     chat_body = responses_to_chat(body)
     streaming = bool(chat_body.get("stream"))
 
@@ -709,12 +828,12 @@ async def codex_responses(request: Request):
 
     while True:
 
-        # انتخاب مدل برای این تلاش
+        # Ø§Ù†ØªØ®Ø§Ø¨ Ù…Ø¯Ù„ Ø¨Ø±Ø§ÛŒ Ø§ÛŒÙ† ØªÙ„Ø§Ø´
         selected_model = select_next_model()
 
         if selected_model is None:
-            # اگر مدل‌های قبلی خطای قطعی داده‌اند، آخرین خطای واقعی
-            # ارائه‌دهنده را برگردان؛ در غیر این صورت چرخه تمام شده است.
+            # Ø§Ú¯Ø± Ù…Ø¯Ù„â€ŒÙ‡Ø§ÛŒ Ù‚Ø¨Ù„ÛŒ Ø®Ø·Ø§ÛŒ Ù‚Ø·Ø¹ÛŒ Ø¯Ø§Ø¯Ù‡â€ŒØ§Ù†Ø¯ØŒ Ø¢Ø®Ø±ÛŒÙ† Ø®Ø·Ø§ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ
+            # Ø§Ø±Ø§Ø¦Ù‡â€ŒØ¯Ù‡Ù†Ø¯Ù‡ Ø±Ø§ Ø¨Ø±Ú¯Ø±Ø¯Ø§Ù†Ø› Ø¯Ø± ØºÛŒØ± Ø§ÛŒÙ† ØµÙˆØ±Øª Ú†Ø±Ø®Ù‡ ØªÙ…Ø§Ù… Ø´Ø¯Ù‡ Ø§Ø³Øª.
             if last_provider_error is not None:
                 content, status_code, content_type = last_provider_error
 
@@ -769,7 +888,7 @@ async def codex_responses(request: Request):
                 ),
             )
 
-        # در هر تلاش فقط مدل مقصد تغییر می‌کند.
+        # Ø¯Ø± Ù‡Ø± ØªÙ„Ø§Ø´ ÙÙ‚Ø· Ù…Ø¯Ù„ Ù…Ù‚ØµØ¯ ØªØºÛŒÛŒØ± Ù…ÛŒâ€ŒÚ©Ù†Ø¯.
         chat_body["model"] = model_id
 
         headers = {
@@ -820,7 +939,7 @@ async def codex_responses(request: Request):
 
             continue
 
-        # خطای ارائه‌دهنده؛ هنوز هیچ پاسخی به Codex ارسال نشده است.
+        # Ø®Ø·Ø§ÛŒ Ø§Ø±Ø§Ø¦Ù‡â€ŒØ¯Ù‡Ù†Ø¯Ù‡Ø› Ù‡Ù†ÙˆØ² Ù‡ÛŒÚ† Ù¾Ø§Ø³Ø®ÛŒ Ø¨Ù‡ Codex Ø§Ø±Ø³Ø§Ù„ Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.
         if upstream.status_code >= 400:
             try:
                 content = await upstream.aread()
@@ -863,10 +982,10 @@ async def codex_responses(request: Request):
             continue
         
 
-        # پاسخ موفق HTTP داریم؛ ادامهٔ پردازش با همین مدل انجام می‌شود.
+        # Ù¾Ø§Ø³Ø® Ù…ÙˆÙÙ‚ HTTP Ø¯Ø§Ø±ÛŒÙ…Ø› Ø§Ø¯Ø§Ù…Ù‡Ù” Ù¾Ø±Ø¯Ø§Ø²Ø´ Ø¨Ø§ Ù‡Ù…ÛŒÙ† Ù…Ø¯Ù„ Ø§Ù†Ø¬Ø§Ù… Ù…ÛŒâ€ŒØ´ÙˆØ¯.
         break
 
-    # پاسخ غیرجریانی
+    # Ù¾Ø§Ø³Ø® ØºÛŒØ±Ø¬Ø±ÛŒØ§Ù†ÛŒ
     if not streaming:
         try:
             upstream_payload = upstream.json()
@@ -909,7 +1028,7 @@ async def codex_responses(request: Request):
             media_type="application/json",
         )
 
-    # پاسخ جریانی
+    # Ù¾Ø§Ø³Ø® Ø¬Ø±ÛŒØ§Ù†ÛŒ
     async def convert_stream():
         converter = ResponsesStreamConverter()
         event_lines = []
@@ -958,7 +1077,7 @@ async def codex_responses(request: Request):
                     for output_event in converter.feed(parsed):
                         yield output_event
 
-            # تبدیل جریان را مانند قبل خاتمه می‌دهیم.
+            # ØªØ¨Ø¯ÛŒÙ„ Ø¬Ø±ÛŒØ§Ù† Ø±Ø§ Ù…Ø§Ù†Ù†Ø¯ Ù‚Ø¨Ù„ Ø®Ø§ØªÙ…Ù‡ Ù…ÛŒâ€ŒØ¯Ù‡ÛŒÙ….
             for output_event in converter.finish():
                 yield output_event
 
