@@ -658,7 +658,7 @@ def record_request_result(
             model["test_status"] = "confirmed"
             model["failure_at"] = None
         else:
-            model["test_status"] = "confirmed"
+            model["test_status"] = "failed"
             model["failure_at"] = _now()
 
 
