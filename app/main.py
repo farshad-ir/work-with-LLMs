@@ -4,6 +4,9 @@ import asyncio
 import re
 from datetime import datetime, timezone
 
+from collections import defaultdict, deque
+from threading import Lock
+
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -527,6 +530,50 @@ async def remove_provider(provider_name: str):
     }
 
 
+
+
+
+# MT5 delayed response queue
+mt5_response_queues = defaultdict(deque)
+mt5_response_lock = Lock()
+
+
+@app.post("/api/mt5/responses/{client_id}")
+async def mt5_enqueue_response(client_id: str, request: Request):
+    try:
+        data = await request.json()
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Request body must be valid JSON.",
+        )
+
+    with mt5_response_lock:
+        mt5_response_queues[client_id].append(data)
+
+    return {
+        "success": True,
+        "client_id": client_id,
+        "queued": True,
+        "queue_size": len(mt5_response_queues[client_id]),
+    }
+
+
+@app.get("/api/mt5/responses/{client_id}")
+async def mt5_get_responses(client_id: str):
+    with mt5_response_lock:
+        queue = mt5_response_queues[client_id]
+
+        responses = list(queue)
+        queue.clear()
+
+    return {
+        "success": True,
+        "client_id": client_id,
+        "count": len(responses),
+        "responses": responses,
+    }
+
 @app.post("/api/mt5/ingest")
 async def mt5_ingest(request: Request):
     try:
@@ -544,7 +591,7 @@ async def mt5_ingest(request: Request):
         timeframe = data.get("timeframe", "")
         candles = data["candles"]
 
-        print("Time, Symbol, Timeframe, Open, High, Low, Close", flush=True)
+        print("[ header ] Time, Symbol, Timeframe, Open, High, Low, Close", flush=True)
 
         for candle in candles:
             if not isinstance(candle, dict):
@@ -552,6 +599,7 @@ async def mt5_ingest(request: Request):
                 continue
 
             print(
+                f"[ MT-5 ] "
                 f"{candle.get('time', '')}, "
                 f"{symbol}, "
                 f"{timeframe}, "
