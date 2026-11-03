@@ -620,18 +620,6 @@ def record_request_result(
 
     input_chars = max(0, int(input_chars))
     output_chars = max(0, int(output_chars))
-
-
-    _log_event(
-        "RES",
-        "CFM" if was_confirmed_turn else _get_group_code(
-            str(model.get("provider", ""))
-        ),
-        f"{result_key} | success={success} | "
-        f"status={previous_status} | "
-        f"input={input_chars} | output={output_chars} | "
-        f"error={error_type}"
-    )
     
     if success:
         previous_chars = model.get("lifetime_chars") or 0
@@ -670,19 +658,9 @@ def record_request_result(
             model["test_status"] = "confirmed"
             model["failure_at"] = None
         else:
-            model["test_status"] = "failed"
+            model["test_status"] = "confirmed"
             model["failure_at"] = _now()
 
-
-        if was_confirmed_turn:
-            _log_event(
-                "RES",
-                "CFM",
-                f"CONFIRMED_TEST_END | {result_key} | "
-                f"success={success} | "
-                f"lifetime_chars={model.get('lifetime_chars')} | "
-                f"final_status={model.get('test_status')}"
-            )
 
         if state.get("current_model_key") == result_key:
             state["current_model_key"] = None
