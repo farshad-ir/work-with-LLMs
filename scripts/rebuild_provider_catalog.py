@@ -10,6 +10,11 @@ sys.path.insert(0, str(PROJECT_DIR))
 from app.config import PROJECT_DIR, load_config, save_config, get_env_value
 from app.thinker_room import rebuild_large_catalog
 
+from app.ultra_models import (
+    ULTRA_TRANSPORT_PROVIDER,
+    get_ultra_models,
+    is_ultra_model,
+)
 
 CONFIG_PATH = PROJECT_DIR / "config.json"
 CATALOG_PATH = PROJECT_DIR / "data" / "large_catalog.json"
@@ -23,9 +28,6 @@ async def main():
         provider["models"] = []
         provider["enabled"] = False
 
-    # خالی کردن مسیرهای Routing
-    config["routing"]["primary"] = None
-    config["routing"]["fallbacks"] = []
 
     save_config(config)
 
@@ -74,13 +76,31 @@ async def main():
                     if not isinstance(model_id, str) or not model_id.strip():
                         continue
 
+                    # مدل‌های Ultra در فهرست عادی NVIDIA ثبت نمی‌شوند.
+                    if (
+                        provider_name.strip().lower().replace("-", "_")
+                        in {ULTRA_TRANSPORT_PROVIDER, "nvidia_nim"}
+                        and is_ultra_model(model_id)
+                    ):
+                        continue
+
                     models.append({
                         "id": model_id,
                         "name": item.get("name") or model_id,
                     })
 
                 provider["models"] = models
-                provider["enabled"] = bool(models)
+
+
+                is_ultra_provider = (
+                    provider_name.strip().lower().replace("-", "_")
+                    in {ULTRA_TRANSPORT_PROVIDER, "nvidia_nim"}
+                )
+
+                provider["enabled"] = bool(models) or (
+                    is_ultra_provider and bool(get_ultra_models())
+                )
+
 
                 print(f"OK: {len(models)} models")
 

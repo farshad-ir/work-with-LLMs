@@ -5,6 +5,13 @@ from pathlib import Path
 from typing import Any
 import json
 
+from app.ultra_models import (
+    ULTRA_TRANSPORT_PROVIDER,
+    get_ultra_models,
+    is_ultra_model,
+    make_ultra_model_key,
+)
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -208,6 +215,14 @@ def rebuild_large_catalog(config: dict[str, Any]) -> dict[str, Any]:
             if not model_id:
                 continue
 
+
+            # Ultra models must not be registered under the regular NVIDIA key.
+            if (
+                provider == ULTRA_TRANSPORT_PROVIDER
+                and is_ultra_model(model_id)
+            ):
+                continue
+
             key = _model_key(provider, model_id)
 
             # از ثبت دوبارهٔ یک مدل جلوگیری می‌کنیم.
@@ -229,6 +244,34 @@ def rebuild_large_catalog(config: dict[str, Any]) -> dict[str, Any]:
             _copy_test_history(model, previous_model)
 
             catalog_models.append(model)
+
+    # Add curated Ultra models
+    for source_model in get_ultra_models(enabled_only=True):
+        model_id = str(source_model.get("id") or "").strip()
+
+        if not model_id:
+            continue
+
+        key = make_ultra_model_key(model_id)
+
+        if key in seen_keys:
+            continue
+
+        seen_keys.add(key)
+
+        model = {
+            "key": key,
+            "provider": ULTRA_TRANSPORT_PROVIDER,
+            "id": model_id,
+            "name": str(source_model.get("name") or model_id),
+        }
+
+        previous_model = previous_by_key.get(key)
+        _copy_test_history(model, previous_model)
+
+        catalog_models.append(model)
+
+
 
     catalog = {
         "model_count": len(catalog_models),
