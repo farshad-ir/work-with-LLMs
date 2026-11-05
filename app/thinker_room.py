@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,7 +11,7 @@ DATA_DIR = BASE_DIR / "data"
 LARGE_CATALOG_PATH = DATA_DIR / "large_catalog.json"
 
 
-# اطلاعاتی که با Refresh ارائه‌دهندگان باید حفظ شوند.
+# Ø§Ø·Ù„Ø§Ø¹Ø§ØªÛŒ Ú©Ù‡ Ø¨Ø§ Refresh Ø§Ø±Ø§Ø¦Ù‡â€ŒØ¯Ù‡Ù†Ø¯Ú¯Ø§Ù† Ø¨Ø§ÛŒØ¯ Ø­ÙØ¸ Ø´ÙˆÙ†Ø¯.
 PRESERVED_MODEL_FIELDS = (
     "lifetime_chars",
     "successful_requests",
@@ -135,10 +135,10 @@ def _copy_test_history(
     previous_model: dict[str, Any] | None,
 ) -> None:
     """
-    تاریخچهٔ آزمایش را از نسخهٔ قبلی مدل حفظ می‌کند.
+    ØªØ§Ø±ÛŒØ®Ú†Ù‡Ù” Ø¢Ø²Ù…Ø§ÛŒØ´ Ø±Ø§ Ø§Ø² Ù†Ø³Ø®Ù‡Ù” Ù‚Ø¨Ù„ÛŒ Ù…Ø¯Ù„ Ø­ÙØ¸ Ù…ÛŒâ€ŒÚ©Ù†Ø¯.
 
-    None برای lifetime_chars به معنی آزمایش‌نشده است.
-    صفر یک مقدار معتبر است و نباید با None جایگزین شود.
+    None Ø¨Ø±Ø§ÛŒ lifetime_chars Ø¨Ù‡ Ù…Ø¹Ù†ÛŒ Ø¢Ø²Ù…Ø§ÛŒØ´â€ŒÙ†Ø´Ø¯Ù‡ Ø§Ø³Øª.
+    ØµÙØ± ÛŒÚ© Ù…Ù‚Ø¯Ø§Ø± Ù…Ø¹ØªØ¨Ø± Ø§Ø³Øª Ùˆ Ù†Ø¨Ø§ÛŒØ¯ Ø¨Ø§ None Ø¬Ø§ÛŒÚ¯Ø²ÛŒÙ† Ø´ÙˆØ¯.
     """
     if previous_model is None:
         new_model.setdefault("lifetime_chars", None)
@@ -146,6 +146,7 @@ def _copy_test_history(
         new_model.setdefault("failed_requests", 0)
         new_model.setdefault("output_chars", 0)
         new_model.setdefault("test_status", "untested")
+        new_model.setdefault("mt5_status", "pending")
         new_model.setdefault("last_tested_at", None)
         new_model.setdefault("last_error_type", None)
         new_model.setdefault("last_error_message", None)
@@ -155,6 +156,9 @@ def _copy_test_history(
     for field in PRESERVED_MODEL_FIELDS:
         if field in previous_model:
             new_model[field] = previous_model[field]
+
+    # Preserve mt5_status if it exists, otherwise default to pending
+    new_model.setdefault("mt5_status", previous_model.get("mt5_status", "pending"))
 
     new_model.setdefault("lifetime_chars", None)
     new_model.setdefault("successful_requests", 0)
@@ -166,15 +170,14 @@ def _copy_test_history(
     new_model.setdefault("last_error_message", None)
     new_model.setdefault("failure_at", None)
 
-
 def rebuild_large_catalog(config: dict[str, Any]) -> dict[str, Any]:
     """
-    دفتر بزرگ را از فهرست فعلی مدل‌های ارائه‌دهندگان می‌سازد.
+    Ø¯ÙØªØ± Ø¨Ø²Ø±Ú¯ Ø±Ø§ Ø§Ø² ÙÙ‡Ø±Ø³Øª ÙØ¹Ù„ÛŒ Ù…Ø¯Ù„â€ŒÙ‡Ø§ÛŒ Ø§Ø±Ø§Ø¦Ù‡â€ŒØ¯Ù‡Ù†Ø¯Ú¯Ø§Ù† Ù…ÛŒâ€ŒØ³Ø§Ø²Ø¯.
 
-    - ترتیب مدل‌ها مطابق ترتیب ارائه‌دهندگان و مدل‌های config حفظ می‌شود.
-    - مدل‌هایی که دیگر در فهرست ارائه‌دهندگان نیستند حذف می‌شوند.
-    - تاریخچهٔ آزمایش مدل‌های باقی‌مانده حفظ می‌شود.
-    - کلید هر مدل به شکل provider:model_id است.
+    - ØªØ±ØªÛŒØ¨ Ù…Ø¯Ù„â€ŒÙ‡Ø§ Ù…Ø·Ø§Ø¨Ù‚ ØªØ±ØªÛŒØ¨ Ø§Ø±Ø§Ø¦Ù‡â€ŒØ¯Ù‡Ù†Ø¯Ú¯Ø§Ù† Ùˆ Ù…Ø¯Ù„â€ŒÙ‡Ø§ÛŒ config Ø­ÙØ¸ Ù…ÛŒâ€ŒØ´ÙˆØ¯.
+    - Ù…Ø¯Ù„â€ŒÙ‡Ø§ÛŒÛŒ Ú©Ù‡ Ø¯ÛŒÚ¯Ø± Ø¯Ø± ÙÙ‡Ø±Ø³Øª Ø§Ø±Ø§Ø¦Ù‡â€ŒØ¯Ù‡Ù†Ø¯Ú¯Ø§Ù† Ù†ÛŒØ³ØªÙ†Ø¯ Ø­Ø°Ù Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯.
+    - ØªØ§Ø±ÛŒØ®Ú†Ù‡Ù” Ø¢Ø²Ù…Ø§ÛŒØ´ Ù…Ø¯Ù„â€ŒÙ‡Ø§ÛŒ Ø¨Ø§Ù‚ÛŒâ€ŒÙ…Ø§Ù†Ø¯Ù‡ Ø­ÙØ¸ Ù…ÛŒâ€ŒØ´ÙˆØ¯.
+    - Ú©Ù„ÛŒØ¯ Ù‡Ø± Ù…Ø¯Ù„ Ø¨Ù‡ Ø´Ú©Ù„ provider:model_id Ø§Ø³Øª.
     """
     previous_catalog = _load_previous_catalog()
     previous_by_key = _index_previous_models(
@@ -210,7 +213,7 @@ def rebuild_large_catalog(config: dict[str, Any]) -> dict[str, Any]:
 
             key = _model_key(provider, model_id)
 
-            # از ثبت دوبارهٔ یک مدل جلوگیری می‌کنیم.
+            # Ø§Ø² Ø«Ø¨Øª Ø¯ÙˆØ¨Ø§Ø±Ù‡Ù” ÛŒÚ© Ù…Ø¯Ù„ Ø¬Ù„ÙˆÚ¯ÛŒØ±ÛŒ Ù…ÛŒâ€ŒÚ©Ù†ÛŒÙ….
             if key in seen_keys:
                 continue
 
@@ -243,10 +246,10 @@ def rebuild_large_catalog(config: dict[str, Any]) -> dict[str, Any]:
 
 def load_large_catalog() -> dict[str, Any]:
     """
-    دفتر بزرگ ذخیره‌شده را می‌خواند.
+    Ø¯ÙØªØ± Ø¨Ø²Ø±Ú¯ Ø°Ø®ÛŒØ±Ù‡â€ŒØ´Ø¯Ù‡ Ø±Ø§ Ù…ÛŒâ€ŒØ®ÙˆØ§Ù†Ø¯.
 
-    این تابع به‌تنهایی دفتر را بازسازی نمی‌کند؛
-    بازسازی فقط هنگام Refresh ارائه‌دهنده انجام می‌شود.
+    Ø§ÛŒÙ† ØªØ§Ø¨Ø¹ Ø¨Ù‡â€ŒØªÙ†Ù‡Ø§ÛŒÛŒ Ø¯ÙØªØ± Ø±Ø§ Ø¨Ø§Ø²Ø³Ø§Ø²ÛŒ Ù†Ù…ÛŒâ€ŒÚ©Ù†Ø¯Ø›
+    Ø¨Ø§Ø²Ø³Ø§Ø²ÛŒ ÙÙ‚Ø· Ù‡Ù†Ú¯Ø§Ù… Refresh Ø§Ø±Ø§Ø¦Ù‡â€ŒØ¯Ù‡Ù†Ø¯Ù‡ Ø§Ù†Ø¬Ø§Ù… Ù…ÛŒâ€ŒØ´ÙˆØ¯.
     """
     catalog = _load_previous_catalog()
 
@@ -257,4 +260,5 @@ def load_large_catalog() -> dict[str, Any]:
         "updated_at": catalog.get("updated_at"),
         "models": models,
     }
+
 
