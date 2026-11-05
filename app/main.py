@@ -36,6 +36,8 @@ from app.model_rotation import (
     record_request_result,
     get_rotation_status,
     _provider_key,
+    select_next_model_mt5,
+    record_request_result_mt5,
 )
 
 
@@ -604,7 +606,39 @@ async def mt5_ingest(request: Request):
     else:
         print(json.dumps(data, ensure_ascii=False, indent=2), flush=True)
 
-    return {"success": True}
+    # Route to MT5-specific rotation
+    selected_model = select_next_model_mt5()
+    if selected_model is None:
+        print("[MT5-ROTATION] No MT5 model available", flush=True)
+        return {"success": True, "mt5_rotation": "no_model_available"}
+
+    model_key = selected_model.get("key") or f"{selected_model.get('provider')}:{selected_model.get('id')}"
+    provider = selected_model.get("provider")
+    
+    print(f"[MT5-ROTATION] Selected model: {model_key} (Provider: {provider})", flush=True)
+
+    # Record the request for MT5 rotation (simulated success for now)
+    # In production, this would call the provider and record actual result
+    input_chars = len(json.dumps(data))
+    result = record_request_result_mt5(
+        model_key=model_key,
+        input_chars=input_chars,
+        success=True,
+        ends_model_test=False,
+    )
+
+    print(f"[MT5-ROTATION] Model {model_key} recorded: test_status={result.get('test_status')}, mt5_in_progress={result.get('mt5_in_progress')}", flush=True)
+
+    return {
+        "success": True,
+        "mt5_rotation": {
+            "model_key": model_key,
+            "provider": provider,
+            "test_status": result.get("test_status"),
+            "mt5_in_progress": result.get("mt5_in_progress"),
+            "next_available": True
+        }
+    }
 
 
 @app.get("/api/thinker-room/catalog")

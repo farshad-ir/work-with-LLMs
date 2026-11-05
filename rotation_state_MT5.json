@@ -1,0 +1,10 @@
+﻿{
+    "round_total":  0,
+    "round_completed":  0,
+    "current_model_key":  null,
+    "next_provider_index":  0,
+    "next_rotation_group":  null,
+    "test_input_char_limit":  250000,
+    "round_number":  1,
+    "next_rotation_group_index":  0
+}
