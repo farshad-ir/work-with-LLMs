@@ -584,34 +584,25 @@ async def mt5_ingest(request: Request):
             detail="Request body must be valid JSON.",
         )
 
-
-
-    if isinstance(data, dict) and isinstance(data.get("candles"), list):
-        symbol = data.get("symbol", "")
-        timeframe = data.get("timeframe", "")
-        candles = data["candles"]
-
-        print("[ header ] Time, Symbol, Timeframe, Open, High, Low, Close", flush=True)
-
-        for candle in candles:
-            if not isinstance(candle, dict):
-                print(f"Invalid candle: {candle}", flush=True)
-                continue
-
-            print(
-                f"[ MT-5 ] "
-                f"{candle.get('time', '')}, "
-                f"{symbol}, "
-                f"{timeframe}, "
-                f"{candle.get('open', '')}, "
-                f"{candle.get('high', '')}, "
-                f"{candle.get('low', '')}, "
-                f"{candle.get('close', '')}",
-                flush=True,
-            )
+    # Free-form explorer: print everything received
+    if isinstance(data, dict):
+        for key, value in data.items():
+            print(f"\n[ key ] {key}", flush=True)
+            if isinstance(value, dict):
+                print(json.dumps(value, ensure_ascii=False, indent=2), flush=True)
+            elif isinstance(value, list):
+                n = len(value)
+                print(f"  [ array ] length={n}", flush=True)
+                if n > 0:
+                    print(f"  [ first ]", json.dumps(value[0], ensure_ascii=False, indent=2), flush=True)
+                if n > 1:
+                    print(f"  [ last ]", json.dumps(value[-1], ensure_ascii=False, indent=2), flush=True)
+                if n > 2:
+                    print(f"  [ ... {n-2} more items omitted ... ]", flush=True)
+            else:
+                print(f"  {value}", flush=True)
     else:
         print(json.dumps(data, ensure_ascii=False, indent=2), flush=True)
-
 
     return {"success": True}
 
