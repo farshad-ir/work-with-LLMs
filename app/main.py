@@ -916,7 +916,6 @@ async def codex_responses(request: Request):
 
     async def fetch_with_retries():
 
-        last_error = None
         attempt = 0
 
         # چرخه Retry عمداً نامحدود است.
@@ -984,14 +983,6 @@ async def codex_responses(request: Request):
                     error_message=error_message,
                 )
 
-                last_error = (
-                    json.dumps(
-                        {"error": {"message": error_message}},
-                        ensure_ascii=False,
-                    ).encode("utf-8"),
-                    503,
-                    "application/json",
-                )
 
                 _gateway_log(
                     f"[RETRY] attempt={attempt} "
@@ -1074,12 +1065,6 @@ async def codex_responses(request: Request):
                         error_type="provider_http_error",
                         error_message=error_message,
                         log_value=status_code,
-                    )
-
-                    last_error = (
-                        content,
-                        status_code,
-                        content_type,
                     )
 
                     _gateway_log(
@@ -1176,15 +1161,6 @@ async def codex_responses(request: Request):
                     ends_model_test=True,
                     error_type=error_type,
                     error_message=error_message,
-                )
-
-                last_error = (
-                    json.dumps(
-                        {"error": {"message": error_message}},
-                        ensure_ascii=False,
-                    ).encode("utf-8"),
-                    502,
-                    "application/json",
                 )
 
                 _gateway_log(
