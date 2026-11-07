@@ -233,9 +233,12 @@ def parse_chat_sse_event(event_text: str) -> dict[str, Any] | None:
     """Parse one complete Server-Sent Events block from Chat Completions."""
 
     data_lines = []
+    event_name = ""
 
     for line in event_text.splitlines():
-        if line.startswith("data:"):
+        if line.startswith("event:"):
+            event_name = line[6:].strip().lower()
+        elif line.startswith("data:"):
             data_lines.append(line[5:].lstrip())
 
     if not data_lines:
@@ -249,12 +252,30 @@ def parse_chat_sse_event(event_text: str) -> dict[str, Any] | None:
     try:
         value = json.loads(data)
     except json.JSONDecodeError:
+        if event_name == "error":
+            return {
+                "type": "error",
+                "error": {"message": data},
+            }
         return None
 
     if not isinstance(value, dict):
         return None
 
+    error = value.get("error")
+
+    if (
+        event_name == "error"
+        or error is not None
+        or value.get("type") in ("error", "response.failed")
+    ):
+        return {
+            "type": "error",
+            "error": error if error is not None else value,
+        }
+
     choices = value.get("choices", [])
+
     if not choices or not isinstance(choices[0], dict):
         return {
             "type": "metadata",
@@ -266,7 +287,7 @@ def parse_chat_sse_event(event_text: str) -> dict[str, Any] | None:
     choice = choices[0]
     delta = choice.get("delta", {})
 
-    result: dict[str, Any] = {
+    return {
         "type": "delta",
         "id": value.get("id"),
         "model": value.get("model"),
@@ -274,9 +295,6 @@ def parse_chat_sse_event(event_text: str) -> dict[str, Any] | None:
         "tool_calls": delta.get("tool_calls", []),
         "finish_reason": choice.get("finish_reason"),
     }
-
-    return result
-
 
 def sse_event(event_type: str, payload: dict[str, Any]) -> str:
     """Format one Responses API server-sent event."""
@@ -449,14 +467,19 @@ class ResponsesStreamConverter:
         if not self.started:
             self.response_id = "resp_" + (self.chat_id or "gateway")
             self.started = True
+
             emitted.append(sse_event(
                 "response.created",
                 {"response": self._response_object()},
             ))
+
             emitted.append(sse_event(
                 "response.in_progress",
                 {"response": self._response_object()},
             ))
+
+
+
 
         if self.text_started:
             message_id = "msg_" + (self.chat_id or "gateway")

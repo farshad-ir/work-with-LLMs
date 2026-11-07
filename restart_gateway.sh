@@ -27,10 +27,20 @@ rm -f "$PID_FILE"
 
 echo "Starting Gateway..."
 
+
+# Uvicorn logging is disabled by default.
+if [[ "${UVICORN_LOG_ENABLED:-false}" =~ ^(1|true|yes|on)$ ]]; then
+    UVICORN_OUTPUT="$LOG_FILE"
+else
+    UVICORN_OUTPUT="/dev/null"
+fi
+
+# Start the Gateway.
 nohup "$UVICORN" app.main:app \
     --host 127.0.0.1 \
     --port 8088 \
-    >> "$LOG_FILE" 2>&1 </dev/null &
+    >> "$UVICORN_OUTPUT" 2>&1 </dev/null &
+
 
 echo $! > "$PID_FILE"
 

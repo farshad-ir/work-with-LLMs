@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import os
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -174,6 +174,12 @@ GROUP_CODE = {
 
 def _log_event(event_code: str, group_code: str, detail: str) -> None:
     """Append one rotation event without affecting selection."""
+
+    if os.getenv("ROTATION_LOG_ENABLED", "false").lower() not in (
+        "1", "true", "yes", "on"
+    ):
+        return
+
     try:
         log_path = DATA_DIR / "rotation.log"
         log_path.parent.mkdir(parents=True, exist_ok=True)
