@@ -1,3 +1,4 @@
+from threading import Lock
 import tempfile
 import json
 import os
@@ -44,6 +45,38 @@ GATEWAY_LOG_ENABLED = os.getenv(
 def _gateway_log(*args, **kwargs):
     if GATEWAY_LOG_ENABLED:
         print(*args, **kwargs)
+
+
+_SHORT_LOG_LOCK = Lock()
+
+
+def _short_gateway_log(
+    model: str,
+    provider: str,
+    value: int | str,
+) -> None:
+    enabled = get_env_value("GATEWAY_SHORT_LOG_ENABLED").strip().lower()
+
+    if enabled not in ("1", "true", "yes", "on"):
+        return
+
+    log_dir = Path(__file__).resolve().parent.parent / "logs"
+    log_path = log_dir / "gateway.log"
+
+    model = str(model).replace(",", "_").replace("\n", " ")
+    provider = str(provider).replace(",", "_").replace("\n", " ")
+    value = str(value).replace(",", "_").replace("\n", " ")
+
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+        with _SHORT_LOG_LOCK:
+            with log_path.open("a", encoding="utf-8") as file:
+                file.write(f"{model}, {provider}, {value}\n")
+
+    except OSError as exc:
+        _gateway_log(f"[SHORT LOG] Could not write log: {exc}")
+
 
 
 class ProviderResponseBuffer:
@@ -786,6 +819,7 @@ def _record_rotation_result(
             error_type=error_type,
             error_message=error_message,
         )
+
         _gateway_log(
             "[ROTATION] "
             f"model={result['model_key']} "
