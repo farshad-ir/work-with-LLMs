@@ -468,18 +468,18 @@ class ResponsesStreamConverter:
             self.response_id = "resp_" + (self.chat_id or "gateway")
             self.started = True
 
-            event_type = (
-                "response.incomplete"
-                if status == "incomplete"
-                else "response.completed"
-            )
-
-            emitted.append(sse_event(event_type, {"response": response}))
+            emitted.append(sse_event(
+                "response.created",
+                {"response": self._response_object()},
+            ))
 
             emitted.append(sse_event(
                 "response.in_progress",
                 {"response": self._response_object()},
             ))
+
+
+
 
         if self.text_started:
             message_id = "msg_" + (self.chat_id or "gateway")

@@ -1,3 +1,4 @@
+import tempfile
 import json
 import os
 import asyncio
@@ -17,6 +18,7 @@ from app.responses_adapter import (
     parse_chat_sse_event,
     parse_json_object,
     responses_to_chat,
+    sse_event,
 )
 from app.config import (
     get_env_value,
@@ -44,6 +46,158 @@ def _gateway_log(*args, **kwargs):
     if GATEWAY_LOG_ENABLED:
         print(*args, **kwargs)
 
+
+class ProviderResponseBuffer:
+    """Bounded response buffer that spills from RAM to a temporary file."""
+
+    def __init__(self) -> None:
+        self.ram_limit = int(
+            os.getenv("GATEWAY_BUFFER_RAM_LIMIT", str(2 * 1024 * 1024))
+        )
+        self.max_bytes = int(
+            os.getenv("GATEWAY_BUFFER_MAX_BYTES", str(50 * 1024 * 1024))
+        )
+
+        self.file = tempfile.SpooledTemporaryFile(
+            max_size=self.ram_limit,
+            mode="w+b",
+        )
+        self.size = 0
+
+    def write(self, chunk: bytes) -> None:
+        new_size = self.size + len(chunk)
+
+        if new_size > self.max_bytes:
+            raise ValueError(
+                f"Provider response exceeded the {self.max_bytes}-byte limit."
+            )
+
+        self.file.write(chunk)
+        self.size = new_size
+
+    def read(self) -> bytes:
+        self.file.seek(0)
+        return self.file.read()
+
+    def close(self) -> None:
+        self.file.close()
+
+def _responses_to_sse_events(response: dict) -> list[str]:
+    """Convert a complete Responses API object into SSE events."""
+    response_id = response.get("id", "resp_gateway")
+    output = response.get("output", [])
+
+    events = [
+        sse_event("response.created", {
+            "response": {
+                **response,
+                "status": "in_progress",
+                "output": [],
+            }
+        }),
+        sse_event("response.in_progress", {
+            "response": {
+                **response,
+                "status": "in_progress",
+                "output": [],
+            }
+        }),
+    ]
+
+    for output_index, item in enumerate(output):
+        if not isinstance(item, dict):
+            continue
+
+        item_id = item.get("id", f"item_{output_index}")
+
+        events.append(sse_event("response.output_item.added", {
+            "response_id": response_id,
+            "output_index": output_index,
+            "item": {
+                **item,
+                "status": "in_progress",
+            },
+        }))
+
+        if item.get("type") == "message":
+            content = item.get("content", [])
+
+            for content_index, part in enumerate(content):
+                if not isinstance(part, dict):
+                    continue
+
+                text = part.get("text", "")
+
+                events.append(sse_event("response.content_part.added", {
+                    "response_id": response_id,
+                    "item_id": item_id,
+                    "output_index": output_index,
+                    "content_index": content_index,
+                    "part": {
+                        **part,
+                        "text": "",
+                    },
+                }))
+
+                if text:
+                    events.append(sse_event("response.output_text.delta", {
+                        "response_id": response_id,
+                        "item_id": item_id,
+                        "output_index": output_index,
+                        "content_index": content_index,
+                        "delta": text,
+                    }))
+
+                events.append(sse_event("response.output_text.done", {
+                    "response_id": response_id,
+                    "item_id": item_id,
+                    "output_index": output_index,
+                    "content_index": content_index,
+                    "text": text,
+                }))
+
+                events.append(sse_event("response.content_part.done", {
+                    "response_id": response_id,
+                    "item_id": item_id,
+                    "output_index": output_index,
+                    "content_index": content_index,
+                    "part": part,
+                }))
+
+        elif item.get("type") == "function_call":
+            arguments = item.get("arguments", "")
+
+            events.append(sse_event("response.function_call_arguments.delta", {
+                "response_id": response_id,
+                "item_id": item_id,
+                "output_index": output_index,
+                "delta": arguments,
+            }))
+
+            events.append(sse_event("response.function_call_arguments.done", {
+                "response_id": response_id,
+                "item_id": item_id,
+                "output_index": output_index,
+                "arguments": arguments,
+            }))
+
+        events.append(sse_event("response.output_item.done", {
+            "response_id": response_id,
+            "output_index": output_index,
+            "item": item,
+        }))
+
+    terminal_event = (
+        "response.incomplete"
+        if response.get("status") == "incomplete"
+        else "response.completed"
+    )
+
+    events.append(sse_event(terminal_event, {
+        "response": response,
+    }))
+
+    return events
 
 # Aliases for provider normalization
 def _normalize_provider_name(name: str) -> str:
