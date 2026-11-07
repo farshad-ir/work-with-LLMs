@@ -35,6 +35,15 @@ from app.model_rotation import (
     _provider_key,
 )
 
+GATEWAY_LOG_ENABLED = os.getenv(
+    "GATEWAY_LOG_ENABLED", "false"
+).lower() in ("1", "true", "yes", "on")
+
+
+def _gateway_log(*args, **kwargs):
+    if GATEWAY_LOG_ENABLED:
+        print(*args, **kwargs)
+
 
 # Aliases for provider normalization
 def _normalize_provider_name(name: str) -> str:
@@ -624,7 +633,7 @@ def _record_rotation_result(
             error_type=error_type,
             error_message=error_message,
         )
-        print(
+        _gateway_log(
             "[ROTATION] "
             f"model={result['model_key']} "
             f"success={result['success']} "
@@ -632,7 +641,7 @@ def _record_rotation_result(
             f"status={result['test_status']}"
         )
     except (RuntimeError, ValueError, OSError) as exc:
-        print(f"[ROTATION] Could not record result: {exc}")
+        _gateway_log(f"[ROTATION] Could not record result: {exc}")
 
 
 def _is_permanent_model_error(status_code: int, content: bytes) -> bool:
@@ -812,7 +821,7 @@ async def codex_responses(request: Request):
                 error_message=str(exc)[:500],
             )
 
-            print(
+            _gateway_log(
                 "[ROTATION] "
                 f"Model failed: {model_key}; "
                 f"connection error; trying next model."
@@ -850,7 +859,7 @@ async def codex_responses(request: Request):
                     content_type,
                 )
         
-                print(
+                _gateway_log(
                     "[ROTATION] "
                     f"Model failed: {model_key}; "
                     f"HTTP {status_code}; trying next model."
@@ -973,7 +982,7 @@ async def codex_responses(request: Request):
                 if isinstance(arguments, str):
                     output_chars += len(arguments)
 
-            print(
+            _gateway_log(
                 "[STREAM DEBUG] "
                 f"model={model_key} "
                 f"completed={stream_completed} "
