@@ -807,8 +807,9 @@ def _record_rotation_result(
     ends_model_test: bool = False,
     error_type: str | None = None,
     error_message: str | None = None,
+    log_value: int | str | None = None,
 ) -> None:
-    """ثبت نتیجه؛ خطای ثبت نباید پاسخ جاری Codex را خراب کند."""
+    """ثبت نتیجه Rotation و نوشتن لاگ سه‌ستونی."""
     try:
         result = record_request_result(
             model_key=model_key,
@@ -820,6 +821,27 @@ def _record_rotation_result(
             error_message=error_message,
         )
 
+        provider_name, separator, model_name = (
+            str(result["model_key"]).partition(":")
+        )
+
+        if not separator:
+            model_name = str(result["model_key"])
+            provider_name = ""
+
+        if log_value is not None:
+            value = log_value
+        elif success:
+            value = result["lifetime_chars"]
+        else:
+            value = error_type or "ERROR"
+
+        _short_gateway_log(
+            model=model_name,
+            provider=provider_name,
+            value=value,
+        )
+
         _gateway_log(
             "[ROTATION] "
             f"model={result['model_key']} "
@@ -827,8 +849,10 @@ def _record_rotation_result(
             f"chars={result['lifetime_chars']} "
             f"status={result['test_status']}"
         )
+
     except (RuntimeError, ValueError, OSError) as exc:
         _gateway_log(f"[ROTATION] Could not record result: {exc}")
+
 
 
 def _is_permanent_model_error(status_code: int, content: bytes) -> bool:
@@ -1049,6 +1073,7 @@ async def codex_responses(request: Request):
                         ends_model_test=True,
                         error_type="provider_http_error",
                         error_message=error_message,
+                        log_value=status_code,
                     )
 
                     last_error = (
