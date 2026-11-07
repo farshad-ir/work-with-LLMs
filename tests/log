@@ -1,0 +1,958 @@
+(.venv) mycode-gateway $ git status --short
+git fetch origin
+git branch --show-current
+git status -sb
+git log --oneline --decorate --graph origin/master..HEAD
+git diff --stat origin/master...HEAD
+git diff --check origin/master...HEAD
+feature/heartbeat-and-logging
+## feature/heartbeat-and-logging...origin/feature/heartbeat-and-logging
+* 98f3505 (HEAD -> feature/heartbeat-and-logging, origin/feature/heartbeat-and-logging) Complete three-column gateway logging
+* 0623423 Add configurable three-column gateway short logging
+* ddaede7 Add unlimited provider retries with buffered responses and heartbeat
+* 860e96b before heartbit, buffer file for respose added
+* 667e68c On/Off keys for logs
+* fabbc3c gateway events
+ app/gateway_events.py    |  55 +++++
+ app/main.py              | 806 +++++++++++++++++++++++++++++++++++++++++++++++------------------------
+ app/model_rotation.py    |   8 +-
+ app/responses_adapter.py |  33 ++-
+ restart_gateway.sh       |  12 +-
+ start_gateway.sh         |  12 +-
+ 6 files changed, 651 insertions(+), 275 deletions(-)
+(.venv) mycode-gateway $ git diff origin/master...HEAD -- app/main.py
+diff --git a/app/main.py b/app/main.py
+index d00ef93..b086be9 100644
+--- a/app/main.py
++++ b/app/main.py
+@@ -1,3 +1,5 @@
++from threading import Lock
++import tempfile
+ import json
+ import os
+ import asyncio
+@@ -10,14 +12,14 @@ from pathlib import Path
+ import httpx
+ from fastapi import FastAPI, HTTPException, Request
+ from fastapi.responses import HTMLResponse, Response, StreamingResponse
+-
+ from app.responses_adapter import (
+-    ResponsesStreamConverter,
+     chat_to_responses_text,
+-    parse_chat_sse_event,
+     parse_json_object,
+     responses_to_chat,
++    sse_event,
+ )
++
++
+ from app.config import (
+     get_env_value,
+     get_public_config,
+@@ -35,6 +37,199 @@ from app.model_rotation import (
+     _provider_key,
+ )
+ 
++GATEWAY_LOG_ENABLED = os.getenv(
++    "GATEWAY_LOG_ENABLED", "false"
++).lower() in ("1", "true", "yes", "on")
++
++
++def _gateway_log(*args, **kwargs):
++    if GATEWAY_LOG_ENABLED:
++        print(*args, **kwargs)
++
++
++_SHORT_LOG_LOCK = Lock()
++
++
++def _short_gateway_log(
++    model: str,
++    provider: str,
++    value: int | str,
++) -> None:
++    enabled = get_env_value("GATEWAY_SHORT_LOG_ENABLED").strip().lower()
++
++    if enabled not in ("1", "true", "yes", "on"):
++        return
++
++    log_dir = Path(__file__).resolve().parent.parent / "logs"
++    log_path = log_dir / "gateway.log"
++
++    model = str(model).replace(",", "_").replace("\n", " ")
++    provider = str(provider).replace(",", "_").replace("\n", " ")
++    value = str(value).replace(",", "_").replace("\n", " ")
++
++    try:
++        log_dir.mkdir(parents=True, exist_ok=True)
++
++        with _SHORT_LOG_LOCK:
++            with log_path.open("a", encoding="utf-8") as file:
++                file.write(f"{model}, {provider}, {value}\n")
++
++    except OSError as exc:
++        _gateway_log(f"[SHORT LOG] Could not write log: {exc}")
++
++
++
++class ProviderResponseBuffer:
++    """Bounded response buffer that spills from RAM to a temporary file."""
++
++    def __init__(self) -> None:
++        self.ram_limit = int(
++            os.getenv("GATEWAY_BUFFER_RAM_LIMIT", str(2 * 1024 * 1024))
++        )
++        self.max_bytes = int(
++            os.getenv("GATEWAY_BUFFER_MAX_BYTES", str(50 * 1024 * 1024))
++        )
++
++        self.file = tempfile.SpooledTemporaryFile(
++            max_size=self.ram_limit,
++            mode="w+b",
++        )
++        self.size = 0
++
++    def write(self, chunk: bytes) -> None:
++        new_size = self.size + len(chunk)
++
++        if new_size > self.max_bytes:
++            raise ValueError(
++                f"Provider response exceeded the {self.max_bytes}-byte limit."
++            )
++
++        self.file.write(chunk)
++        self.size = new_size
++
++    def read(self) -> bytes:
++        self.file.seek(0)
++        return self.file.read()
++
++    def close(self) -> None:
++        self.file.close()
++
++def _responses_to_sse_events(response: dict) -> list[str]:
++    """Convert a complete Responses API object into SSE events."""
++    response_id = response.get("id", "resp_gateway")
++    output = response.get("output", [])
++
++    events = [
++        sse_event("response.created", {
++            "response": {
++                **response,
++                "status": "in_progress",
++                "output": [],
++            }
++        }),
++        sse_event("response.in_progress", {
++            "response": {
++                **response,
++                "status": "in_progress",
++                "output": [],
++            }
++        }),
++    ]
++
++    for output_index, item in enumerate(output):
++        if not isinstance(item, dict):
++            continue
++
++        item_id = item.get("id", f"item_{output_index}")
++
++        events.append(sse_event("response.output_item.added", {
++            "response_id": response_id,
++            "output_index": output_index,
++            "item": {
++                **item,
++                "status": "in_progress",
++            },
++        }))
++
++        if item.get("type") == "message":
++            content = item.get("content", [])
++
++            for content_index, part in enumerate(content):
++                if not isinstance(part, dict):
++                    continue
++
++                text = part.get("text", "")
++
++                events.append(sse_event("response.content_part.added", {
++                    "response_id": response_id,
++                    "item_id": item_id,
++                    "output_index": output_index,
++                    "content_index": content_index,
++                    "part": {
++                        **part,
++                        "text": "",
++                    },
++                }))
++
++                if text:
++                    events.append(sse_event("response.output_text.delta", {
++                        "response_id": response_id,
++                        "item_id": item_id,
++                        "output_index": output_index,
++                        "content_index": content_index,
++                        "delta": text,
++                    }))
++
++                events.append(sse_event("response.output_text.done", {
++                    "response_id": response_id,
++                    "item_id": item_id,
++                    "output_index": output_index,
++                    "content_index": content_index,
++                    "text": text,
++                }))
++
++                events.append(sse_event("response.content_part.done", {
++                    "response_id": response_id,
++                    "item_id": item_id,
++                    "output_index": output_index,
++                    "content_index": content_index,
++                    "part": part,
++                }))
++
++        elif item.get("type") == "function_call":
++            arguments = item.get("arguments", "")
++
++            events.append(sse_event("response.function_call_arguments.delta", {
++                "response_id": response_id,
++                "item_id": item_id,
++                "output_index": output_index,
++                "delta": arguments,
++            }))
++
++            events.append(sse_event("response.function_call_arguments.done", {
++                "response_id": response_id,
++                "item_id": item_id,
++                "output_index": output_index,
++                "arguments": arguments,
++            }))
++
++        events.append(sse_event("response.output_item.done", {
++            "response_id": response_id,
++            "output_index": output_index,
++            "item": item,
++        }))
++
++    terminal_event = (
++        "response.incomplete"
++        if response.get("status") == "incomplete"
++        else "response.completed"
++    )
++
++    events.append(sse_event(terminal_event, {
++        "response": response,
++    }))
++
++    return events
+ 
+ # Aliases for provider normalization
+ def _normalize_provider_name(name: str) -> str:
+@@ -612,8 +807,9 @@ def _record_rotation_result(
+     ends_model_test: bool = False,
+     error_type: str | None = None,
+     error_message: str | None = None,
++    log_value: int | str | None = None,
+ ) -> None:
+-    """ثبت نتیجه؛ خطای ثبت نباید پاسخ جاری Codex را خراب کند."""
++    """ثبت نتیجه Rotation و نوشتن لاگ سه‌ستونی."""
+     try:
+         result = record_request_result(
+             model_key=model_key,
+@@ -624,15 +820,39 @@ def _record_rotation_result(
+             error_type=error_type,
+             error_message=error_message,
+         )
+-        print(
++
++        provider_name, separator, model_name = (
++            str(result["model_key"]).partition(":")
++        )
++
++        if not separator:
++            model_name = str(result["model_key"])
++            provider_name = ""
++
++        if log_value is not None:
++            value = log_value
++        elif success:
++            value = result["lifetime_chars"]
++        else:
++            value = error_type or "ERROR"
++
++        _short_gateway_log(
++            model=model_name,
++            provider=provider_name,
++            value=value,
++        )
++
++        _gateway_log(
+             "[ROTATION] "
+             f"model={result['model_key']} "
+             f"success={result['success']} "
+             f"chars={result['lifetime_chars']} "
+             f"status={result['test_status']}"
+         )
++
+     except (RuntimeError, ValueError, OSError) as exc:
+-        print(f"[ROTATION] Could not record result: {exc}")
++        _gateway_log(f"[ROTATION] Could not record result: {exc}")
++
+ 
+ 
+ def _is_permanent_model_error(status_code: int, content: bytes) -> bool:
+@@ -679,341 +899,393 @@ def _response_output_char_count(response: dict) -> int:
+ 
+ @app.post("/v1/responses")
+ async def codex_responses(request: Request):
+-    config = load_config()
+ 
+     try:
+         raw_body = await request.body()
+         body = parse_json_object(raw_body)
+         input_chars = len(raw_body.decode("utf-8"))
++
+     except (ValueError, UnicodeDecodeError):
+         raise HTTPException(
+             status_code=400,
+             detail="Request body must be a valid JSON object.",
+         ) from None
+ 
+-
+-    # تبدیل درخواست ورودی؛ محتوای درخواست در تمام تلاش‌ها ثابت می‌ماند.
+     chat_body = responses_to_chat(body)
+     streaming = bool(chat_body.get("stream"))
+ 
+-    provider_aliases = {
+-        "nvidia_nim": "nvidia",
+-        "nvidia-nim": "nvidia",
+-        "tokenrouter": "token_router",
+-        "token-router": "token_router",
+-    }
++    async def fetch_with_retries():
+ 
+-    last_provider_error = None
+-    upstream = None
+-    client = None
++        last_error = None
++        attempt = 0
+ 
+-    while True:
++        # چرخه Retry عمداً نامحدود است.
++        while True:
+ 
+-        # انتخاب مدل برای این تلاش
+-        selected_model = select_next_model()
++            attempt += 1
+ 
+-        if selected_model is None:
+-            # اگر مدل‌های قبلی خطای قطعی داده‌اند، آخرین خطای واقعی
+-            # ارائه‌دهنده را برگردان؛ در غیر این صورت چرخه تمام شده است.
+-            if last_provider_error is not None:
+-                content, status_code, content_type = last_provider_error
++            selected_model = select_next_model()
+ 
+-                return Response(
+-                    content=content,
+-                    status_code=status_code,
+-                    headers={"Content-Type": content_type},
+-                )
++            # اگر فعلاً مدلی انتخاب نشد، کمی صبر می‌کنیم
++            # و دوباره Rotation را امتحان می‌کنیم.
++            if selected_model is None:
++                await asyncio.sleep(1)
++                continue
+ 
+-            raise HTTPException(
+-                status_code=503,
+-                detail="All models have completed their tests.",
++            provider_name = _normalize_provider_name(
++                selected_model.get("provider", "")
+             )
+ 
+-        provider_name = str(
+-            selected_model.get("provider", "")
+-        ).strip().lower()
++            model_id = str(selected_model.get("id", ""))
+ 
+-        provider_name = provider_aliases.get(
+-            provider_name,
+-            provider_name,
+-        )
++            model_key = str(
++                selected_model.get("key")
++                or f"{provider_name}:{model_id}"
++            )
+ 
+-        model_id = str(selected_model.get("id", ""))
++            config = load_config()
++            providers = config.get("providers", {})
+ 
+-        model_key = str(
+-            selected_model.get("key")
+-            or f"{provider_name}:{model_id}"
+-        )
++            provider = next(
++                (
++                    value
++                    for name, value in providers.items()
++                    if _normalize_provider_name(name) == provider_name
++                ),
++                {},
++            )
+ 
+-        provider = config["providers"].get(provider_name, {})
++            base_url = str(
++                provider.get("base_url", "")
++            ).rstrip("/")
+ 
+-        if not provider.get("enabled", False):
+-            raise HTTPException(
+-                status_code=503,
+-                detail=f"Provider '{provider_name}' is disabled.",
+-            )
++            key_name = provider.get("api_key_env", "")
++            api_key = get_env_value(key_name) if key_name else ""
+ 
+-        base_url = str(
+-            provider.get("base_url", "")
+-        ).rstrip("/")
++            # Provider غیرفعال یا ناقص هم یک شکست محسوب می‌شود.
++            if (
++                not provider.get("enabled", False)
++                or not base_url
++                or not api_key
++                or not model_id
++            ):
+ 
+-        key_name = provider.get("api_key_env", "")
+-        api_key = get_env_value(key_name) if key_name else ""
++                error_message = (
++                    f"Provider '{provider_name}' is disabled "
++                    "or not fully configured."
++                )
+ 
+-        if not base_url or not api_key or not model_id:
+-            raise HTTPException(
+-                status_code=503,
+-                detail=(
+-                    f"Provider '{provider_name}' is not fully configured. "
+-                    "Check its base URL, API key and model ID."
+-                ),
+-            )
++                _record_rotation_result(
++                    model_key=model_key,
++                    input_chars=input_chars,
++                    success=False,
++                    ends_model_test=True,
++                    error_type="provider_not_configured",
++                    error_message=error_message,
++                )
+ 
+-        # در هر تلاش فقط مدل مقصد تغییر می‌کند.
+-        chat_body["model"] = model_id
+-
+-        headers = {
+-            "Authorization": f"Bearer {api_key}",
+-            "Content-Type": "application/json",
+-            "Accept": (
+-                "text/event-stream"
+-                if streaming
+-                else "application/json"
+-            ),
+-        }
++                last_error = (
++                    json.dumps(
++                        {"error": {"message": error_message}},
++                        ensure_ascii=False,
++                    ).encode("utf-8"),
++                    503,
++                    "application/json",
++                )
+ 
+-        client = httpx.AsyncClient(
+-            timeout=httpx.Timeout(180.0, connect=15.0)
+-        )
++                _gateway_log(
++                    f"[RETRY] attempt={attempt} "
++                    f"model={model_key} "
++                    "reason=provider_not_configured"
++                )
+ 
+-        try:
+-            upstream_request = client.build_request(
+-                "POST",
+-                f"{base_url}/chat/completions",
+-                json=chat_body,
+-                headers=headers,
+-            )
++                continue
++
++            buffer = ProviderResponseBuffer()
+ 
+-            upstream = await client.send(
+-                upstream_request,
+-                stream=streaming,
++            client = httpx.AsyncClient(
++                timeout=httpx.Timeout(
++                    180.0,
++                    connect=15.0,
++                )
+             )
+ 
++            upstream = None
+ 
+-        except httpx.HTTPError as exc:
+-            await client.aclose()
++            try:
+ 
+-            _record_rotation_result(
+-                model_key=model_key,
+-                input_chars=input_chars,
+-                success=False,
+-                ends_model_test=True,
+-                error_type="provider_connection_error",
+-                error_message=str(exc)[:500],
+-            )
++                # درخواست اصلی ثابت می‌ماند.
++                # فقط مدل مقصد تغییر می‌کند.
++                request_body = dict(chat_body)
+ 
+-            print(
+-                "[ROTATION] "
+-                f"Model failed: {model_key}; "
+-                f"connection error; trying next model."
+-            )
++                request_body["model"] = model_id
+ 
+-            continue
++                # برای امکان Retry، پاسخ upstream
++                # باید کامل دریافت شود.
++                request_body["stream"] = False
++                request_body.pop("stream_options", None)
+ 
+-        # خطای ارائه‌دهنده؛ هنوز هیچ پاسخی به Codex ارسال نشده است.
+-        if upstream.status_code >= 400:
+-            try:
+-                content = await upstream.aread()
+-                status_code = upstream.status_code
+-                content_type = upstream.headers.get(
+-                    "content-type",
+-                    "application/json",
++                headers = {
++                    "Authorization": f"Bearer {api_key}",
++                    "Content-Type": "application/json",
++                    "Accept": "application/json",
++                }
++
++                upstream_request = client.build_request(
++                    "POST",
++                    f"{base_url}/chat/completions",
++                    json=request_body,
++                    headers=headers,
+                 )
+-        
+-                error_message = content.decode(
+-                    "utf-8",
+-                    errors="replace",
+-                )[:500]
+-        
++
++                upstream = await client.send(
++                    upstream_request,
++                    stream=True,
++                )
++
++                # دریافت قطعه‌ای پاسخ در بافر.
++                # تا ۲ مگابایت RAM؛ سپس فایل موقت دیسک.
++                # حداکثر حجم کل ۵۰ مگابایت.
++                async for chunk in upstream.aiter_bytes():
++                    buffer.write(chunk)
++
++                # هر خطای HTTP باعث انتخاب مدل بعدی می‌شود.
++                if upstream.status_code >= 400:
++
++                    content = buffer.read()
++
++                    status_code = upstream.status_code
++
++                    content_type = upstream.headers.get(
++                        "content-type",
++                        "application/json",
++                    )
++
++                    error_message = content.decode(
++                        "utf-8",
++                        errors="replace",
++                    )[:500]
++
++                    _record_rotation_result(
++                        model_key=model_key,
++                        input_chars=input_chars,
++                        success=False,
++                        ends_model_test=True,
++                        error_type="provider_http_error",
++                        error_message=error_message,
++                        log_value=status_code,
++                    )
++
++                    last_error = (
++                        content,
++                        status_code,
++                        content_type,
++                    )
++
++                    _gateway_log(
++                        f"[RETRY] attempt={attempt} "
++                        f"model={model_key} "
++                        f"HTTP={status_code}; trying next model."
++                    )
++
++                    continue
++
++                # HTTP موفق است؛ حالا JSON را بررسی می‌کنیم.
++                provider_payload = parse_json_object(
++                    buffer.read()
++                )
++
++                choices = provider_payload.get("choices")
++
++                if (
++                    not isinstance(choices, list)
++                    or not choices
++                    or not isinstance(choices[0], dict)
++                    or not isinstance(
++                        choices[0].get("message"),
++                        dict,
++                    )
++                ):
++                    raise ValueError(
++                        "Invalid Chat Completions response."
++                    )
++
++                converted = chat_to_responses_text(
++                    provider_payload
++                )
++
++                if (
++                    not isinstance(converted, dict)
++                    or not isinstance(
++                        converted.get("output"),
++                        list,
++                    )
++                    or converted.get("status")
++                    not in ("completed", "incomplete")
++                ):
++                    raise ValueError(
++                        "Invalid converted Responses object."
++                    )
++
++                output_chars = _response_output_char_count(
++                    converted
++                )
++
++                # فقط پاسخ کامل و معتبر موفق محسوب می‌شود.
++                _record_rotation_result(
++                    model_key=model_key,
++                    input_chars=input_chars,
++                    output_chars=output_chars,
++                    success=True,
++                )
++
++                _gateway_log(
++                    f"[RETRY] attempt={attempt} "
++                    f"model={model_key} "
++                    f"success=True "
++                    f"output_chars={output_chars}"
++                )
++
++                return {
++                    "success": True,
++                    "response": converted,
++                    "model_key": model_key,
++                }
++
++            except asyncio.CancelledError:
++                # درخواست لغو شده؛ چرخه Retry متوقف می‌شود.
++                raise
++
++            except Exception as exc:
++
++                if isinstance(exc, httpx.HTTPError):
++                    error_type = "provider_connection_error"
++
++                elif isinstance(exc, ValueError):
++                    error_type = "invalid_provider_response"
++
++                else:
++                    error_type = "provider_attempt_error"
++
++                error_message = str(exc)[:500]
++
+                 _record_rotation_result(
+                     model_key=model_key,
+                     input_chars=input_chars,
+                     success=False,
+                     ends_model_test=True,
+-                    error_type="provider_http_error",
++                    error_type=error_type,
+                     error_message=error_message,
+                 )
+-        
+-                last_provider_error = (
+-                    content,
+-                    status_code,
+-                    content_type,
++
++                last_error = (
++                    json.dumps(
++                        {"error": {"message": error_message}},
++                        ensure_ascii=False,
++                    ).encode("utf-8"),
++                    502,
++                    "application/json",
+                 )
+-        
+-                print(
+-                    "[ROTATION] "
+-                    f"Model failed: {model_key}; "
+-                    f"HTTP {status_code}; trying next model."
++
++                _gateway_log(
++                    f"[RETRY] attempt={attempt} "
++                    f"model={model_key} "
++                    f"error={error_type}: {error_message}; "
++                    "trying next model."
+                 )
+-        
++
+             finally:
+-                await upstream.aclose()
+-                await client.aclose()
+-        
+-            continue
+-        
+ 
+-        # پاسخ موفق HTTP داریم؛ ادامهٔ پردازش با همین مدل انجام می‌شود.
+-        break
++                if upstream is not None:
++                    try:
++                        await upstream.aclose()
++                    except Exception:
++                        pass
+ 
+-    # پاسخ غیرجریانی
+-    if not streaming:
+-        try:
+-            upstream_payload = upstream.json()
+-            converted = chat_to_responses_text(upstream_payload)
+-
+-            if not isinstance(converted, dict):
+-                raise ValueError("Unexpected response format.")
+-
+-            content = json.dumps(converted, ensure_ascii=False)
+-            output_chars = _response_output_char_count(converted)
+-
+-        except (ValueError, TypeError, AttributeError) as exc:
+-            _record_rotation_result(
+-                model_key=model_key,
+-                input_chars=input_chars,
+-                success=False,
+-                ends_model_test=True,
+-                error_type="invalid_provider_response",
+-                error_message=str(exc)[:500],
+-            )
++                try:
++                    await client.aclose()
++                except Exception:
++                    pass
+ 
+-            raise HTTPException(
+-                status_code=502,
+-                detail=f"Provider '{provider_name}' returned an invalid response.",
+-            ) from None
++                try:
++                    buffer.close()
++                except Exception:
++                    pass
+ 
+-        finally:
+-            await upstream.aclose()
+-            await client.aclose()
++    # -------------------------------------------------
++    # Streaming response to Codex
++    # -------------------------------------------------
+ 
+-        _record_rotation_result(
+-            model_key=model_key,
+-            input_chars=input_chars,
+-            output_chars=output_chars,
+-            success=True,
+-        )
++    if streaming:
+ 
+-        return Response(
+-            content=content,
+-            media_type="application/json",
+-        )
++        async def stream_response():
+ 
+-    # پاسخ جریانی
+-    async def convert_stream():
+-        converter = ResponsesStreamConverter()
+-        event_lines = []
+-        stream_completed = False
+-        stream_error = None
++            task = asyncio.create_task(
++                fetch_with_retries()
++            )
+ 
+-        try:
+-            async for line in upstream.aiter_lines():
+-                if line == "":
+-                    if event_lines:
+-                        parsed = parse_chat_sse_event(
+-                            "\n".join(event_lines)
+-                        )
+-                        event_lines = []
+-
+-                        if parsed:
+-                            if parsed.get("type") == "done":
+-                                stream_completed = True
+-                            elif (
+-                                parsed.get("type") == "delta"
+-                                and parsed.get("finish_reason") is not None
+-                            ):
+-                                stream_completed = True
+-
+-                            for output_event in converter.feed(parsed):
+-                                yield output_event
++            try:
+ 
+-                else:
+-                    event_lines.append(line)
++                while not task.done():
+ 
+-            if event_lines:
+-                parsed = parse_chat_sse_event(
+-                    "\n".join(event_lines)
+-                )
++                    done, _ = await asyncio.wait(
++                        {task},
++                        timeout=15.0,
++                    )
+ 
+-                if parsed:
+-                    if parsed.get("type") == "done":
+-                        stream_completed = True
+-                    elif (
+-                        parsed.get("type") == "delta"
+-                        and parsed.get("finish_reason") is not None
+-                    ):
+-                        stream_completed = True
++                    if not done:
++                        yield ": heartbeat\n\n"
+ 
++                result = await task
+ 
+-                    for output_event in converter.feed(parsed):
+-                        yield output_event
++                # اگر به اینجا رسیدیم، Retry تمام شده
++                # و پاسخ کامل آماده تحویل است.
++                for event in _responses_to_sse_events(
++                    result["response"]
++                ):
++                    yield event
+ 
+-            # تبدیل جریان را مانند قبل خاتمه می‌دهیم.
+-            for output_event in converter.finish():
+-                yield output_event
++            except asyncio.CancelledError:
+ 
+-        except httpx.HTTPError as exc:
+-            stream_error = str(exc)[:500]
++                # قطع ارتباط Codex:
++                # توقف کامل عملیات و عدم انتخاب مدل بعدی.
++                if not task.done():
++                    task.cancel()
+ 
+-        finally:
+-            output_chars = len(converter.text)
+-
+-            for tool in converter.tool_calls.values():
+-                arguments = tool.get("arguments", "")
+-                if isinstance(arguments, str):
+-                    output_chars += len(arguments)
+-
+-            print(
+-                "[STREAM DEBUG] "
+-                f"model={model_key} "
+-                f"completed={stream_completed} "
+-                f"error={stream_error!r} "
+-                f"text_chars={len(converter.text)} "
+-                f"tool_calls={len(converter.tool_calls)}"
+-            )
++                await asyncio.gather(
++                    task,
++                    return_exceptions=True,
++                )
+ 
+-            _record_rotation_result(
+-                model_key=model_key,
+-                input_chars=input_chars,
+-                output_chars=output_chars,
+-                success=stream_completed,
+-                ends_model_test=not stream_completed,
+-                error_type=(
+-                    None
+-                    if stream_completed
+-                    else "incomplete_stream"
+-                ),
+-                error_message=(
+-                    None
+-                    if stream_completed
+-                    else stream_error or "Stream ended without a completion event."
+-                ),
+-            )
++                raise
+ 
++        return StreamingResponse(
++            stream_response(),
++            status_code=200,
++            media_type="text/event-stream",
++            headers={
++                "Cache-Control": "no-cache",
++                "X-Accel-Buffering": "no",
++            },
++        )
+ 
+-            await upstream.aclose()
+-            await client.aclose()
++    # -------------------------------------------------
++    # Non-streaming response
++    # -------------------------------------------------
+ 
+-    return StreamingResponse(
+-        convert_stream(),
+-        status_code=upstream.status_code,
+-        media_type="text/event-stream",
+-        headers={
+-            "Cache-Control": "no-cache",
+-            "X-Accel-Buffering": "no",
+-        },
++    result = await fetch_with_retries()
++
++    return Response(
++        content=json.dumps(
++            result["response"],
++            ensure_ascii=False,
++        ),
++        media_type="application/json",
+     )
+ 
++
++
++
+ if __name__ == "__main__":
+     import uvicorn
