@@ -301,3 +301,57 @@ def load_large_catalog() -> dict[str, Any]:
         "models": models,
     }
 
+
+
+# ============================================================
+# MT5 Thinker Room - Consumer-specific context
+# ============================================================
+
+def get_thinker_room(consumer_id: str) -> dict[str, Any]:
+    """Get or create a thinker room for the specified consumer."""
+    # Each consumer has its own thinker room directory
+    room_path = DATA_DIR / f"thinker_room_{consumer_id}.json"
+    return _read_json(room_path, {
+        "consumer_id": consumer_id,
+        "conversation_history": [],
+        "current_model": None,
+        "context": {},
+        "created_at": _now(),
+        "updated_at": _now(),
+    })
+
+def save_thinker_room(consumer_id: str, room_data: dict[str, Any]) -> None:
+    """Save thinker room data for the specified consumer."""
+    room_path = DATA_DIR / f"thinker_room_{consumer_id}.json"
+    room_data["updated_at"] = _now()
+    _write_json(room_path, room_data)
+
+def add_to_conversation(consumer_id: str, role: str, content: str, model: str | None = None) -> None:
+    """Add a message to the consumer-specific conversation history."""
+    room = get_thinker_room(consumer_id)
+    room["conversation_history"].append({
+        "role": role,
+        "content": content,
+        "model": model,
+        "timestamp": _now(),
+    })
+    save_thinker_room(consumer_id, room)
+
+def get_conversation_history(consumer_id: str, limit: int | None = None) -> list[dict[str, Any]]:
+    """Get conversation history for the specified consumer."""
+    room = get_thinker_room(consumer_id)
+    history = room.get("conversation_history", [])
+    if limit:
+        return history[-limit:]
+    return history
+
+def set_current_model(consumer_id: str, model_key: str | None) -> None:
+    """Set the current model for the consumer."""
+    room = get_thinker_room(consumer_id)
+    room["current_model"] = model_key
+    save_thinker_room(consumer_id, room)
+
+def get_current_model(consumer_id: str) -> str | None:
+    """Get the current model for the consumer."""
+    room = get_thinker_room(consumer_id)
+    return room.get("current_model")

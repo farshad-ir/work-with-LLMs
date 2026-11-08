@@ -11,7 +11,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, Response, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 from app.responses_adapter import (
     chat_to_responses_text,
     parse_json_object,
@@ -67,12 +67,25 @@ def _short_gateway_log(
     provider = str(provider).replace(",", "_").replace("\n", " ")
     value = str(value).replace(",", "_").replace("\n", " ")
 
+    if value == "provider_connection_error":
+        value = "(WebErr)"
+    elif value.isdigit():
+        value = f"{int(value):,}"
+    elif value in ("TiOut", "WebErr"):
+        value = f"({value})"
+    elif value.startswith("(") and value.endswith(")"):
+        pass
+    elif value:
+        value = f"({value})"
+
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
 
         with _SHORT_LOG_LOCK:
             with log_path.open("a", encoding="utf-8") as file:
-                file.write(f"{model}, {provider}, {value}\n")
+                file.write(
+                    f"{value:<10} {provider:<15} {model}\n"
+                )
 
     except OSError as exc:
         _gateway_log(f"[SHORT LOG] Could not write log: {exc}")
@@ -504,12 +517,14 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 async def lifespan(app: FastAPI):
     yield
 
+
 class SequentialResponsesMiddleware:
-    """Serialize complete /v1/responses requests, including streaming."""
+    """Serialize Codex requests to /v1/responses."""
+
+    LOCK = asyncio.Lock()
 
     def __init__(self, app):
         self.app = app
-        self.lock = asyncio.Lock()
 
     async def __call__(self, scope, receive, send):
         if (
@@ -519,12 +534,14 @@ class SequentialResponsesMiddleware:
             await self.app(scope, receive, send)
             return
 
-        await self.lock.acquire()
+        await self.LOCK.acquire()
 
         try:
             await self.app(scope, receive, send)
         finally:
-            self.lock.release()
+            self.LOCK.release()
+
+MT5_REQUEST_LOCK = asyncio.Lock()
 
 app = FastAPI(
     title="MyCode Gateway",
@@ -538,6 +555,48 @@ app.add_middleware(SequentialResponsesMiddleware)
 @app.get("/health")
 async def health():
     return {"status": "ok", "app": "MyCode Gateway", "version": "0.1.0"}
+
+@app.post("/v1/mt5/ingest")
+async def mt5_ingest(request: Request):
+    if MT5_REQUEST_LOCK.locked():
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": {
+                    "code": "consumer_busy",
+                    "message": (
+                        "A previous MetaTrader request is still "
+                        "being processed."
+                    ),
+                }
+            },
+        )
+
+    await MT5_REQUEST_LOCK.acquire()
+
+    try:
+        try:
+            payload = await request.json()
+        except Exception:
+            raise HTTPException(
+                status_code=400,
+                detail="Request body must be valid JSON.",
+            ) from None
+
+        if not isinstance(payload, dict):
+            raise HTTPException(
+                status_code=400,
+                detail="Request body must be a JSON object.",
+            )
+
+        return {
+            "success": True,
+            "consumer": "mt5",
+            "received": True,
+        }
+
+    finally:
+        MT5_REQUEST_LOCK.release()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -802,6 +861,7 @@ async def refresh_models(provider_name: str):
 def _record_rotation_result(
     model_key: str,
     input_chars: int,
+    consumer_id: str,
     output_chars: int = 0,
     success: bool = False,
     ends_model_test: bool = False,
@@ -819,6 +879,7 @@ def _record_rotation_result(
             ends_model_test=ends_model_test,
             error_type=error_type,
             error_message=error_message,
+            consumer_id=consumer_id,  # MODIFIED: Pass consumer_id
         )
 
         provider_name, separator, model_name = (
@@ -904,6 +965,9 @@ async def codex_responses(request: Request):
         raw_body = await request.body()
         body = parse_json_object(raw_body)
         input_chars = len(raw_body.decode("utf-8"))
+        # MODIFIED: Extract consumer identifier
+        consumer_id = "codex"
+
 
     except (ValueError, UnicodeDecodeError):
         raise HTTPException(
@@ -916,7 +980,6 @@ async def codex_responses(request: Request):
 
     async def fetch_with_retries():
 
-        last_error = None
         attempt = 0
 
         # چرخه Retry عمداً نامحدود است.
@@ -924,7 +987,7 @@ async def codex_responses(request: Request):
 
             attempt += 1
 
-            selected_model = select_next_model()
+            selected_model = select_next_model(consumer_id)
 
             # اگر فعلاً مدلی انتخاب نشد، کمی صبر می‌کنیم
             # و دوباره Rotation را امتحان می‌کنیم.
@@ -982,16 +1045,8 @@ async def codex_responses(request: Request):
                     ends_model_test=True,
                     error_type="provider_not_configured",
                     error_message=error_message,
-                )
+                consumer_id=consumer_id,)
 
-                last_error = (
-                    json.dumps(
-                        {"error": {"message": error_message}},
-                        ensure_ascii=False,
-                    ).encode("utf-8"),
-                    503,
-                    "application/json",
-                )
 
                 _gateway_log(
                     f"[RETRY] attempt={attempt} "
@@ -1074,13 +1129,7 @@ async def codex_responses(request: Request):
                         error_type="provider_http_error",
                         error_message=error_message,
                         log_value=status_code,
-                    )
-
-                    last_error = (
-                        content,
-                        status_code,
-                        content_type,
-                    )
+                    consumer_id=consumer_id,)
 
                     _gateway_log(
                         f"[RETRY] attempt={attempt} "
@@ -1137,7 +1186,7 @@ async def codex_responses(request: Request):
                     input_chars=input_chars,
                     output_chars=output_chars,
                     success=True,
-                )
+                consumer_id=consumer_id,)
 
                 _gateway_log(
                     f"[RETRY] attempt={attempt} "
@@ -1176,16 +1225,7 @@ async def codex_responses(request: Request):
                     ends_model_test=True,
                     error_type=error_type,
                     error_message=error_message,
-                )
-
-                last_error = (
-                    json.dumps(
-                        {"error": {"message": error_message}},
-                        ensure_ascii=False,
-                    ).encode("utf-8"),
-                    502,
-                    "application/json",
-                )
+                consumer_id=consumer_id,)
 
                 _gateway_log(
                     f"[RETRY] attempt={attempt} "
