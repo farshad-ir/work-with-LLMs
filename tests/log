@@ -90,7 +90,7 @@ class GatewayController extends Controller
 
             // Python sends heartbeat every 15 seconds.
             // Allow enough time for several heartbeat intervals.
-            stream_set_timeout($socket, 45);
+            stream_set_timeout($socket, 0);
             
             $body = $request->getContent();
             
