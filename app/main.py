@@ -811,7 +811,7 @@ def _record_rotation_result(
     error_type: str | None = None,
     error_message: str | None = None,
     log_value: int | str | None = None,
-    consumer_id: str | None = None,  # MODIFIED: Added for dual consumer support
+    consumer_id: str,
 ) -> None:
     """ثبت نتیجه Rotation و نوشتن لاگ سه‌ستونی."""
     try:
