@@ -971,7 +971,10 @@ async def codex_responses(request: Request):
             f"[CODEX] Request body received: {len(raw_body)} bytes",
             flush=True
         )
-
+        print(
+            f"[CODEX] Request ID: {request.headers.get('x-gateway-request-id', 'MISSING')}",
+            flush=True
+        )
         
         body = parse_json_object(raw_body)
         input_chars = len(raw_body.decode("utf-8"))
