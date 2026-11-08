@@ -59,10 +59,6 @@ class GatewayController extends Controller
 
             $writeLog('PYTHON_CONNECTED');
 
-            $diag->info('Connected to Python gateway', [
-                'id' => $requestId,
-            ]);
-
             // The upstream may take a long time to generate a response.
             stream_set_timeout($socket, 0);
 
@@ -91,25 +87,10 @@ class GatewayController extends Controller
 
             $stage = 'sent';
 
-            $diag->info('Request sent to Python gateway', [
-                'id' => $requestId,
-                'bytes' => strlen($headers . $body),
-                'elapsed_ms' => round((microtime(true) - $startedAt) * 1000),
-            ]);
-
-
             $stage = 'waiting_status';
 
             // Read the upstream status line.
             $statusLine = fgets($socket, 8192);
-
-
-            $diag->info('Python gateway status line', [
-                'id' => $requestId,
-                'status_line' => $statusLine === false ? false : trim($statusLine),
-                'elapsed_ms' => round((microtime(true) - $startedAt) * 1000),
-            ]);
-
 
 
             if ($statusLine === false ||
@@ -235,20 +216,6 @@ class GatewayController extends Controller
             );
 
         } catch (\Throwable $e) {
-
-
-
-            $diag->error('Codex gateway failed', [
-                'id' => $requestId,
-                'stage' => $stage,
-                'elapsed_ms' => round((microtime(true) - $startedAt) * 1000),
-                'exception' => get_class($e),
-                'message' => $e->getMessage(),
-            ]);
-
-
-
-
 
 
             if (is_resource($socket)) {
