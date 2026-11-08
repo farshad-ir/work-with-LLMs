@@ -278,6 +278,7 @@ def _provider_has_untested_model(
 def _select_confirmed_model(
     catalog: dict[str, Any],
     state: dict[str, Any],
+    consumer_id: str,
 ) -> dict[str, Any] | None:
     """
     Start the next confirmed-model turn.
@@ -339,6 +340,7 @@ def _select_confirmed_model(
 def _advance_rotation_group(
     state: dict[str, Any],
     selected_group: str,
+    consumer_id: str,
 ) -> None:
     groups = _get_rotation_groups()
     group_count = len(groups)
@@ -364,7 +366,7 @@ def _select_ordinary_model(
     state: dict[str, Any],
     provider: str,
     provider_index: int,
-    consumer_id,
+    consumer_id: str,
 ) -> dict[str, Any] | None:
     """Select the first untested model for a provider."""
     for model in catalog["models"]:
@@ -391,7 +393,7 @@ def _select_ordinary_model(
             state.get("next_rotation_group_index", 0)
         )
 
-        _advance_rotation_group(state, provider)
+        _advance_rotation_group(state, provider, consumer_id)
 
         new_pointer = int(
             state.get("next_rotation_group_index", 0)
@@ -416,7 +418,7 @@ def _select_ordinary_model(
     return None
 
 
-def select_next_model() -> dict[str, Any] | None:
+def select_next_model(consumer_id: str | None = None) -> dict[str, Any] | None:
     """
     Select the next model according to dynamic rotation order.
 
@@ -519,7 +521,7 @@ def select_next_model() -> dict[str, Any] | None:
                 f"RETRY_MODELS={len(failed_models)}",
             )
             
-            return select_next_model()
+            return select_next_model(consumer_id)
 
     
     # Examine at most one complete rotation. Empty groups are skipped.
@@ -535,7 +537,7 @@ def select_next_model() -> dict[str, Any] | None:
                 _log_event("SKP", "CFM", "NO_CONFIRMED_MODELS")
                 continue
 
-            model = _select_confirmed_model(catalog, state)
+            model = _select_confirmed_model(catalog, state, consumer_id)
 
 
             if model is not None:
@@ -543,7 +545,7 @@ def select_next_model() -> dict[str, Any] | None:
 
                 old_pointer = group_index
 
-                _advance_rotation_group(state, "confirmed_models")
+                _advance_rotation_group(state, "confirmed_models", consumer_id)
 
                 new_pointer = int(
                     state.get("next_rotation_group_index", 0)
@@ -608,6 +610,7 @@ def record_request_result(
     ends_model_test: bool = False,
     error_type: str | None = None,
     error_message: str | None = None,
+    consumer_id: str | None = None,  # MODIFIED: Added for dual consumer support
 ) -> dict[str, Any]:
     catalog = _load_catalog()
     state = _load_state()
