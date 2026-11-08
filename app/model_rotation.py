@@ -393,6 +393,8 @@ def _select_ordinary_model(
             provider_index + 1
         ) % max(1, len(groups) - 1)
 
+        state["finished"] = False
+
         old_pointer = int(
             state.get("next_rotation_group_index", 0)
         )
