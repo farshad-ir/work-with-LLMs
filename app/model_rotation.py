@@ -81,7 +81,6 @@ def _load_state() -> dict[str, Any]:
         ROTATION_STATE_PATH,
         {
             "next_provider_index": 0,
-            "current_model_key": None,
             "finished": False,
             "test_input_char_limit": DEFAULT_TEST_INPUT_CHAR_LIMIT,
         },
@@ -92,10 +91,12 @@ def _load_state() -> dict[str, Any]:
 
     state.setdefault("next_rotation_group_index", 0)
     state.setdefault("next_rotation_group", None)
-    state.setdefault("confirmed_model_key", None)
-    state.setdefault("confirmed_model_index", 0)
+
+    state.setdefault("current_model_by_consumer", {})
+    state.setdefault("confirmed_model_by_consumer", {})
+    state.setdefault("confirmed_model_index_by_consumer", {})
+
     state.setdefault("next_provider_index", 0)
-    state.setdefault("current_model_key", None)
     state.setdefault("finished", False)
     state.setdefault(
         "test_input_char_limit",
@@ -274,34 +275,31 @@ def _provider_has_untested_model(
 
     return False
 
-
 def _select_confirmed_model(
     catalog: dict[str, Any],
     state: dict[str, Any],
     consumer_id: str,
 ) -> dict[str, Any] | None:
     """
-    Start the next confirmed-model turn.
-
-    confirmed_model_key is the persistent cursor. If it no longer
-    exists in the confirmed group, selection starts with the first
-    confirmed model.
+    Start the next confirmed-model turn for a specific consumer.
     """
     confirmed = _confirmed_models(catalog)
 
+    confirmed_keys = state["confirmed_model_by_consumer"]
+    confirmed_indexes = state["confirmed_model_index_by_consumer"]
+    current_models = state["current_model_by_consumer"]
 
     if not confirmed:
-        state["confirmed_model_key"] = None
-        state["confirmed_model_index"] = 0
+        confirmed_keys[consumer_id] = None
+        confirmed_indexes[consumer_id] = 0
         _save_catalog(catalog)
         _save_state(state)
         return None
 
+    previous_key = confirmed_keys.get(consumer_id)
+    previous_index = int(confirmed_indexes.get(consumer_id) or 0)
 
-    previous_key = state.get("confirmed_model_key")
-    previous_index = int(state.get("confirmed_model_index") or 0)
     start_index = previous_index % len(confirmed)
-
 
     if previous_key:
         matching_index = next(
@@ -312,12 +310,12 @@ def _select_confirmed_model(
             ),
             None,
         )
+
         if matching_index is not None:
             start_index = (matching_index + 1) % len(confirmed)
 
     model = confirmed[start_index]
     model_key = _model_key(model)
-
 
     model["key"] = model_key
     model["lifetime_chars"] = 0
@@ -326,15 +324,18 @@ def _select_confirmed_model(
     model["last_error_type"] = None
     model["last_error_message"] = None
 
-    state["current_model_key"] = model_key
-    state["confirmed_model_key"] = model_key
-    state["confirmed_model_index"] = start_index
+    current_models[consumer_id] = model_key
+    confirmed_keys[consumer_id] = model_key
+    confirmed_indexes[consumer_id] = start_index
+
     state["finished"] = False
 
     _save_catalog(catalog)
     _save_state(state)
 
     return model
+
+
 
 
 def _advance_rotation_group(
@@ -361,6 +362,7 @@ def _advance_rotation_group(
     state["next_rotation_group"] = groups[state["next_rotation_group_index"]]
 
 
+
 def _select_ordinary_model(
     catalog: dict[str, Any],
     state: dict[str, Any],
@@ -383,11 +385,13 @@ def _select_ordinary_model(
         model["test_status"] = "in_progress"
         model["last_tested_at"] = _now()
 
-        state["current_model_key"] = model_key
-        # Keep next_provider_index in sync for backward compatibility.
+        state["current_model_by_consumer"][consumer_id] = model_key
+
+        # Keep next_provider_index in sync.
         groups = _get_rotation_groups()
-        state["next_provider_index"] = (provider_index + 1) % max(1, len(groups) - 1)
-        state["finished"] = False
+        state["next_provider_index"] = (
+            provider_index + 1
+        ) % max(1, len(groups) - 1)
 
         old_pointer = int(
             state.get("next_rotation_group_index", 0)
@@ -406,10 +410,8 @@ def _select_ordinary_model(
                 f"{old_pointer}>{new_pointer}",
             )
 
-
         _save_catalog(catalog)
         _save_state(state)
-
 
         _log_event("SEL", _get_group_code(provider), model_key)
 
@@ -418,7 +420,8 @@ def _select_ordinary_model(
     return None
 
 
-def select_next_model(consumer_id: str | None = None) -> dict[str, Any] | None:
+
+def select_next_model(consumer_id: str) -> dict[str, Any] | None:
     """
     Select the next model according to dynamic rotation order.
 
@@ -432,7 +435,7 @@ def select_next_model(consumer_id: str | None = None) -> dict[str, Any] | None:
     models = catalog["models"]
 
     if not models:
-        state["current_model_key"] = None
+        state["current_model_by_consumer"][consumer_id] = None
         state["finished"] = True
         _save_state(state)
         return None
@@ -448,18 +451,19 @@ def select_next_model(consumer_id: str | None = None) -> dict[str, Any] | None:
             if model.get("test_status") in {"confirmed", "failed"}
         )
         _save_state(state)
-
-    current_key = state.get("current_model_key")
-
+        
+    current_key = state["current_model_by_consumer"].get(consumer_id)
+    
     if current_key:
         current_model = _find_model(catalog, str(current_key))
-
+    
         if current_model is not None and current_model.get(
             "test_status"
         ) in {"in_progress", "confirmed_in_progress"}:
             return current_model
+    
+        state["current_model_by_consumer"][consumer_id] = None
 
-        state["current_model_key"] = None
 
     # Preserve the ordinary failed-model retry behavior.
     #
@@ -484,6 +488,7 @@ def select_next_model(consumer_id: str | None = None) -> dict[str, Any] | None:
 
     # Start a new round before selecting confirmed models.
     # This happens only when all ordinary providers have no untested models.
+    
     ordinary_models_exhausted = not any(
         _provider_has_untested_model(catalog, provider)
         for provider in provider_groups
@@ -505,7 +510,7 @@ def select_next_model(consumer_id: str | None = None) -> dict[str, Any] | None:
             state["round_number"] = int(state.get("round_number", 1)) + 1
             state["round_total"] = len(failed_models)
             state["round_completed"] = 0
-            state["current_model_key"] = None
+            state["current_model_by_consumer"][consumer_id] = None
             state["finished"] = False
             state["next_rotation_group_index"] = 0
             state["next_rotation_group"] = groups[0] if groups else None
@@ -585,13 +590,14 @@ def select_next_model(consumer_id: str | None = None) -> dict[str, Any] | None:
             state,
             provider,
             provider_index,
+            consumer_id,
         )
 
         if model is not None:
             return model
 
     
-    state["current_model_key"] = None
+    state["current_model_by_consumer"][consumer_id] = None
     state["finished"] = True
 
     _save_catalog(catalog)
@@ -610,7 +616,8 @@ def record_request_result(
     ends_model_test: bool = False,
     error_type: str | None = None,
     error_message: str | None = None,
-    consumer_id: str | None = None,  # MODIFIED: Added for dual consumer support
+    *,
+    consumer_id: str,  
 ) -> dict[str, Any]:
     catalog = _load_catalog()
     state = _load_state()
@@ -671,9 +678,10 @@ def record_request_result(
             model["test_status"] = "failed"
             model["failure_at"] = _now()
 
+        if state["current_model_by_consumer"].get(consumer_id) == result_key:
+            state["current_model_by_consumer"][consumer_id] = None
+    
 
-        if state.get("current_model_key") == result_key:
-            state["current_model_key"] = None
 
     # Only ordinary model tests contribute to ordinary round completion.
     terminal_statuses = {"confirmed", "failed"}
@@ -698,7 +706,7 @@ def record_request_result(
         "failed_requests": model.get("failed_requests", 0),
         "output_chars": model.get("output_chars", 0),
         "test_status": model.get("test_status"),
-        "current_model_key": state.get("current_model_key"),
+        "current_model_key": state["current_model_by_consumer"].get(consumer_id),
         "finished": state.get("finished", False),
     }
 
@@ -759,8 +767,11 @@ def get_rotation_status() -> dict[str, Any]:
         "in_progress": in_progress,
         "confirmed_count": confirmed_count,
         "confirmed_in_progress": confirmed_in_progress,
-        "current_model_key": state.get("current_model_key"),
-        "confirmed_model_key": state.get("confirmed_model_key"),
+        
+        "current_model_by_consumer": state["current_model_by_consumer"],
+        "confirmed_model_by_consumer": state["confirmed_model_by_consumer"],
+        "confirmed_model_index_by_consumer": state["confirmed_model_index_by_consumer"],
+        
         "next_rotation_group_index": next_group_index,
         "next_rotation_group": (
             groups[next_group_index]
