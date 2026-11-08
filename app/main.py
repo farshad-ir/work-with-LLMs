@@ -67,12 +67,25 @@ def _short_gateway_log(
     provider = str(provider).replace(",", "_").replace("\n", " ")
     value = str(value).replace(",", "_").replace("\n", " ")
 
+    if value == "provider_connection_error":
+        value = "(WebErr)"
+    elif value.isdigit():
+        value = f"{int(value):,}"
+    elif value in ("TiOut", "WebErr"):
+        value = f"({value})"
+    elif value.startswith("(") and value.endswith(")"):
+        pass
+    elif value:
+        value = f"({value})"
+
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
 
         with _SHORT_LOG_LOCK:
             with log_path.open("a", encoding="utf-8") as file:
-                file.write(f"{model}, {provider}, {value}\n")
+                file.write(
+                    f"{value:<10} {provider:<15} {model}\n"
+                )
 
     except OSError as exc:
         _gateway_log(f"[SHORT LOG] Could not write log: {exc}")
