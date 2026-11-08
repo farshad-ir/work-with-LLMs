@@ -542,6 +542,28 @@ app.add_middleware(SequentialResponsesMiddleware)
 async def health():
     return {"status": "ok", "app": "MyCode Gateway", "version": "0.1.0"}
 
+@app.post("/v1/mt5/ingest")
+async def mt5_ingest(request: Request):
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Request body must be valid JSON.",
+        ) from None
+
+    if not isinstance(payload, dict):
+        raise HTTPException(
+            status_code=400,
+            detail="Request body must be a JSON object.",
+        )
+
+    return {
+        "success": True,
+        "consumer": "mt5",
+        "received": True,
+    }
+
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard():
