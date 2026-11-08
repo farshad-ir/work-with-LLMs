@@ -180,7 +180,7 @@ class GatewayController extends Controller
             }
 
             return response()->stream(
-                function () use ($socket, $isChunked, $upstreamHeaders) {
+                function () use ($socket, $isChunked, $upstreamHeaders, $writeLog) {
                     @set_time_limit(0);
 
                     try {
