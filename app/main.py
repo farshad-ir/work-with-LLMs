@@ -504,17 +504,11 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 async def lifespan(app: FastAPI):
     yield
 
+
 class SequentialResponsesMiddleware:
-    """Serialize /v1/responses per consumer.
+    """Serialize Codex requests to /v1/responses."""
 
-    One active Codex request and one active MT5 request may run
-    concurrently. A second request from the same consumer waits.
-    """
-
-    CONSUMER_LOCKS = {
-        "codex": asyncio.Lock(),
-        "mt5": asyncio.Lock(),
-    }
+    LOCK = asyncio.Lock()
 
     def __init__(self, app):
         self.app = app
@@ -527,32 +521,13 @@ class SequentialResponsesMiddleware:
             await self.app(scope, receive, send)
             return
 
-        body = await receive()
-        consumer_id = "codex"
-
-        if body.get("type") == "http.request":
-            body_bytes = body.get("body", b"{}")
-            try:
-                parsed_body = parse_json_object(body_bytes)
-                consumer_id = _normalize_consumer_id(parsed_body.get("client"))
-            except Exception:
-                consumer_id = "codex"
-
-            scope["consumer_id"] = consumer_id
-
-            async def receive_with_body() -> dict:
-                return body
-
-            receive = receive_with_body
-
-        lock = self.CONSUMER_LOCKS.get(consumer_id, self.CONSUMER_LOCKS["codex"])
-
-        await lock.acquire()
+        await self.LOCK.acquire()
 
         try:
             await self.app(scope, receive, send)
         finally:
-            lock.release()
+            self.LOCK.release()
+
 
 app = FastAPI(
     title="MyCode Gateway",
@@ -927,16 +902,6 @@ def _response_output_char_count(response: dict) -> int:
     return total
 
 
-def _normalize_consumer_id(raw_value: object) -> str:
-    """Return a supported consumer identifier."""
-    consumer_id = str(raw_value or "codex").strip().lower()
-
-    if consumer_id not in ("codex", "mt5"):
-        return "codex"
-
-    return consumer_id
-
-
 @app.post("/v1/responses")
 async def codex_responses(request: Request):
 
@@ -945,7 +910,7 @@ async def codex_responses(request: Request):
         body = parse_json_object(raw_body)
         input_chars = len(raw_body.decode("utf-8"))
         # MODIFIED: Extract consumer identifier
-        consumer_id = _normalize_consumer_id(body.get("client"))
+        consumer_id = "codex"
 
 
     except (ValueError, UnicodeDecodeError):
