@@ -146,6 +146,7 @@ class GatewayController extends Controller
             $headers =
                 "POST /v1/responses HTTP/1.1\r\n" .
                 "Host: 127.0.0.1:8088\r\n" .
+                "X-Gateway-Request-ID: {$requestId}\r\n" .
                 "Content-Type: {$contentType}\r\n" .
                 "Accept: {$accept}\r\n" .
                 "Accept-Encoding: identity\r\n" .
