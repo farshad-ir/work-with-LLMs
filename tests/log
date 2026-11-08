@@ -107,6 +107,7 @@ class GatewayController extends Controller
             }
 
             $statusCode = (int) $matches[1];
+            $writeLog('PYTHON_STATUS_RECEIVED: ' . $statusCode);
 
             // Read upstream response headers.
             $upstreamHeaders = [];
