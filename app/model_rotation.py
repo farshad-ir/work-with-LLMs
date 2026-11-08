@@ -543,7 +543,9 @@ def select_next_model(consumer_id: str) -> dict[str, Any] | None:
             for model in failed_models:
                 model["test_status"] = "untested"
                 model["failure_at"] = None
-
+            
+            _apply_nvidia_confirmed_fallback(catalog)
+            
             state["round_number"] = int(state.get("round_number", 1)) + 1
             state["round_total"] = len(failed_models)
             state["round_completed"] = 0
