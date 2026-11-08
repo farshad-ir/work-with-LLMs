@@ -21,35 +21,20 @@ class GatewayController extends Controller
         $stage = 'started';
         $startedAt = microtime(true);
 
-        $diag = Log::build([
-            'driver' => 'single',
-            'path' => storage_path('logs/gateway-private-detail.log'),
-            'level' => 'debug',
-        ]);
-
-
         $diagPath = storage_path('logs/gateway-private.log');
-
-        $entry = json_encode([
-            'time' => date('Y-m-d H:i:s'),
-            'event' => 'CODEX_CONTROLLER_ENTERED',
-            'id' => $requestId,
-            'body_bytes' => strlen($request->getContent()),
-        ]);
-
-        file_put_contents(
-            $diagPath,
-            $entry . PHP_EOL,
-            FILE_APPEND | LOCK_EX
-        );
-
-
-
-
-        $diag->info('Codex request received', [
-            'id' => $requestId,
-            'body_bytes' => strlen($request->getContent()),
-        ]);
+        
+        // Start a fresh log for this request.
+        file_put_contents($diagPath, '', LOCK_EX);
+        
+        $writeLog = function (string $event) use ($diagPath): void {
+            file_put_contents(
+                $diagPath,
+                date('Y-m-d H:i:s') . ' | ' . $event . PHP_EOL,
+                FILE_APPEND | LOCK_EX
+            );
+        };
+        
+        $writeLog('CODEX_CONTROLLER_ENTERED');
 
         try {
             $errno = 0;
@@ -71,6 +56,8 @@ class GatewayController extends Controller
             }
 
             $stage = 'connected';
+
+            $writeLog('PYTHON_CONNECTED');
 
             $diag->info('Connected to Python gateway', [
                 'id' => $requestId,
