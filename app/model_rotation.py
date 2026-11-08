@@ -275,6 +275,41 @@ def _provider_has_untested_model(
 
     return False
 
+def _apply_nvidia_confirmed_fallback(
+    catalog: dict[str, Any],
+) -> int:
+    """Mark NVIDIA models as confirmed when none is confirmed."""
+
+    nvidia_models = [
+        model
+        for model in catalog["models"]
+        if _provider_key(str(model.get("provider", ""))) == "nvidia"
+    ]
+
+    if any(
+        model.get("test_status") == "confirmed"
+        for model in nvidia_models
+    ):
+        return 0
+
+    updated = 0
+
+    for model in nvidia_models:
+        if model.get("test_status") in {
+            "in_progress",
+            "confirmed_in_progress",
+        }:
+            continue
+
+        model["test_status"] = "confirmed"
+        model["failure_at"] = None
+        updated += 1
+
+    return updated
+
+
+
+
 def _select_confirmed_model(
     catalog: dict[str, Any],
     state: dict[str, Any],
