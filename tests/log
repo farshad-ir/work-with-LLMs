@@ -132,8 +132,6 @@ class GatewayController extends Controller
             // Handle an interim 100 Continue response, if one is returned.
             if ($statusCode === 100) {
 
-                $writeLog('PYTHON_STATUS_RECEIVED: ' . $statusCode);
-
                 $statusLine = fgets($socket, 8192);
 
                 if ($statusLine === false ||
@@ -161,6 +159,8 @@ class GatewayController extends Controller
                     $upstreamHeaders[$name] = $value;
                 }
             }
+
+            $writeLog('PYTHON_STATUS_RECEIVED: ' . $statusCode);
 
             $isChunked = isset($upstreamHeaders['transfer-encoding'])
                 && stripos($upstreamHeaders['transfer-encoding'], 'chunked') !== false;
