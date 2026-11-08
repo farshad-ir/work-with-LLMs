@@ -160,12 +160,15 @@ class GatewayController extends Controller
                     $upstreamHeaders[$name] = $value;
                 }
             }
-
+            $writeLog('PYTHON_HEADERS_RECEIVED');
             $writeLog('PYTHON_STATUS_RECEIVED: ' . $statusCode);
 
             $isChunked = isset($upstreamHeaders['transfer-encoding'])
                 && stripos($upstreamHeaders['transfer-encoding'], 'chunked') !== false;
-
+            $writeLog(
+                'PYTHON_BODY_MODE: ' .
+                ($isChunked ? 'chunked' : (isset($upstreamHeaders['content-length']) ? 'content-length' : 'connection-close'))
+            );
             $responseHeaders = [
                 'Content-Type' => $upstreamHeaders['content-type'] ?? 'application/json',
                 'Cache-Control' => $upstreamHeaders['cache-control'] ?? 'no-cache',
@@ -179,13 +182,13 @@ class GatewayController extends Controller
             if (isset($upstreamHeaders['retry-after'])) {
                 $responseHeaders['Retry-After'] = $upstreamHeaders['retry-after'];
             }
+            $writeLog('LARAVEL_STREAM_RESPONSE_CREATED');
 
             return response()->stream(
                 function () use ($socket, $isChunked, $upstreamHeaders, $writeLog) {
                     @set_time_limit(0);
                     $writeLog('RESPONSE_STREAM_STARTED');
 
-                    $writeLog('RESPONSE_STREAM_STARTED');
                     try {
                         if ($isChunked) {
                             $this->streamChunkedBody($socket);
@@ -215,6 +218,9 @@ class GatewayController extends Controller
                                 $this->flushOutput();
                             }
                         }
+
+                        $writeLog('RESPONSE_BODY_READ_ENDED');
+
                     } catch (\Throwable $e) {
                         $writeLog('RESPONSE_STREAM_ERROR: ' . $e->getMessage());
                         throw $e;
