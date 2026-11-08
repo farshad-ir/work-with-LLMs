@@ -961,8 +961,18 @@ def _response_output_char_count(response: dict) -> int:
 @app.post("/v1/responses")
 async def codex_responses(request: Request):
 
+    print("[CODEX] Waiting for request body", flush=True)
+
     try:
         raw_body = await request.body()
+
+        
+        print(
+            f"[CODEX] Request body received: {len(raw_body)} bytes",
+            flush=True
+        )
+
+        
         body = parse_json_object(raw_body)
         input_chars = len(raw_body.decode("utf-8"))
         # MODIFIED: Extract consumer identifier
