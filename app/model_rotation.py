@@ -364,6 +364,7 @@ def _select_ordinary_model(
     state: dict[str, Any],
     provider: str,
     provider_index: int,
+    consumer_id,
 ) -> dict[str, Any] | None:
     """Select the first untested model for a provider."""
     for model in catalog["models"]:
