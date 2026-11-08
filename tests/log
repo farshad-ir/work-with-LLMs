@@ -93,6 +93,7 @@ class GatewayController extends Controller
             $stage = 'waiting_status';
 
             // Read the upstream status line.
+            $writeLog('WAITING_FOR_PYTHON_STATUS');
             $statusLine = fgets($socket, 8192);
 
 
@@ -182,7 +183,9 @@ class GatewayController extends Controller
             return response()->stream(
                 function () use ($socket, $isChunked, $upstreamHeaders, $writeLog) {
                     @set_time_limit(0);
+                    $writeLog('RESPONSE_STREAM_STARTED');
 
+                    $writeLog('RESPONSE_STREAM_STARTED');
                     try {
                         if ($isChunked) {
                             $this->streamChunkedBody($socket);
@@ -212,7 +215,12 @@ class GatewayController extends Controller
                                 $this->flushOutput();
                             }
                         }
+                    } catch (\Throwable $e) {
+                        $writeLog('RESPONSE_STREAM_ERROR: ' . $e->getMessage());
+                        throw $e;
                     } finally {
+                        $writeLog('RESPONSE_STREAM_CLOSED');
+                    
                         if (is_resource($socket)) {
                             fclose($socket);
                         }
@@ -224,6 +232,7 @@ class GatewayController extends Controller
 
         } catch (\Throwable $e) {
 
+            $writeLog('GATEWAY_ERROR: ' . $stage . ' | ' . $e->getMessage());
 
             if (is_resource($socket)) {
                 fclose($socket);
