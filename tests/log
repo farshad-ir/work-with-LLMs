@@ -87,6 +87,9 @@ class GatewayController extends Controller
 
             $stage = 'sent';
 
+            $writeLog('REQUEST_SENT');
+
+
             $stage = 'waiting_status';
 
             // Read the upstream status line.
