@@ -1,0 +1,748 @@
+2026-11-08 20:45:31 | request=677c6d8248a7bf9a | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:31 | request=677c6d8248a7bf9a | +2ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:32 | request=71a4cfed743410f4 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:32 | request=71a4cfed743410f4 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:32 | request=71a4cfed743410f4 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:32 | request=71a4cfed743410f4 | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:32 | request=71a4cfed743410f4 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:32 | request=71a4cfed743410f4 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:32 | request=71a4cfed743410f4 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:32 | request=b15413a614a5caac | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:32 | request=b15413a614a5caac | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:32 | request=b15413a614a5caac | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:32 | request=b15413a614a5caac | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:32 | request=b15413a614a5caac | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:32 | request=b15413a614a5caac | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:32 | request=b15413a614a5caac | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:34 | request=46b166cff10ff11a | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:34 | request=46b166cff10ff11a | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:34 | request=46b166cff10ff11a | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:34 | request=46b166cff10ff11a | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:34 | request=46b166cff10ff11a | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:34 | request=46b166cff10ff11a | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:34 | request=46b166cff10ff11a | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:34 | request=5ffd6753ac8a8807 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:34 | request=5ffd6753ac8a8807 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:34 | request=5ffd6753ac8a8807 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:34 | request=5ffd6753ac8a8807 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:34 | request=5ffd6753ac8a8807 | +2ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:34 | request=5ffd6753ac8a8807 | +2ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:34 | request=5ffd6753ac8a8807 | +2ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:35 | request=71b7ca367cfe04a9 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:35 | request=71b7ca367cfe04a9 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:35 | request=71b7ca367cfe04a9 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:35 | request=71b7ca367cfe04a9 | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:35 | request=71b7ca367cfe04a9 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:35 | request=71b7ca367cfe04a9 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:35 | request=71b7ca367cfe04a9 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:35 | request=31cbf22d4606057f | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:35 | request=31cbf22d4606057f | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:35 | request=31cbf22d4606057f | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:35 | request=31cbf22d4606057f | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:35 | request=31cbf22d4606057f | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:35 | request=31cbf22d4606057f | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:35 | request=31cbf22d4606057f | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:36 | request=774077e64e5a5430 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:36 | request=774077e64e5a5430 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:36 | request=774077e64e5a5430 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:36 | request=774077e64e5a5430 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:36 | request=774077e64e5a5430 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:36 | request=774077e64e5a5430 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:36 | request=774077e64e5a5430 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:36 | request=3ae80b665ea43c72 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:36 | request=3ae80b665ea43c72 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:36 | request=3ae80b665ea43c72 | +0ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:36 | request=3ae80b665ea43c72 | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:36 | request=3ae80b665ea43c72 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:36 | request=3ae80b665ea43c72 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:36 | request=3ae80b665ea43c72 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:36 | request=b7573fa9655d0ddc | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:36 | request=b7573fa9655d0ddc | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:36 | request=b7573fa9655d0ddc | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:36 | request=b7573fa9655d0ddc | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:36 | request=b7573fa9655d0ddc | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:36 | request=b7573fa9655d0ddc | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:36 | request=b7573fa9655d0ddc | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:37 | request=2c7266e7e934cc10 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:37 | request=2c7266e7e934cc10 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:37 | request=2c7266e7e934cc10 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:37 | request=2c7266e7e934cc10 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:37 | request=2c7266e7e934cc10 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:37 | request=2c7266e7e934cc10 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:37 | request=2c7266e7e934cc10 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:37 | request=17e49798607aacf3 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:37 | request=17e49798607aacf3 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:37 | request=17e49798607aacf3 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:37 | request=17e49798607aacf3 | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:37 | request=17e49798607aacf3 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:37 | request=17e49798607aacf3 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:37 | request=17e49798607aacf3 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:38 | request=768daf10312340f2 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:38 | request=768daf10312340f2 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:38 | request=768daf10312340f2 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:38 | request=768daf10312340f2 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:38 | request=768daf10312340f2 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:38 | request=768daf10312340f2 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:38 | request=768daf10312340f2 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:39 | request=2ed8984d915ba09c | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:39 | request=2ed8984d915ba09c | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:39 | request=2ed8984d915ba09c | +0ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:39 | request=2ed8984d915ba09c | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:39 | request=2ed8984d915ba09c | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:39 | request=2ed8984d915ba09c | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:39 | request=2ed8984d915ba09c | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:40 | request=9da7b4c2f8221dfd | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:40 | request=9da7b4c2f8221dfd | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:40 | request=9da7b4c2f8221dfd | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:40 | request=9da7b4c2f8221dfd | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:40 | request=9da7b4c2f8221dfd | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:40 | request=9da7b4c2f8221dfd | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:40 | request=9da7b4c2f8221dfd | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:41 | request=9503fa5603f222ee | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:41 | request=9503fa5603f222ee | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:41 | request=9503fa5603f222ee | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:41 | request=9503fa5603f222ee | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:41 | request=9503fa5603f222ee | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:41 | request=9503fa5603f222ee | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:41 | request=9503fa5603f222ee | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:41 | request=08294f4a35a19ef4 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:41 | request=08294f4a35a19ef4 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:41 | request=08294f4a35a19ef4 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:41 | request=08294f4a35a19ef4 | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:41 | request=08294f4a35a19ef4 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:41 | request=08294f4a35a19ef4 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:41 | request=08294f4a35a19ef4 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:42 | request=67f45a3739b6217c | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:42 | request=67f45a3739b6217c | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:42 | request=67f45a3739b6217c | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:42 | request=67f45a3739b6217c | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:42 | request=67f45a3739b6217c | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:42 | request=67f45a3739b6217c | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:42 | request=67f45a3739b6217c | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:42 | request=10d2593645cb9fbb | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:42 | request=10d2593645cb9fbb | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:42 | request=10d2593645cb9fbb | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:42 | request=10d2593645cb9fbb | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:42 | request=10d2593645cb9fbb | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:42 | request=10d2593645cb9fbb | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:42 | request=10d2593645cb9fbb | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:42 | request=eb4d899bb4112403 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:42 | request=eb4d899bb4112403 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:42 | request=eb4d899bb4112403 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:42 | request=eb4d899bb4112403 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:42 | request=eb4d899bb4112403 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:42 | request=eb4d899bb4112403 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:42 | request=eb4d899bb4112403 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:43 | request=a4705d0029e9b351 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:43 | request=a4705d0029e9b351 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:43 | request=a4705d0029e9b351 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:43 | request=a4705d0029e9b351 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:43 | request=a4705d0029e9b351 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:43 | request=a4705d0029e9b351 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:43 | request=a4705d0029e9b351 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:43 | request=270ae71c0fcdd942 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:43 | request=270ae71c0fcdd942 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:43 | request=270ae71c0fcdd942 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:43 | request=270ae71c0fcdd942 | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:43 | request=270ae71c0fcdd942 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:43 | request=270ae71c0fcdd942 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:43 | request=270ae71c0fcdd942 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:44 | request=0ccaca0aa0a7e63b | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:44 | request=0ccaca0aa0a7e63b | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:44 | request=0ccaca0aa0a7e63b | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:44 | request=0ccaca0aa0a7e63b | +2ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:44 | request=0ccaca0aa0a7e63b | +2ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:44 | request=0ccaca0aa0a7e63b | +2ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:44 | request=0ccaca0aa0a7e63b | +2ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:45 | request=090d945d3839fe2f | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:45 | request=090d945d3839fe2f | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:45 | request=090d945d3839fe2f | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:45 | request=090d945d3839fe2f | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:45 | request=090d945d3839fe2f | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:45 | request=090d945d3839fe2f | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:45 | request=090d945d3839fe2f | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:46 | request=62e213636361e83a | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:46 | request=62e213636361e83a | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:46 | request=62e213636361e83a | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:46 | request=62e213636361e83a | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:46 | request=62e213636361e83a | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:46 | request=62e213636361e83a | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:46 | request=62e213636361e83a | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:47 | request=49cbc51cdd2a7cbc | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:47 | request=49cbc51cdd2a7cbc | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:47 | request=49cbc51cdd2a7cbc | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:47 | request=49cbc51cdd2a7cbc | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:47 | request=49cbc51cdd2a7cbc | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:47 | request=49cbc51cdd2a7cbc | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:47 | request=49cbc51cdd2a7cbc | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:47 | request=e2e2db05cb64897d | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:47 | request=e2e2db05cb64897d | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:47 | request=e2e2db05cb64897d | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:47 | request=e2e2db05cb64897d | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:47 | request=e2e2db05cb64897d | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:47 | request=e2e2db05cb64897d | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:47 | request=e2e2db05cb64897d | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +4ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +4ms | PYTHON_STATUS_LINE_RECEIVED | {"status_line":"HTTP/1.1 200OK"}
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +5ms | PYTHON_HEADERS_RECEIVED
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +5ms | PYTHON_STATUS_RECEIVED: 200
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +5ms | PYTHON_BODY_MODE: chunked
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +5ms | LARAVEL_STREAM_RESPONSE_CREATED
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +19ms | RESPONSE_STREAM_STARTED
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +19ms | RESPONSE_STREAM_ERROR: Unexpected end of chunked response: {"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket\/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp:\/\/127.0.0.1:8088"}
+2026-11-08 20:45:48 | request=b176a594486a2c09 | +19ms | RESPONSE_STREAM_CLOSED
+2026-11-08 20:45:48 | request=5207cd6fb2ecbfdd | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:48 | request=5207cd6fb2ecbfdd | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:48 | request=5207cd6fb2ecbfdd | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:48 | request=5207cd6fb2ecbfdd | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:48 | request=5207cd6fb2ecbfdd | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:48 | request=5207cd6fb2ecbfdd | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:48 | request=5207cd6fb2ecbfdd | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:49 | request=c937ea3efc5c8827 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:49 | request=c937ea3efc5c8827 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:49 | request=c937ea3efc5c8827 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:49 | request=c937ea3efc5c8827 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:49 | request=c937ea3efc5c8827 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:49 | request=c937ea3efc5c8827 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:49 | request=c937ea3efc5c8827 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:49 | request=2267f34471e05da2 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:49 | request=2267f34471e05da2 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:49 | request=2267f34471e05da2 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:49 | request=2267f34471e05da2 | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:49 | request=2267f34471e05da2 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:49 | request=2267f34471e05da2 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:49 | request=2267f34471e05da2 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:50 | request=302965239f123677 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:50 | request=302965239f123677 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:50 | request=302965239f123677 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:50 | request=302965239f123677 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:50 | request=302965239f123677 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:50 | request=302965239f123677 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:50 | request=302965239f123677 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:51 | request=aaeef31abec200e7 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:51 | request=aaeef31abec200e7 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:51 | request=aaeef31abec200e7 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:51 | request=aaeef31abec200e7 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:51 | request=aaeef31abec200e7 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:51 | request=aaeef31abec200e7 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:51 | request=aaeef31abec200e7 | +2ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:51 | request=85b0ed39522af80a | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:51 | request=85b0ed39522af80a | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:51 | request=85b0ed39522af80a | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:51 | request=85b0ed39522af80a | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:51 | request=85b0ed39522af80a | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:51 | request=85b0ed39522af80a | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:51 | request=85b0ed39522af80a | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:53 | request=b651672f0d8431b1 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:53 | request=b651672f0d8431b1 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:53 | request=b651672f0d8431b1 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:53 | request=b651672f0d8431b1 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:53 | request=b651672f0d8431b1 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:53 | request=b651672f0d8431b1 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:53 | request=b651672f0d8431b1 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:55 | request=b120c9b79d79cd76 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:55 | request=b120c9b79d79cd76 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:55 | request=b120c9b79d79cd76 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:55 | request=b120c9b79d79cd76 | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:55 | request=b120c9b79d79cd76 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:55 | request=b120c9b79d79cd76 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:55 | request=b120c9b79d79cd76 | +2ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:56 | request=11b8d9db1ab5ede0 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:56 | request=11b8d9db1ab5ede0 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:56 | request=11b8d9db1ab5ede0 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:56 | request=11b8d9db1ab5ede0 | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:56 | request=11b8d9db1ab5ede0 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:56 | request=11b8d9db1ab5ede0 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:56 | request=11b8d9db1ab5ede0 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:56 | request=6d60f527b7a2224e | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:56 | request=6d60f527b7a2224e | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:56 | request=6d60f527b7a2224e | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:56 | request=6d60f527b7a2224e | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:56 | request=6d60f527b7a2224e | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:56 | request=6d60f527b7a2224e | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:56 | request=6d60f527b7a2224e | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:57 | request=7d1a0422c220166f | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:57 | request=7d1a0422c220166f | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:57 | request=7d1a0422c220166f | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:57 | request=7d1a0422c220166f | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:57 | request=7d1a0422c220166f | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:57 | request=7d1a0422c220166f | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:57 | request=7d1a0422c220166f | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:57 | request=1dff645784c328cf | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:57 | request=1dff645784c328cf | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:57 | request=1dff645784c328cf | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:57 | request=1dff645784c328cf | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:57 | request=1dff645784c328cf | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:57 | request=1dff645784c328cf | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:57 | request=1dff645784c328cf | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:58 | request=a5bf4b025587d787 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:58 | request=a5bf4b025587d787 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:58 | request=a5bf4b025587d787 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:58 | request=a5bf4b025587d787 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:58 | request=a5bf4b025587d787 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:58 | request=a5bf4b025587d787 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:58 | request=a5bf4b025587d787 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:59 | request=7dd8fb508e725371 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:59 | request=7dd8fb508e725371 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:59 | request=7dd8fb508e725371 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:45:59 | request=7dd8fb508e725371 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:45:59 | request=7dd8fb508e725371 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:59 | request=7dd8fb508e725371 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:59 | request=7dd8fb508e725371 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:45:59 | request=75894701ceae6be4 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:45:59 | request=75894701ceae6be4 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:45:59 | request=75894701ceae6be4 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 20:45:59 | request=75894701ceae6be4 | +1ms | REQUEST_SENT | {"bytes":25675}
+2026-11-08 20:45:59 | request=75894701ceae6be4 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:45:59 | request=75894701ceae6be4 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:45:59 | request=75894701ceae6be4 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:46:00 | request=ffb05891b4bad091 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:46:00 | request=ffb05891b4bad091 | +0ms | PYTHON_CONNECTED
+2026-11-08 20:46:00 | request=ffb05891b4bad091 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:46:00 | request=ffb05891b4bad091 | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:46:00 | request=ffb05891b4bad091 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:46:00 | request=ffb05891b4bad091 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:46:00 | request=ffb05891b4bad091 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 20:46:02 | request=8a058cb9304cf04f | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 20:46:02 | request=8a058cb9304cf04f | +0ms | PYTHON_CONNECTED
+2026-11-08 20:46:02 | request=8a058cb9304cf04f | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":62839}
+2026-11-08 20:46:02 | request=8a058cb9304cf04f | +1ms | REQUEST_SENT | {"bytes":63020}
+2026-11-08 20:46:02 | request=8a058cb9304cf04f | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 20:46:02 | request=8a058cb9304cf04f | +2ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 20:46:02 | request=8a058cb9304cf04f | +2ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+[yhkcinki@nhs03 ~]$ cd apps
+[yhkcinki@nhs03 apps]$ cd work*
+[yhkcinki@nhs03 work-with-LLMs]$ git status -sb
+## master...origin/master
+[yhkcinki@nhs03 work-with-LLMs]$ git pull
+Enter passphrase for key '/home/yhkcinki/.ssh/github_work_with_llms':
+remote: Enumerating objects: 56, done.
+remote: Counting objects: 100% (56/56), done.
+remote: Compressing objects: 100% (56/56), done.
+remote: Total 56 (delta 37), reused 0 (delta 0), pack-reused 0 (from 0)
+Unpacking objects: 100% (56/56), 29.21 KiB | 1.22 MiB/s, done.
+From github.com:farshad-ir/work-with-LLMs
+   2d90511..b68f390  master     -> origin/master
+Updating 2d90511..b68f390
+Fast-forward
+ app/main.py |   10 +
+ tests/log   | 1449 ++++++++++++++++++++++++++++++++--------------------------------------------------------------
+ 2 files changed, 501 insertions(+), 958 deletions(-)
+[yhkcinki@nhs03 work-with-LLMs]$ git pull
+Enter passphrase for key '/home/yhkcinki/.ssh/github_work_with_llms':
+remote: Enumerating objects: 13, done.
+remote: Counting objects: 100% (13/13), done.
+remote: Compressing objects: 100% (8/8), done.
+remote: Total 8 (delta 6), reused 0 (delta 0), pack-reused 0 (from 0)
+Unpacking objects: 100% (8/8), 2.06 KiB | 264.00 KiB/s, done.
+From github.com:farshad-ir/work-with-LLMs
+   b68f390..2b2dc39  master     -> origin/master
+Updating b68f390..2b2dc39
+Fast-forward
+ app/main.py | 5 ++++-
+ tests/log   | 1 +
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+[yhkcinki@nhs03 work-with-LLMs]$ cd \rezvan
+bash: cd: rezvan: No such file or directory
+[yhkcinki@nhs03 work-with-LLMs]$ cd ..
+[yhkcinki@nhs03 apps]$ cd ..
+[yhkcinki@nhs03 ~]$ cd rezvan
+[yhkcinki@nhs03 rezvan]$ truncate -s 0 storage/logs/gateway-private.log
+[yhkcinki@nhs03 rezvan]$ cat storage/logs/gateway-private.log
+[yhkcinki@nhs03 rezvan]$ cat storage/logs/gateway-private.log
+2026-11-08 21:31:36 | request=a2ced5109d0c9236 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:36 | request=a2ced5109d0c9236 | +1ms | PYTHON_CONNECTED
+2026-11-08 21:31:36 | request=a2ced5109d0c9236 | +87ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":63446}
+2026-11-08 21:31:36 | request=a2ced5109d0c9236 | +88ms | REQUEST_SENT | {"bytes":63667}
+2026-11-08 21:31:36 | request=a2ced5109d0c9236 | +88ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:36 | request=a2ced5109d0c9236 | +88ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:36 | request=a2ced5109d0c9236 | +89ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTP status line.
+2026-11-08 21:31:36 | request=8713900fb89b81b5 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:36 | request=8713900fb89b81b5 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:36 | request=8713900fb89b81b5 | +84ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:36 | request=8713900fb89b81b5 | +85ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:36 | request=8713900fb89b81b5 | +85ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:36 | request=8713900fb89b81b5 | +85ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:36 | request=8713900fb89b81b5 | +85ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTP status line.
+2026-11-08 21:31:37 | request=826f0f13f3c845c1 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:37 | request=826f0f13f3c845c1 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:37 | request=826f0f13f3c845c1 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":63446}
+2026-11-08 21:31:37 | request=826f0f13f3c845c1 | +1ms | REQUEST_SENT | {"bytes":63667}
+2026-11-08 21:31:37 | request=826f0f13f3c845c1 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:37 | request=826f0f13f3c845c1 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:37 | request=826f0f13f3c845c1 | +2ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:37 | request=ef608b930a36c21f | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:37 | request=ef608b930a36c21f | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:37 | request=ef608b930a36c21f | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:37 | request=ef608b930a36c21f | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:37 | request=ef608b930a36c21f | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:37 | request=ef608b930a36c21f | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:37 | request=ef608b930a36c21f | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:38 | request=9384ba814b76c3ad | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:38 | request=9384ba814b76c3ad | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:38 | request=9384ba814b76c3ad | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":63446}
+2026-11-08 21:31:38 | request=9384ba814b76c3ad | +1ms | REQUEST_SENT | {"bytes":63667}
+2026-11-08 21:31:38 | request=9384ba814b76c3ad | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:38 | request=9384ba814b76c3ad | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:38 | request=9384ba814b76c3ad | +2ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:38 | request=abf54c0ba08be06f | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:38 | request=abf54c0ba08be06f | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:38 | request=abf54c0ba08be06f | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:38 | request=abf54c0ba08be06f | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:38 | request=abf54c0ba08be06f | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:38 | request=abf54c0ba08be06f | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:38 | request=abf54c0ba08be06f | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:39 | request=19d58f512c9006ec | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:39 | request=19d58f512c9006ec | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:39 | request=19d58f512c9006ec | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":63446}
+2026-11-08 21:31:39 | request=19d58f512c9006ec | +1ms | REQUEST_SENT | {"bytes":63667}
+2026-11-08 21:31:39 | request=19d58f512c9006ec | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:39 | request=19d58f512c9006ec | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:39 | request=19d58f512c9006ec | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:39 | request=00ff4baf79132bcf | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:39 | request=00ff4baf79132bcf | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:39 | request=00ff4baf79132bcf | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:39 | request=00ff4baf79132bcf | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:39 | request=00ff4baf79132bcf | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:39 | request=00ff4baf79132bcf | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:39 | request=00ff4baf79132bcf | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:41 | request=77541232f3632281 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:41 | request=77541232f3632281 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:41 | request=77541232f3632281 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":63446}
+2026-11-08 21:31:41 | request=77541232f3632281 | +1ms | REQUEST_SENT | {"bytes":63667}
+2026-11-08 21:31:41 | request=77541232f3632281 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:41 | request=77541232f3632281 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:41 | request=77541232f3632281 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:41 | request=5dcfeec695ce60d8 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:41 | request=5dcfeec695ce60d8 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:41 | request=5dcfeec695ce60d8 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:41 | request=5dcfeec695ce60d8 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:41 | request=5dcfeec695ce60d8 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:41 | request=5dcfeec695ce60d8 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:41 | request=5dcfeec695ce60d8 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:42 | request=22843b1610d4d381 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:42 | request=22843b1610d4d381 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:42 | request=22843b1610d4d381 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:42 | request=22843b1610d4d381 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:42 | request=22843b1610d4d381 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:42 | request=22843b1610d4d381 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:42 | request=22843b1610d4d381 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:42 | request=2b7becf1fe8333ec | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:42 | request=2b7becf1fe8333ec | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:42 | request=2b7becf1fe8333ec | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":63446}
+2026-11-08 21:31:42 | request=2b7becf1fe8333ec | +1ms | REQUEST_SENT | {"bytes":63667}
+2026-11-08 21:31:42 | request=2b7becf1fe8333ec | +2ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:42 | request=2b7becf1fe8333ec | +2ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:42 | request=2b7becf1fe8333ec | +2ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:42 | request=75dbcc7558b17b05 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:42 | request=75dbcc7558b17b05 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:42 | request=75dbcc7558b17b05 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:42 | request=75dbcc7558b17b05 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:42 | request=75dbcc7558b17b05 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:42 | request=75dbcc7558b17b05 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:42 | request=75dbcc7558b17b05 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:42 | request=504fe9e1cca39109 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:42 | request=504fe9e1cca39109 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:42 | request=504fe9e1cca39109 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":63446}
+2026-11-08 21:31:42 | request=504fe9e1cca39109 | +1ms | REQUEST_SENT | {"bytes":63667}
+2026-11-08 21:31:42 | request=504fe9e1cca39109 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:42 | request=504fe9e1cca39109 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:42 | request=504fe9e1cca39109 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:43 | request=18b86a8b182a29c6 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:43 | request=18b86a8b182a29c6 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:43 | request=18b86a8b182a29c6 | +0ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:43 | request=18b86a8b182a29c6 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:43 | request=18b86a8b182a29c6 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:43 | request=18b86a8b182a29c6 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:43 | request=18b86a8b182a29c6 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:43 | request=afc2c5d659720a3c | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:43 | request=afc2c5d659720a3c | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:43 | request=afc2c5d659720a3c | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":63446}
+2026-11-08 21:31:43 | request=afc2c5d659720a3c | +1ms | REQUEST_SENT | {"bytes":63667}
+2026-11-08 21:31:43 | request=afc2c5d659720a3c | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:43 | request=afc2c5d659720a3c | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:43 | request=afc2c5d659720a3c | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:44 | request=944703461ec14038 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:44 | request=944703461ec14038 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:44 | request=944703461ec14038 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:44 | request=944703461ec14038 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:44 | request=944703461ec14038 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:44 | request=944703461ec14038 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:44 | request=944703461ec14038 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:46 | request=3a014123f22ff53a | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:46 | request=3a014123f22ff53a | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:46 | request=3a014123f22ff53a | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:46 | request=3a014123f22ff53a | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:46 | request=3a014123f22ff53a | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:46 | request=3a014123f22ff53a | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:46 | request=3a014123f22ff53a | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:47 | request=bfe9666496687b06 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:47 | request=bfe9666496687b06 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:47 | request=bfe9666496687b06 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:47 | request=bfe9666496687b06 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:47 | request=bfe9666496687b06 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:47 | request=bfe9666496687b06 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:47 | request=bfe9666496687b06 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:47 | request=6e20aaf199fb4a58 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:47 | request=6e20aaf199fb4a58 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:47 | request=6e20aaf199fb4a58 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:47 | request=6e20aaf199fb4a58 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:47 | request=6e20aaf199fb4a58 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:47 | request=6e20aaf199fb4a58 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:47 | request=6e20aaf199fb4a58 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:48 | request=40adb9bf4b597c2f | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:48 | request=40adb9bf4b597c2f | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:48 | request=40adb9bf4b597c2f | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:48 | request=40adb9bf4b597c2f | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:48 | request=40adb9bf4b597c2f | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:48 | request=40adb9bf4b597c2f | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:48 | request=40adb9bf4b597c2f | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:49 | request=e877fc1fc465a950 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:49 | request=e877fc1fc465a950 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:49 | request=e877fc1fc465a950 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:49 | request=e877fc1fc465a950 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:49 | request=e877fc1fc465a950 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:49 | request=e877fc1fc465a950 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:49 | request=e877fc1fc465a950 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:51 | request=de8548ebad019747 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:51 | request=de8548ebad019747 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:51 | request=de8548ebad019747 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:51 | request=de8548ebad019747 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:51 | request=de8548ebad019747 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:51 | request=de8548ebad019747 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:51 | request=de8548ebad019747 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:52 | request=702d37d4a21661cc | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:52 | request=702d37d4a21661cc | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:52 | request=702d37d4a21661cc | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:52 | request=702d37d4a21661cc | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:52 | request=702d37d4a21661cc | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:52 | request=702d37d4a21661cc | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:52 | request=702d37d4a21661cc | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:53 | request=f936e9185f2428e7 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:53 | request=f936e9185f2428e7 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:53 | request=f936e9185f2428e7 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:53 | request=f936e9185f2428e7 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:53 | request=f936e9185f2428e7 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:53 | request=f936e9185f2428e7 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:53 | request=f936e9185f2428e7 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:53 | request=0c894f8caea4e054 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:53 | request=0c894f8caea4e054 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:53 | request=0c894f8caea4e054 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:53 | request=0c894f8caea4e054 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:53 | request=0c894f8caea4e054 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:53 | request=0c894f8caea4e054 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:53 | request=0c894f8caea4e054 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:54 | request=e626e7b2c6039d06 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:54 | request=e626e7b2c6039d06 | +1ms | PYTHON_CONNECTED
+2026-11-08 21:31:54 | request=e626e7b2c6039d06 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:54 | request=e626e7b2c6039d06 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:54 | request=e626e7b2c6039d06 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:54 | request=e626e7b2c6039d06 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:54 | request=e626e7b2c6039d06 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:56 | request=0bfb3ed23c2d3ca4 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:56 | request=0bfb3ed23c2d3ca4 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:56 | request=0bfb3ed23c2d3ca4 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:56 | request=0bfb3ed23c2d3ca4 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:56 | request=0bfb3ed23c2d3ca4 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:56 | request=0bfb3ed23c2d3ca4 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:56 | request=0bfb3ed23c2d3ca4 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:58 | request=f17e6d268d48c98a | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:58 | request=f17e6d268d48c98a | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:58 | request=f17e6d268d48c98a | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:58 | request=f17e6d268d48c98a | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:58 | request=f17e6d268d48c98a | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:58 | request=f17e6d268d48c98a | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:58 | request=f17e6d268d48c98a | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:59 | request=1999d613d0231008 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:59 | request=1999d613d0231008 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:59 | request=1999d613d0231008 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:59 | request=1999d613d0231008 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:59 | request=1999d613d0231008 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:59 | request=1999d613d0231008 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:59 | request=1999d613d0231008 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:31:59 | request=5b5735a4498dad31 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:31:59 | request=5b5735a4498dad31 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:31:59 | request=5b5735a4498dad31 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:31:59 | request=5b5735a4498dad31 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:31:59 | request=5b5735a4498dad31 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:31:59 | request=5b5735a4498dad31 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:31:59 | request=5b5735a4498dad31 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:32:01 | request=53257f92d4cec292 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:32:01 | request=53257f92d4cec292 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:32:01 | request=53257f92d4cec292 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:32:01 | request=53257f92d4cec292 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:32:01 | request=53257f92d4cec292 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:32:01 | request=53257f92d4cec292 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:32:01 | request=53257f92d4cec292 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:32:02 | request=a8e1fcad069e1538 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:32:02 | request=a8e1fcad069e1538 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:32:02 | request=a8e1fcad069e1538 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:32:02 | request=a8e1fcad069e1538 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:32:02 | request=a8e1fcad069e1538 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:32:02 | request=a8e1fcad069e1538 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:32:02 | request=a8e1fcad069e1538 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:32:06 | request=6587e6bb9068c7bb | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:32:06 | request=6587e6bb9068c7bb | +0ms | PYTHON_CONNECTED
+2026-11-08 21:32:06 | request=6587e6bb9068c7bb | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:32:06 | request=6587e6bb9068c7bb | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:32:06 | request=6587e6bb9068c7bb | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:32:06 | request=6587e6bb9068c7bb | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:32:06 | request=6587e6bb9068c7bb | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:32:07 | request=c76bfb96bfacdfd1 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:32:07 | request=c76bfb96bfacdfd1 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:32:07 | request=c76bfb96bfacdfd1 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:32:07 | request=c76bfb96bfacdfd1 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:32:07 | request=c76bfb96bfacdfd1 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:32:07 | request=c76bfb96bfacdfd1 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:32:07 | request=c76bfb96bfacdfd1 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:32:07 | request=88ecaf6574f23b8f | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:32:07 | request=88ecaf6574f23b8f | +0ms | PYTHON_CONNECTED
+2026-11-08 21:32:07 | request=88ecaf6574f23b8f | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:32:07 | request=88ecaf6574f23b8f | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:32:07 | request=88ecaf6574f23b8f | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:32:07 | request=88ecaf6574f23b8f | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:32:07 | request=88ecaf6574f23b8f | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+2026-11-08 21:32:08 | request=4ae0802f969ff2a0 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
+2026-11-08 21:32:08 | request=4ae0802f969ff2a0 | +0ms | PYTHON_CONNECTED
+2026-11-08 21:32:08 | request=4ae0802f969ff2a0 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
+2026-11-08 21:32:08 | request=4ae0802f969ff2a0 | +1ms | REQUEST_SENT | {"bytes":25715}
+2026-11-08 21:32:08 | request=4ae0802f969ff2a0 | +1ms | WAITING_FOR_PYTHON_STATUS
+2026-11-08 21:32:08 | request=4ae0802f969ff2a0 | +1ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":false,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
+2026-11-08 21:32:08 | request=4ae0802f969ff2a0 | +1ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTPstatus line.
+
+[yhkcinki@nhs03 rezvan]$
+
+
+
+
+
+  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 745, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 372, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/yhkcinki/apps/work-with-LLMs/app/main.py", line 967, in codex_responses
+    raw_body = await request.body()
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/requests.py", line 259, in body
+    async for chunk in stream:
+  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/requests.py", line 252, in stream
+    raise ClientDisconnect()
+starlette.requests.ClientDisconnect
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 22843b1610d4d381
+INFO:     127.0.0.1:48650 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 63446 bytes
+[CODEX] Request ID: 2b7becf1fe8333ec
+INFO:     127.0.0.1:48664 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 75dbcc7558b17b05
+INFO:     127.0.0.1:48672 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 63446 bytes
+[CODEX] Request ID: 504fe9e1cca39109
+INFO:     127.0.0.1:48674 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 18b86a8b182a29c6
+INFO:     127.0.0.1:48690 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 63446 bytes
+[CODEX] Request ID: afc2c5d659720a3c
+INFO:     127.0.0.1:48698 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 944703461ec14038
+INFO:     127.0.0.1:48700 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 3a014123f22ff53a
+INFO:     127.0.0.1:48716 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: bfe9666496687b06
+INFO:     127.0.0.1:48720 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 6e20aaf199fb4a58
+INFO:     127.0.0.1:48736 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 40adb9bf4b597c2f
+INFO:     127.0.0.1:45820 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: e877fc1fc465a950
+INFO:     127.0.0.1:45832 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: de8548ebad019747
+INFO:     127.0.0.1:45838 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 702d37d4a21661cc
+INFO:     127.0.0.1:45850 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: f936e9185f2428e7
+INFO:     127.0.0.1:45866 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 0c894f8caea4e054
+INFO:     127.0.0.1:45874 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: e626e7b2c6039d06
+INFO:     127.0.0.1:45890 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 0bfb3ed23c2d3ca4
+INFO:     127.0.0.1:45904 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: f17e6d268d48c98a
+INFO:     127.0.0.1:45298 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 1999d613d0231008
+INFO:     127.0.0.1:45300 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 5b5735a4498dad31
+INFO:     127.0.0.1:45302 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 53257f92d4cec292
+INFO:     127.0.0.1:45310 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: a8e1fcad069e1538
+INFO:     127.0.0.1:45324 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 6587e6bb9068c7bb
+INFO:     127.0.0.1:45338 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: c76bfb96bfacdfd1
+INFO:     127.0.0.1:45342 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 88ecaf6574f23b8f
+INFO:     127.0.0.1:45354 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 4ae0802f969ff2a0
+INFO:     127.0.0.1:60260 - "POST /v1/responses HTTP/1.1" 200 OK
+[CODEX] Waiting for request body
+[CODEX] Request body received: 25494 bytes
+[CODEX] Request ID: 86b3aa2f3b3f183d
+INFO:     127.0.0.1:60268 - "POST /v1/responses HTTP/1.1" 200 OK
