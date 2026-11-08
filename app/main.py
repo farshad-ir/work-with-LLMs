@@ -848,13 +848,13 @@ async def refresh_models(provider_name: str):
 def _record_rotation_result(
     model_key: str,
     input_chars: int,
+    consumer_id: str,
     output_chars: int = 0,
     success: bool = False,
     ends_model_test: bool = False,
     error_type: str | None = None,
     error_message: str | None = None,
     log_value: int | str | None = None,
-    consumer_id: str,
 ) -> None:
     """ثبت نتیجه Rotation و نوشتن لاگ سه‌ستونی."""
     try:
