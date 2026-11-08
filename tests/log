@@ -200,21 +200,6 @@ class GatewayController extends Controller
             
             $statusCode = (int) $matches[1];
 
-   
-
-
-
-            if ($statusLine === false ||
-                !preg_match('/^HTTP\/\d(?:\.\d)?\s+(\d{3})/', $statusLine, $matches)) {
-                throw new \RuntimeException(
-                            'Invalid response from Python gateway. Status line: ' .
-                            var_export($statusLine, true) .
-                            ' | Socket: ' .
-                            json_encode(stream_get_meta_data($socket))
-                        );
-            }
-
-            $statusCode = (int) $matches[1];
             
 
             // Read upstream response headers.
