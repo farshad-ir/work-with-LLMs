@@ -11,7 +11,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, Response, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 from app.responses_adapter import (
     chat_to_responses_text,
     parse_json_object,
@@ -528,6 +528,7 @@ class SequentialResponsesMiddleware:
         finally:
             self.LOCK.release()
 
+MT5_REQUEST_LOCK = asyncio.Lock()
 
 app = FastAPI(
     title="MyCode Gateway",
@@ -544,25 +545,45 @@ async def health():
 
 @app.post("/v1/mt5/ingest")
 async def mt5_ingest(request: Request):
-    try:
-        payload = await request.json()
-    except Exception:
-        raise HTTPException(
-            status_code=400,
-            detail="Request body must be valid JSON.",
-        ) from None
-
-    if not isinstance(payload, dict):
-        raise HTTPException(
-            status_code=400,
-            detail="Request body must be a JSON object.",
+    if MT5_REQUEST_LOCK.locked():
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": {
+                    "code": "consumer_busy",
+                    "message": (
+                        "A previous MetaTrader request is still "
+                        "being processed."
+                    ),
+                }
+            },
         )
 
-    return {
-        "success": True,
-        "consumer": "mt5",
-        "received": True,
-    }
+    await MT5_REQUEST_LOCK.acquire()
+
+    try:
+        try:
+            payload = await request.json()
+        except Exception:
+            raise HTTPException(
+                status_code=400,
+                detail="Request body must be valid JSON.",
+            ) from None
+
+        if not isinstance(payload, dict):
+            raise HTTPException(
+                status_code=400,
+                detail="Request body must be a JSON object.",
+            )
+
+        return {
+            "success": True,
+            "consumer": "mt5",
+            "received": True,
+        }
+
+    finally:
+        MT5_REQUEST_LOCK.release()
 
 
 @app.get("/", response_class=HTMLResponse)
