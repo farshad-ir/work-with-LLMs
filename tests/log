@@ -107,7 +107,7 @@ class GatewayController extends Controller
             }
 
             $statusCode = (int) $matches[1];
-            $writeLog('PYTHON_STATUS_RECEIVED: ' . $statusCode);
+            
 
             // Read upstream response headers.
             $upstreamHeaders = [];
@@ -131,6 +131,9 @@ class GatewayController extends Controller
 
             // Handle an interim 100 Continue response, if one is returned.
             if ($statusCode === 100) {
+
+                $writeLog('PYTHON_STATUS_RECEIVED: ' . $statusCode);
+
                 $statusLine = fgets($socket, 8192);
 
                 if ($statusLine === false ||
