@@ -20,21 +20,50 @@ class GatewayController extends Controller
         $requestId = bin2hex(random_bytes(8));
         $stage = 'started';
         $startedAt = microtime(true);
-
+        
         $diagPath = storage_path('logs/gateway-private.log');
         
-        // Start a fresh log for this request.
-        file_put_contents($diagPath, '', LOCK_EX);
+        $writeLog = function (
+            string $event,
+            array $context = []
+        ) use ($diagPath, $requestId, $startedAt): void {
         
-        $writeLog = function (string $event) use ($diagPath): void {
+            $elapsedMs = (int) round(
+                (microtime(true) - $startedAt) * 1000
+            );
+        
+            $contextText = $context
+                ? ' | ' . json_encode(
+                    $context,
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                )
+                : '';
+        
+            $line = sprintf(
+                "%s | request=%s | +%dms | %s%s\n",
+                date('Y-m-d H:i:s'),
+                $requestId,
+                $elapsedMs,
+                $event,
+                $contextText
+            );
+        
             file_put_contents(
                 $diagPath,
-                date('Y-m-d H:i:s') . ' | ' . $event . PHP_EOL,
+                $line,
                 FILE_APPEND | LOCK_EX
             );
         };
         
-        $writeLog('CODEX_CONTROLLER_ENTERED');
+        $writeLog('CODEX_CONTROLLER_ENTERED', [
+            'method' => $request->method(),
+            'path' => $request->path(),
+            'client_ip' => $request->ip(),
+        ]);
+
+
+
+
 
         try {
             $errno = 0;
@@ -59,13 +88,56 @@ class GatewayController extends Controller
 
             $writeLog('PYTHON_CONNECTED');
 
-            // The upstream may take a long time to generate a response.
-            stream_set_timeout($socket, 0);
-
+            // Python sends heartbeat every 15 seconds.
+            // Allow enough time for several heartbeat intervals.
+            stream_set_timeout($socket, 45);
+            
             $body = $request->getContent();
+            
+            $payload = json_decode(
+                $body,
+                false,
+                512,
+                JSON_THROW_ON_ERROR
+            );
+            
+            if (!is_object($payload)) {
+                throw new \RuntimeException(
+                    'Invalid JSON request: expected a JSON object.'
+                );
+            }
+            
+            $clientStream = $payload->stream ?? null;
+            
+            // This endpoint is dedicated to streaming Codex responses.
+            $payload->stream = true;
+            
+            $body = json_encode(
+                $payload,
+                JSON_UNESCAPED_UNICODE |
+                JSON_UNESCAPED_SLASHES |
+                JSON_THROW_ON_ERROR
+            );
+            
+            $writeLog('REQUEST_STREAM_MODE', [
+                'client_requested_stream' => $clientStream,
+                'gateway_stream' => true,
+                'body_bytes' => strlen($body),
+            ]);
+            
+            $contentType = $request->header(
+                'Content-Type',
+                'application/json'
+            );
+            
+            $accept = $request->header(
+                'Accept',
+                'application/json'
+            );
 
-            $contentType = $request->header('Content-Type', 'application/json');
-            $accept = $request->header('Accept', 'application/json');
+
+
+
 
             // Prevent header injection.
             $contentType = str_replace(["\r", "\n"], '', $contentType);
@@ -84,17 +156,52 @@ class GatewayController extends Controller
             $stage = 'sending';
 
             $this->writeAll($socket, $headers . $body);
+            
 
             $stage = 'sent';
-
-            $writeLog('REQUEST_SENT');
-
-
+            
+            $writeLog('REQUEST_SENT', [
+                'bytes' => strlen($headers . $body),
+            ]);
+            
             $stage = 'waiting_status';
-
-            // Read the upstream status line.
+            
             $writeLog('WAITING_FOR_PYTHON_STATUS');
+            
             $statusLine = fgets($socket, 8192);
+            
+            if ($statusLine === false) {
+            
+                $meta = stream_get_meta_data($socket);
+            
+                $writeLog('PYTHON_STATUS_READ_FAILED', [
+                    'socket' => $meta,
+                ]);
+            
+                throw new \RuntimeException(
+                    'Could not read Python HTTP status line.'
+                );
+            }
+            
+            $writeLog('PYTHON_STATUS_LINE_RECEIVED', [
+                'status_line' => trim($statusLine),
+            ]);
+            
+            if (!preg_match(
+                '/^HTTP\/\d(?:\.\d)?\s+(\d{3})/',
+                $statusLine,
+                $matches
+            )) {
+                throw new \RuntimeException(
+                    'Invalid Python HTTP status line: ' .
+                    trim($statusLine)
+                );
+            }
+            
+            $statusCode = (int) $matches[1];
+
+   
+
 
 
             if ($statusLine === false ||
@@ -191,7 +298,7 @@ class GatewayController extends Controller
 
                     try {
                         if ($isChunked) {
-                            $this->streamChunkedBody($socket);
+                            $this->streamChunkedBody($socket, $writeLog);
                         } elseif (isset($upstreamHeaders['content-length'])) {
                             $remaining = (int) $upstreamHeaders['content-length'];
 
@@ -286,50 +393,97 @@ class GatewayController extends Controller
         return $result;
     }
 
-    private function streamChunkedBody($socket): void
-    {
+    private function streamChunkedBody(
+        $socket,
+        callable $writeLog
+    ): void {
+    
+        $chunkCount = 0;
+        $totalBytes = 0;
+        $heartbeatCount = 0;
+    
         while (true) {
+    
             $line = fgets($socket, 8192);
-
+    
             if ($line === false) {
-                break;
+    
+                $meta = stream_get_meta_data($socket);
+    
+                throw new \RuntimeException(
+                    'Unexpected end of chunked response: ' .
+                    json_encode($meta)
+                );
             }
-
-            $sizeText = trim(explode(';', trim($line), 2)[0]);
-
+    
+            $sizeText = trim(
+                explode(';', trim($line), 2)[0]
+            );
+    
             if ($sizeText === '' || !ctype_xdigit($sizeText)) {
-                throw new \RuntimeException('Invalid HTTP chunk size.');
+                throw new \RuntimeException(
+                    'Invalid HTTP chunk size: ' . trim($line)
+                );
             }
-
+    
             $chunkSize = hexdec($sizeText);
-
+    
             if ($chunkSize === 0) {
-                // Consume optional trailer headers.
+    
+                $trailerComplete = false;
+    
                 while (($trailer = fgets($socket, 8192)) !== false) {
+    
                     if ($trailer === "\r\n" || $trailer === "\n") {
+                        $trailerComplete = true;
                         break;
                     }
                 }
-
+    
+                if (!$trailerComplete) {
+                    throw new \RuntimeException(
+                        'Incomplete HTTP chunk trailer.'
+                    );
+                }
+    
                 break;
             }
-
-            $remaining = $chunkSize;
-
-            while ($remaining > 0) {
-                $length = min(8192, $remaining);
-                $chunk = $this->readExact($socket, $length);
-
-                echo $chunk;
-
-                $remaining -= strlen($chunk);
-                $this->flushOutput();
+    
+            $chunk = $this->readExact($socket, $chunkSize);
+    
+            $chunkCount++;
+            $totalBytes += strlen($chunk);
+    
+            if (str_contains($chunk, ': heartbeat')) {
+    
+                $heartbeatCount++;
+    
+                $writeLog('UPSTREAM_HEARTBEAT_RECEIVED', [
+                    'heartbeat_count' => $heartbeatCount,
+                    'chunk' => $chunkCount,
+                ]);
             }
-
-            // Each HTTP chunk is followed by CRLF.
-            $this->readExact($socket, 2);
+    
+            echo $chunk;
+            $this->flushOutput();
+    
+            $crlf = $this->readExact($socket, 2);
+    
+            if ($crlf !== "\r\n") {
+                throw new \RuntimeException(
+                    'Invalid HTTP chunk terminator.'
+                );
+            }
         }
+    
+        $writeLog('UPSTREAM_CHUNKED_BODY_COMPLETE', [
+            'chunks' => $chunkCount,
+            'bytes' => $totalBytes,
+            'heartbeats' => $heartbeatCount,
+        ]);
     }
+
+
 
     private function flushOutput(): void
     {
