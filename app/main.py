@@ -2,6 +2,7 @@ from threading import Lock
 import tempfile
 import json
 import os
+import secrets
 import asyncio
 import re
 from datetime import datetime, timezone
@@ -72,8 +73,19 @@ RESPONSE_BUFFER_PATH = (
     else None
 )
 
+
 BUFFERED_RESPONSE_ACTIVE = False
+BUFFERED_RESPONSE_ERROR = None
 BACKGROUND_RESPONSE_TASKS = set()
+
+RESPONSE_BUFFER_TOKEN = get_env_value(
+    "GATEWAY_RESPONSE_BUFFER_TOKEN"
+).strip()
+
+if RESPONSE_BUFFER_MODE == "buffered" and not RESPONSE_BUFFER_TOKEN:
+    raise ValueError(
+        "GATEWAY_RESPONSE_BUFFER_TOKEN is required in buffered mode."
+    )
 
 
 
@@ -622,6 +634,86 @@ app = FastAPI(
 
 app.add_middleware(SequentialResponsesMiddleware)
 
+@app.post("/api/internal/responses/consume")
+async def consume_buffered_response(request: Request):
+    global BUFFERED_RESPONSE_ACTIVE
+    global BUFFERED_RESPONSE_ERROR
+
+    supplied_token = request.headers.get(
+        "X-Gateway-Internal-Token",
+        "",
+    )
+
+    if not RESPONSE_BUFFER_TOKEN or not secrets.compare_digest(
+        supplied_token,
+        RESPONSE_BUFFER_TOKEN,
+    ):
+        return JSONResponse(
+            status_code=401,
+            content={
+                "status": "unauthorized",
+                "message": "Invalid internal token.",
+            },
+        )
+
+    if not BUFFERED_RESPONSE_ACTIVE:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "status": "not_found",
+                "message": "No active buffered response.",
+            },
+        )
+
+    if BUFFERED_RESPONSE_ERROR:
+        error_message = BUFFERED_RESPONSE_ERROR
+
+        BUFFERED_RESPONSE_ACTIVE = False
+        BUFFERED_RESPONSE_ERROR = None
+
+        return JSONResponse(
+            status_code=502,
+            content={
+                "status": "failed",
+                "error": error_message,
+            },
+        )
+
+    if not RESPONSE_BUFFER_PATH.exists():
+        return JSONResponse(
+            status_code=202,
+            content={
+                "status": "processing",
+            },
+        )
+
+    try:
+        response_payload = json.loads(
+            RESPONSE_BUFFER_PATH.read_text(
+                encoding="utf-8",
+            )
+        )
+
+    except (OSError, ValueError) as exc:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "buffer_read_error",
+                "error": str(exc),
+            },
+        )
+
+    RESPONSE_BUFFER_PATH.unlink(missing_ok=True)
+
+    BUFFERED_RESPONSE_ACTIVE = False
+    BUFFERED_RESPONSE_ERROR = None
+
+    return JSONResponse(
+        status_code=200,
+        content=response_payload,
+    )
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "app": "MyCode Gateway", "version": "0.1.0"}
@@ -1058,8 +1150,32 @@ async def codex_responses(request: Request):
             detail="Request body must be a valid JSON object.",
         ) from None
 
+    global BUFFERED_RESPONSE_ACTIVE
+    global BUFFERED_RESPONSE_ERROR
+
     chat_body = responses_to_chat(body)
     streaming = bool(chat_body.get("stream"))
+
+    if RESPONSE_BUFFER_MODE == "buffered":
+
+        if BUFFERED_RESPONSE_ACTIVE:
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "status": "consumer_busy",
+                    "message": (
+                        "A previous buffered response "
+                        "has not been consumed yet."
+                    ),
+                },
+            )
+
+        _clear_final_response_buffer()
+
+        BUFFERED_RESPONSE_ERROR = None
+        BUFFERED_RESPONSE_ACTIVE = True
+
+    
 
     async def fetch_with_retries():
 
@@ -1336,7 +1452,57 @@ async def codex_responses(request: Request):
                     pass
 
     # -------------------------------------------------
-    # Streaming response to Codex
+    # Buffered response for Laravel
+    # -------------------------------------------------
+
+    if RESPONSE_BUFFER_MODE == "buffered":
+
+        async def run_buffered_response():
+            global BUFFERED_RESPONSE_ERROR
+
+            try:
+                result = await fetch_with_retries()
+
+                _write_final_response_buffer(
+                    result["response"]
+                )
+
+                _gateway_log(
+                    "[BUFFERED] Final response saved successfully."
+                )
+
+            except asyncio.CancelledError:
+                BUFFERED_RESPONSE_ERROR = (
+                    "Background response task was cancelled."
+                )
+                raise
+
+            except Exception as exc:
+                BUFFERED_RESPONSE_ERROR = str(exc)
+
+                _gateway_log(
+                    f"[BUFFERED] Background task failed: {exc}"
+                )
+
+        task = asyncio.create_task(
+            run_buffered_response()
+        )
+
+        BACKGROUND_RESPONSE_TASKS.add(task)
+        task.add_done_callback(
+            BACKGROUND_RESPONSE_TASKS.discard
+        )
+
+        return JSONResponse(
+            status_code=202,
+            content={
+                "status": "processing",
+                "message": "Response processing started.",
+            },
+        )
+
+    # -------------------------------------------------
+    # Original direct streaming response to Codex
     # -------------------------------------------------
 
     if streaming:
@@ -1361,8 +1527,6 @@ async def codex_responses(request: Request):
 
                 result = await task
 
-                # اگر به اینجا رسیدیم، Retry تمام شده
-                # و پاسخ کامل آماده تحویل است.
                 for event in _responses_to_sse_events(
                     result["response"]
                 ):
@@ -1370,8 +1534,6 @@ async def codex_responses(request: Request):
 
             except asyncio.CancelledError:
 
-                # قطع ارتباط Codex:
-                # توقف کامل عملیات و عدم انتخاب مدل بعدی.
                 if not task.done():
                     task.cancel()
 
@@ -1393,7 +1555,7 @@ async def codex_responses(request: Request):
         )
 
     # -------------------------------------------------
-    # Non-streaming response
+    # Original direct non-streaming response
     # -------------------------------------------------
 
     result = await fetch_with_retries()
