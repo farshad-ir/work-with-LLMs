@@ -56,15 +56,21 @@ if RESPONSE_BUFFER_MODE not in ("direct", "buffered"):
     raise ValueError(
         "GATEWAY_RESPONSE_BUFFER_MODE must be direct or buffered."
     )
+    
+_response_buffer_path = get_env_value(
+    "GATEWAY_RESPONSE_BUFFER_PATH"
+).strip()
 
-RESPONSE_BUFFER_PATH = Path(
-    get_env_value("GATEWAY_RESPONSE_BUFFER_PATH")
-).expanduser()
-
-if RESPONSE_BUFFER_MODE == "buffered" and not str(RESPONSE_BUFFER_PATH):
+if RESPONSE_BUFFER_MODE == "buffered" and not _response_buffer_path:
     raise ValueError(
         "GATEWAY_RESPONSE_BUFFER_PATH is required in buffered mode."
     )
+
+RESPONSE_BUFFER_PATH = (
+    Path(_response_buffer_path).expanduser()
+    if _response_buffer_path
+    else None
+)
 
 BUFFERED_RESPONSE_ACTIVE = False
 BACKGROUND_RESPONSE_TASKS = set()
