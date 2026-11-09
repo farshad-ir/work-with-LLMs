@@ -4,6 +4,432 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Http;
+
+class GatewayController extends Controller
+{
+    public function codex(Request $request): JsonResponse
+    {
+        @set_time_limit(0);
+
+        $requestId = bin2hex(random_bytes(8));
+        $startedAt = microtime(true);
+        $socket = null;
+
+        $logPath = storage_path(
+            'logs/gateway-poll-probe.log'
+        );
+
+        $log = function (
+            string $event,
+            array $context = []
+        ) use ($logPath, $requestId, $startedAt): void {
+
+            $entry = [
+                'time' => date('Y-m-d H:i:s'),
+                'request_id' => $requestId,
+                'elapsed_ms' => (int) round(
+                    (microtime(true) - $startedAt) * 1000
+                ),
+                'event' => $event,
+                'context' => $context,
+            ];
+
+            file_put_contents(
+                $logPath,
+                json_encode(
+                    $entry,
+                    JSON_UNESCAPED_UNICODE |
+                    JSON_UNESCAPED_SLASHES
+                ) . PHP_EOL,
+                FILE_APPEND | LOCK_EX
+            );
+        };
+
+        try {
+            $token = (string) env(
+                'GATEWAY_RESPONSE_BUFFER_TOKEN',
+                ''
+            );
+
+            if ($token === '') {
+                throw new \RuntimeException(
+                    'Gateway response buffer token is missing.'
+                );
+            }
+
+            $body = $request->getContent();
+
+            $payload = json_decode($body);
+
+            if (!is_object($payload)) {
+                return response()->json([
+                    'error' => 'Invalid JSON request.',
+                ], 400);
+            }
+
+            $log('PROBE_STARTED', [
+                'body_bytes' => strlen($body),
+            ]);
+
+            /*
+             * 1. Connect to Python
+             */
+
+            $errno = 0;
+            $errstr = '';
+
+            $socket = @stream_socket_client(
+                'tcp://127.0.0.1:8088',
+                $errno,
+                $errstr,
+                15
+            );
+
+            if (!is_resource($socket)) {
+                throw new \RuntimeException(
+                    "Python connection failed: {$errstr} ({$errno})"
+                );
+            }
+
+            stream_set_timeout($socket, 30);
+
+            $log('PYTHON_CONNECTED');
+
+            /*
+             * 2. Send original request
+             */
+
+            $headers =
+                "POST /v1/responses HTTP/1.1\r\n" .
+                "Host: 127.0.0.1:8088\r\n" .
+                "X-Gateway-Request-ID: {$requestId}\r\n" .
+                "Content-Type: application/json\r\n" .
+                "Accept: application/json\r\n" .
+                "Accept-Encoding: identity\r\n" .
+                "Content-Length: " . strlen($body) . "\r\n" .
+                "Connection: close\r\n" .
+                "\r\n";
+
+            $this->writeAll(
+                $socket,
+                $headers . $body
+            );
+
+            $log('PYTHON_REQUEST_SENT', [
+                'bytes' => strlen($headers . $body),
+            ]);
+
+            /*
+             * 3. Preserve the two-second wait
+             */
+
+            $log('WAITING_TWO_SECONDS');
+
+            sleep(2);
+
+            /*
+             * 4. Read Python HTTP status
+             */
+
+            $statusLine = fgets($socket, 8192);
+
+            if ($statusLine === false) {
+                throw new \RuntimeException(
+                    'Could not read Python HTTP status line.'
+                );
+            }
+
+            if (!preg_match(
+                '/^HTTP\/\d(?:\.\d)?\s+(\d{3})/',
+                $statusLine,
+                $matches
+            )) {
+                throw new \RuntimeException(
+                    'Invalid Python HTTP status line: ' .
+                    trim($statusLine)
+                );
+            }
+
+            $pythonStatus = (int) $matches[1];
+
+            $log('PYTHON_STATUS_RECEIVED', [
+                'status' => $pythonStatus,
+                'status_line' => trim($statusLine),
+            ]);
+
+            /*
+             * 5. Read Python response headers
+             */
+
+            $pythonHeaders = [];
+
+            while (($line = fgets($socket, 8192)) !== false) {
+
+                if ($line === "\r\n" || $line === "\n") {
+                    break;
+                }
+
+                $separator = strpos($line, ':');
+
+                if ($separator === false) {
+                    continue;
+                }
+
+                $name = strtolower(
+                    trim(substr($line, 0, $separator))
+                );
+
+                $value = trim(
+                    substr($line, $separator + 1)
+                );
+
+                $pythonHeaders[$name] = $value;
+            }
+
+            /*
+             * 6. Read Python response body
+             */
+
+            if (isset($pythonHeaders['content-length'])) {
+
+                $pythonBody = $this->readExact(
+                    $socket,
+                    (int) $pythonHeaders['content-length']
+                );
+
+            } else {
+
+                $pythonBody = stream_get_contents($socket);
+
+                if ($pythonBody === false) {
+                    throw new \RuntimeException(
+                        'Could not read Python response body.'
+                    );
+                }
+            }
+
+            fclose($socket);
+            $socket = null;
+
+            $pythonJson = json_decode(
+                $pythonBody,
+                true
+            );
+
+            $log('PYTHON_INITIAL_RESPONSE_READ', [
+                'status' => $pythonStatus,
+                'body_bytes' => strlen($pythonBody),
+                'body' => $pythonJson,
+            ]);
+
+            /*
+             * 7. Python must accept the buffered request
+             */
+
+            if ($pythonStatus !== 202) {
+
+                $log('PYTHON_REQUEST_NOT_ACCEPTED', [
+                    'status' => $pythonStatus,
+                ]);
+
+                return response()->json([
+                    'probe_status' => 'python_rejected',
+                    'request_id' => $requestId,
+                    'python_status' => $pythonStatus,
+                    'python_response' => $pythonJson ?? $pythonBody,
+                ], $pythonStatus);
+            }
+
+            $log('BUFFERED_REQUEST_ACCEPTED');
+
+            /*
+             * 8. Start polling Python consume endpoint
+             */
+
+            $consumeUrl =
+                'http://127.0.0.1:8088/api/internal/responses/consume';
+
+            $pollCount = 0;
+
+            $log('POLLING_STARTED', [
+                'interval_seconds' => 2,
+            ]);
+
+            while (true) {
+
+                $pollCount++;
+
+                $pollStartedAt = microtime(true);
+
+                $pollResponse = Http::withHeaders([
+                    'X-Gateway-Internal-Token' => $token,
+                    'Accept' => 'application/json',
+                ])
+                    ->connectTimeout(5)
+                    ->timeout(30)
+                    ->post($consumeUrl);
+
+                $pollStatus = $pollResponse->status();
+
+                $pollElapsedMs = (int) round(
+                    (microtime(true) - $pollStartedAt) * 1000
+                );
+
+                /*
+                 * 9. Still processing
+                 */
+
+                if ($pollStatus === 202) {
+
+                    $log('POLL_NOT_READY', [
+                        'poll_number' => $pollCount,
+                        'http_status' => 202,
+                        'request_elapsed_ms' => $pollElapsedMs,
+                    ]);
+
+                    sleep(2);
+
+                    continue;
+                }
+
+                /*
+                 * 10. Final response is ready
+                 */
+
+                if ($pollStatus === 200) {
+
+                    $finalResponse = $pollResponse->json();
+
+                    if (!is_array($finalResponse)) {
+                        throw new \RuntimeException(
+                            'Python returned invalid final JSON.'
+                        );
+                    }
+
+                    $log('FINAL_RESPONSE_RECEIVED', [
+                        'poll_number' => $pollCount,
+                        'response_id' => $finalResponse['id'] ?? null,
+                        'response_status' => $finalResponse['status'] ?? null,
+                    ]);
+
+                    return response()->json([
+                        'probe_status' => 'completed',
+                        'request_id' => $requestId,
+                        'python_initial_status' => 202,
+                        'poll_count' => $pollCount,
+                        'final_response' => $finalResponse,
+                    ], 200);
+                }
+
+                /*
+                 * 11. Unexpected polling response
+                 */
+
+                $log('POLL_ERROR', [
+                    'poll_number' => $pollCount,
+                    'http_status' => $pollStatus,
+                    'body' => $pollResponse->body(),
+                ]);
+
+                return response()->json([
+                    'probe_status' => 'polling_failed',
+                    'request_id' => $requestId,
+                    'python_initial_status' => 202,
+                    'poll_number' => $pollCount,
+                    'consume_status' => $pollStatus,
+                    'consume_response' => $pollResponse->json()
+                        ?? $pollResponse->body(),
+                ], 502);
+            }
+
+        } catch (\Throwable $e) {
+
+            $log('PROBE_ERROR', [
+                'message' => $e->getMessage(),
+            ]);
+
+            if (is_resource($socket)) {
+                fclose($socket);
+            }
+
+            return response()->json([
+                'probe_status' => 'error',
+                'request_id' => $requestId,
+                'message' => $e->getMessage(),
+            ], 502);
+        }
+    }
+
+    private function writeAll($socket, string $data): void
+    {
+        $length = strlen($data);
+        $written = 0;
+
+        while ($written < $length) {
+
+            $result = fwrite(
+                $socket,
+                substr($data, $written)
+            );
+
+            if ($result === false || $result === 0) {
+                throw new \RuntimeException(
+                    'Failed to write request to Python.'
+                );
+            }
+
+            $written += $result;
+        }
+    }
+
+    private function readExact($socket, int $length): string
+    {
+        $result = '';
+
+        while (strlen($result) < $length) {
+
+            $chunk = fread(
+                $socket,
+                $length - strlen($result)
+            );
+
+            if ($chunk === false || $chunk === '') {
+
+                throw new \RuntimeException(
+                    'Unexpected end of Python HTTP response body.'
+                );
+            }
+
+            $result .= $chunk;
+        }
+
+        return $result;
+    }
+}
+
+
+
+
+
+
+
+
+
+XXX-XXX-XXX
+XXX-XXX-XXX
+XXX-XXX-XXX
+XXX-XXX-XXX
+XXX-XXX-XXX
+
+
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\StreamedResponse;
