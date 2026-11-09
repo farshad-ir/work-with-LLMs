@@ -23,7 +23,6 @@ class GatewayController extends Controller
             ], 500);
         }
 
-        file_put_contents('/home/yhkcinki/rezvan/storage/logs/entry-test.txt', "بسلامت وارد شدیم\n", FILE_APPEND |LOCK_EX);
 
         $socket = null;
 
@@ -496,7 +495,7 @@ class GatewayController extends Controller
 
         $events[] = $makeEvent('response.created', [
             'response' => array_merge($response, [
-                'status' => 'in_progress',
+                'status' => 'queued',
                 'output' => [],
             ]),
         ]);
@@ -528,7 +527,9 @@ class GatewayController extends Controller
                     if (!is_array($part)) {
                         continue;
                     }
-
+                    if (($part['type'] ?? null) !== 'output_text') {
+                        continue;
+                    }
                     $text = $part['text'] ?? '';
 
                     $events[] = $makeEvent('response.content_part.added', [
@@ -591,10 +592,14 @@ class GatewayController extends Controller
                 'item' => $item,
             ]);
         }
-
-        $terminalEvent = ($response['status'] ?? null) === 'incomplete'
-            ? 'response.incomplete'
-            : 'response.completed';
+        
+        $responseStatus = $response['status'] ?? null;
+        
+        $terminalEvent = match ($responseStatus) {
+            'incomplete' => 'response.incomplete',
+            'failed' => 'response.failed',
+            default => 'response.completed',
+        };
 
         $events[] = $makeEvent($terminalEvent, [
             'response' => $response,
