@@ -5,12 +5,23 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class GatewayController extends Controller
 {
     public function codex(Request $request): StreamedResponse|JsonResponse
     {
+        $internalToken = (string) env(
+            'GATEWAY_RESPONSE_BUFFER_TOKEN',
+            ''
+        );
+
+        if ($internalToken === '') {
+            return response()->json([
+                'error' => 'Gateway internal token is not configured.',
+            ], 500);
+        }
 
         file_put_contents('/home/yhkcinki/rezvan/storage/logs/entry-test.txt', "بسلامت وارد شدیم\n", FILE_APPEND |LOCK_EX);
 
@@ -344,6 +355,187 @@ class GatewayController extends Controller
                 'message' => 'Could not communicate with the Python gateway.',
             ], 502);
         }
+    }
+        private function fetchBufferedResponse(
+        string $internalToken,
+        callable $writeLog,
+        callable $sendHeartbeat
+    ): array {
+        $url = 'http://127.0.0.1:8088/api/internal/responses/consume';
+
+        $lastHeartbeat = microtime(true);
+
+        while (true) {
+            $response = Http::withHeaders([
+                'X-Gateway-Internal-Token' => $internalToken,
+                'Accept' => 'application/json',
+            ])
+                ->connectTimeout(5)
+                ->timeout(10)
+                ->post($url);
+
+            $status = $response->status();
+
+            if ($status === 202) {
+                if (microtime(true) - $lastHeartbeat >= 15) {
+                    $sendHeartbeat();
+                    $lastHeartbeat = microtime(true);
+                }
+
+                usleep(500000);
+                continue;
+            }
+
+            if ($status === 200) {
+                $payload = $response->json();
+
+                if (!is_array($payload)) {
+                    throw new \RuntimeException(
+                        'Invalid buffered response JSON.'
+                    );
+                }
+
+                $writeLog('BUFFERED_RESPONSE_RECEIVED');
+
+                return $payload;
+            }
+
+            $writeLog('BUFFERED_CONSUME_ERROR', [
+                'status' => $status,
+                'body' => $response->body(),
+            ]);
+
+            throw new \RuntimeException(
+                'Buffered response consume failed with HTTP ' . $status
+            );
+        }
+    }
+
+    private function responsesToSseEvents(array $response): array
+    {
+        $responseId = $response['id'] ?? 'resp_gateway';
+        $output = $response['output'] ?? [];
+
+        $makeEvent = function (string $type, array $data): string {
+            return 'event: ' . $type . "\n"
+                . 'data: ' . json_encode(
+                    $data,
+                    JSON_UNESCAPED_UNICODE |
+                    JSON_UNESCAPED_SLASHES |
+                    JSON_THROW_ON_ERROR
+                )
+                . "\n\n";
+        };
+
+        $events = [];
+
+        $events[] = $makeEvent('response.created', [
+            'response' => array_merge($response, [
+                'status' => 'in_progress',
+                'output' => [],
+            ]),
+        ]);
+
+        $events[] = $makeEvent('response.in_progress', [
+            'response' => array_merge($response, [
+                'status' => 'in_progress',
+                'output' => [],
+            ]),
+        ]);
+
+        foreach ($output as $outputIndex => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $itemId = $item['id'] ?? "item_{$outputIndex}";
+
+            $events[] = $makeEvent('response.output_item.added', [
+                'response_id' => $responseId,
+                'output_index' => $outputIndex,
+                'item' => array_merge($item, [
+                    'status' => 'in_progress',
+                ]),
+            ]);
+
+            if (($item['type'] ?? null) === 'message') {
+                foreach (($item['content'] ?? []) as $contentIndex => $part) {
+                    if (!is_array($part)) {
+                        continue;
+                    }
+
+                    $text = $part['text'] ?? '';
+
+                    $events[] = $makeEvent('response.content_part.added', [
+                        'response_id' => $responseId,
+                        'item_id' => $itemId,
+                        'output_index' => $outputIndex,
+                        'content_index' => $contentIndex,
+                        'part' => array_merge($part, [
+                            'text' => '',
+                        ]),
+                    ]);
+
+                    if ($text !== '') {
+                        $events[] = $makeEvent('response.output_text.delta', [
+                            'response_id' => $responseId,
+                            'item_id' => $itemId,
+                            'output_index' => $outputIndex,
+                            'content_index' => $contentIndex,
+                            'delta' => $text,
+                        ]);
+                    }
+
+                    $events[] = $makeEvent('response.output_text.done', [
+                        'response_id' => $responseId,
+                        'item_id' => $itemId,
+                        'output_index' => $outputIndex,
+                        'content_index' => $contentIndex,
+                        'text' => $text,
+                    ]);
+
+                    $events[] = $makeEvent('response.content_part.done', [
+                        'response_id' => $responseId,
+                        'item_id' => $itemId,
+                        'output_index' => $outputIndex,
+                        'content_index' => $contentIndex,
+                        'part' => $part,
+                    ]);
+                }
+            } elseif (($item['type'] ?? null) === 'function_call') {
+                $arguments = $item['arguments'] ?? '';
+
+                $events[] = $makeEvent('response.function_call_arguments.delta', [
+                    'response_id' => $responseId,
+                    'item_id' => $itemId,
+                    'output_index' => $outputIndex,
+                    'delta' => $arguments,
+                ]);
+
+                $events[] = $makeEvent('response.function_call_arguments.done', [
+                    'response_id' => $responseId,
+                    'item_id' => $itemId,
+                    'output_index' => $outputIndex,
+                    'arguments' => $arguments,
+                ]);
+            }
+
+            $events[] = $makeEvent('response.output_item.done', [
+                'response_id' => $responseId,
+                'output_index' => $outputIndex,
+                'item' => $item,
+            ]);
+        }
+
+        $terminalEvent = ($response['status'] ?? null) === 'incomplete'
+            ? 'response.incomplete'
+            : 'response.completed';
+
+        $events[] = $makeEvent($terminalEvent, [
+            'response' => $response,
+        ]);
+
+        return $events;
     }
 
     private function writeAll($socket, string $data): void
