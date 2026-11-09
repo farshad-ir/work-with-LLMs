@@ -267,6 +267,71 @@ class GatewayController extends Controller
             $writeLog('PYTHON_HEADERS_RECEIVED');
             $writeLog('PYTHON_STATUS_RECEIVED: ' . $statusCode);
 
+            if ($statusCode === 202) {
+                if (is_resource($socket)) {
+                    fclose($socket);
+                    $socket = null;
+                }
+
+                $writeLog('BUFFERED_REQUEST_ACCEPTED');
+                return response()->stream(
+                    function () use ($internalToken, $writeLog) {
+                        @set_time_limit(0);
+
+                        $writeLog('BUFFERED_SSE_STREAM_STARTED');
+
+                        $sendHeartbeat = function () use ($writeLog) {
+                            echo ": heartbeat\n\n";
+                            $this->flushOutput();
+
+                            $writeLog('CLIENT_HEARTBEAT_SENT');
+                        };
+
+                        try {
+                            $bufferedResponse = $this->fetchBufferedResponse(
+                                $internalToken,
+                                $writeLog,
+                                $sendHeartbeat
+                            );
+                            $events = $this->responsesToSseEvents(
+                                $bufferedResponse
+                            );
+
+                            foreach ($events as $event) {
+                                echo $event;
+                                $this->flushOutput();
+                            }
+
+                            $writeLog('BUFFERED_SSE_DELIVERY_COMPLETED', [
+                                'response_id' => $bufferedResponse['id'] ?? null,
+                                'event_count' => count($events),
+                            ]);
+
+                        } catch (\Throwable $e) {
+                            $writeLog('BUFFERED_SSE_DELIVERY_ERROR', [
+                                'message' => $e->getMessage(),
+                            ]);
+
+                            echo "event: error\n";
+                            echo 'data: ' . json_encode([
+                                'error' => 'buffered_response_failed',
+                                'message' => 'Gateway response delivery failed.',
+                            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                            echo "\n\n";
+
+                            $this->flushOutput();
+                        }
+
+                        $writeLog('BUFFERED_SSE_STREAM_CLOSED');
+                    },
+                    200,
+                    [
+                        'Content-Type' => 'text/event-stream; charset=utf-8',
+                        'Cache-Control' => 'no-cache',
+                        'X-Accel-Buffering' => 'no',
+                    ]
+                );
+            }
             $isChunked = isset($upstreamHeaders['transfer-encoding'])
                 && stripos($upstreamHeaders['transfer-encoding'], 'chunked') !== false;
             $writeLog(
