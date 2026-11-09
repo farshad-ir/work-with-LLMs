@@ -98,7 +98,7 @@ class GatewayController extends Controller
             ) {
                 $log('PREVIOUS_BUFFERED_REQUEST_DETECTED');
 
-                $previousResponse = $this->pollConsume(
+            $previousResponse = $this->pollConsume(
                     $token,
                     $requestId,
                     'previous',
@@ -355,87 +355,79 @@ class GatewayController extends Controller
      * $kind distinguishes the previous request from the current request.
      */
 
-    private function pollConsume(
-        string $token,
-        string $requestId,
-        string $kind,
-        callable $log
-    ): array {
+private function pollConsume(
+    string $token,
+    string $requestId,
+    string $kind,
+    callable $log
+): array {
 
-        $pollCount = 0;
+    $pollCount = 0;
 
-        $log('POLLING_STARTED', [
-            'kind' => $kind,
-            'interval_seconds' => self::POLL_INTERVAL_SECONDS,
-        ]);
+    $log('POLLING_STARTED', [
+        'kind' => $kind,
+        'interval_seconds' => self::POLL_INTERVAL_SECONDS,
+    ]);
 
-        while (true) {
+    while (true) {
 
-            $pollCount++;
+        $pollCount++;
+        $pollStartedAt = microtime(true);
 
-            $pollStartedAt = microtime(true);
+        $result = $this->sendConsumeRequest($token);
 
-            $pollResponse = Http::withHeaders([
-                'X-Gateway-Internal-Token' => $token,
-                'Accept' => 'application/json',
-            ])
-                ->connectTimeout(5)
-                ->timeout(30)
-                ->post(self::CONSUME_URL);
+        $pollStatus = $result['status'];
+        $payload = $result['json'];
 
-            $pollStatus = $pollResponse->status();
+        $pollElapsedMs = (int) round(
+            (microtime(true) - $pollStartedAt) * 1000
+        );
 
-            $pollElapsedMs = (int) round(
-                (microtime(true) - $pollStartedAt) * 1000
-            );
+        if ($pollStatus === 202) {
 
-            if ($pollStatus === 202) {
-
-                $log('POLL_NOT_READY', [
-                    'kind' => $kind,
-                    'poll_number' => $pollCount,
-                    'http_status' => 202,
-                    'request_elapsed_ms' => $pollElapsedMs,
-                ]);
-
-                sleep(self::POLL_INTERVAL_SECONDS);
-
-                continue;
-            }
-
-            if ($pollStatus === 200) {
-
-                $payload = $pollResponse->json();
-
-                if (!is_array($payload)) {
-                    throw new \RuntimeException(
-                        "Invalid {$kind} buffered response JSON."
-                    );
-                }
-
-                $log('POLL_RESPONSE_RECEIVED', [
-                    'kind' => $kind,
-                    'poll_number' => $pollCount,
-                    'response_id' => $payload['id'] ?? null,
-                    'response_status' => $payload['status'] ?? null,
-                ]);
-
-                return $payload;
-            }
-
-            $log('POLL_ERROR', [
+            $log('POLL_NOT_READY', [
                 'kind' => $kind,
                 'poll_number' => $pollCount,
-                'http_status' => $pollStatus,
-                'body' => $pollResponse->body(),
+                'http_status' => 202,
+                'request_elapsed_ms' => $pollElapsedMs,
             ]);
 
-            throw new \RuntimeException(
-                "{$kind} buffered response consume failed with HTTP {$pollStatus}: " .
-                $pollResponse->body()
-            );
+            sleep(self::POLL_INTERVAL_SECONDS);
+
+            continue;
         }
+
+        if ($pollStatus === 200) {
+
+            if (!is_array($payload)) {
+                throw new \RuntimeException(
+                    "Invalid {$kind} buffered response JSON."
+                );
+            }
+
+            $log('POLL_RESPONSE_RECEIVED', [
+                'kind' => $kind,
+                'poll_number' => $pollCount,
+                'response_id' => $payload['id'] ?? null,
+                'response_status' => $payload['status'] ?? null,
+            ]);
+
+            return $payload;
+        }
+
+        $log('POLL_ERROR', [
+            'kind' => $kind,
+            'poll_number' => $pollCount,
+            'http_status' => $pollStatus,
+            'body' => $payload,
+        ]);
+
+        throw new \RuntimeException(
+            "{$kind} consume failed with HTTP {$pollStatus}: " .
+            json_encode($payload, JSON_UNESCAPED_UNICODE)
+        );
     }
+}
 
     private function writeAll($socket, string $data): void
     {
