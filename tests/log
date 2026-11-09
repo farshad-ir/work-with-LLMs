@@ -179,6 +179,7 @@ class GatewayController extends Controller
             
             $writeLog('WAITING_FOR_PYTHON_STATUS');
             
+            sleep(2);
             $statusLine = fgets($socket, 8192);
             
             if ($statusLine === false) {
