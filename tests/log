@@ -286,12 +286,15 @@ class GatewayController extends Controller
                             $writeLog('CLIENT_HEARTBEAT_SENT');
                         };
 
+                                                $sentEventCount = 0;
+
                         try {
                             $bufferedResponse = $this->fetchBufferedResponse(
                                 $internalToken,
                                 $writeLog,
                                 $sendHeartbeat
                             );
+
                             $events = $this->responsesToSseEvents(
                                 $bufferedResponse
                             );
@@ -299,6 +302,7 @@ class GatewayController extends Controller
                             foreach ($events as $event) {
                                 echo $event;
                                 $this->flushOutput();
+                                $sentEventCount++;
                             }
 
                             $writeLog('BUFFERED_SSE_DELIVERY_COMPLETED', [
@@ -309,17 +313,30 @@ class GatewayController extends Controller
                         } catch (\Throwable $e) {
                             $writeLog('BUFFERED_SSE_DELIVERY_ERROR', [
                                 'message' => $e->getMessage(),
+                                'sent_event_count' => $sentEventCount,
                             ]);
 
-                            echo "event: error\n";
-                            echo 'data: ' . json_encode([
-                                'error' => 'buffered_response_failed',
+                            $errorEvent = [
+                                'type' => 'error',
+                                'code' => 'buffered_response_failed',
                                 'message' => 'Gateway response delivery failed.',
-                            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                                'param' => null,
+                                'sequence_number' => $sentEventCount + 1,
+                            ];
+
+                            echo "event: error\n";
+                            echo 'data: ' . json_encode(
+                                $errorEvent,
+                                JSON_UNESCAPED_UNICODE |
+                                JSON_UNESCAPED_SLASHES |
+                                JSON_THROW_ON_ERROR
+                            );
                             echo "\n\n";
 
                             $this->flushOutput();
                         }
+
+                        $writeLog('BUFFERED_SSE_STREAM_CLOSED');
 
                         $writeLog('BUFFERED_SSE_STREAM_CLOSED');
                     },
