@@ -429,6 +429,127 @@ private function pollConsume(
     }
 }
 
+
+
+    private function sendConsumeRequest(string $token): array
+    {
+        $socket = null;
+
+        try {
+            $errno = 0;
+            $errstr = '';
+
+            $socket = @stream_socket_client(
+                self::PYTHON_URL,
+                $errno,
+                $errstr,
+                15
+            );
+
+            if (!is_resource($socket)) {
+                throw new \RuntimeException(
+                    "Python consume connection failed: {$errstr} ({$errno})"
+                );
+            }
+
+            stream_set_timeout($socket, 30);
+
+            $body = '{}';
+
+            $headers =
+                "POST /api/internal/responses/consume HTTP/1.1\r\n" .
+                "Host: 127.0.0.1:8088\r\n" .
+                "X-Gateway-Internal-Token: {$token}\r\n" .
+                "Content-Type: application/json\r\n" .
+                "Accept: application/json\r\n" .
+                "Accept-Encoding: identity\r\n" .
+                "Content-Length: " . strlen($body) . "\r\n" .
+                "Connection: close\r\n" .
+                "\r\n";
+
+            $this->writeAll(
+                $socket,
+                $headers . $body
+            );
+
+            $statusLine = fgets($socket, 8192);
+
+            if ($statusLine === false) {
+                throw new \RuntimeException(
+                    'Could not read consume HTTP status line.'
+                );
+            }
+
+            if (!preg_match(
+                '/^HTTP\/\d(?:\.\d)?\s+(\d{3})/',
+                $statusLine,
+                $matches
+            )) {
+                throw new \RuntimeException(
+                    'Invalid consume HTTP status line: ' .
+                    trim($statusLine)
+                );
+            }
+
+            $status = (int) $matches[1];
+            $responseHeaders = [];
+
+            while (($line = fgets($socket, 8192)) !== false) {
+                if ($line === "\r\n" || $line === "\n") {
+                    break;
+                }
+
+                $separator = strpos($line, ':');
+
+                if ($separator === false) {
+                    continue;
+                }
+
+                $name = strtolower(
+                    trim(substr($line, 0, $separator))
+                );
+
+                $value = trim(
+                    substr($line, $separator + 1)
+                );
+
+                $responseHeaders[$name] = $value;
+            }
+
+            if (isset($responseHeaders['content-length'])) {
+                $responseBody = $this->readExact(
+                    $socket,
+                    (int) $responseHeaders['content-length']
+                );
+            } else {
+                $responseBody = stream_get_contents($socket);
+
+                if ($responseBody === false) {
+                    throw new \RuntimeException(
+                        'Could not read consume response body.'
+                    );
+                }
+            }
+
+            $responseJson = json_decode(
+                $responseBody,
+                true
+            );
+
+            return [
+                'status' => $status,
+                'json' => $responseJson ?? $responseBody,
+            ];
+
+        } finally {
+            if (is_resource($socket)) {
+                fclose($socket);
+            }
+        }
+    }
+
+
+
     private function writeAll($socket, string $data): void
     {
         $length = strlen($data);
