@@ -480,7 +480,17 @@ class GatewayController extends Controller
         $responseId = $response['id'] ?? 'resp_gateway';
         $output = $response['output'] ?? [];
 
-        $makeEvent = function (string $type, array $data): string {
+        $sequenceNumber = 0;
+
+        $makeEvent = function (
+            string $type,
+            array $data
+        ) use (&$sequenceNumber): string {
+            $sequenceNumber++;
+
+            $data['type'] = $type;
+            $data['sequence_number'] = $sequenceNumber;
+
             return 'event: ' . $type . "\n"
                 . 'data: ' . json_encode(
                     $data,
@@ -495,7 +505,7 @@ class GatewayController extends Controller
 
         $events[] = $makeEvent('response.created', [
             'response' => array_merge($response, [
-                'status' => 'queued',
+                'status' => 'in_progress',
                 'output' => [],
             ]),
         ]);
@@ -527,7 +537,53 @@ class GatewayController extends Controller
                     if (!is_array($part)) {
                         continue;
                     }
-                    if (($part['type'] ?? null) !== 'output_text') {
+
+                    $partType = $part['type'] ?? null;
+
+                    if (!in_array($partType, ['output_text', 'refusal'], true)) {
+                        continue;
+                    }
+
+                    if ($partType === 'refusal') {
+                        $refusal = $part['refusal'] ?? '';
+
+                        $events[] = $makeEvent('response.content_part.added', [
+                            'response_id' => $responseId,
+                            'item_id' => $itemId,
+                            'output_index' => $outputIndex,
+                            'content_index' => $contentIndex,
+                            'part' => [
+                                'type' => 'refusal',
+                                'refusal' => '',
+                            ],
+                        ]);
+
+                        if ($refusal !== '') {
+                            $events[] = $makeEvent('response.refusal.delta', [
+                                'response_id' => $responseId,
+                                'item_id' => $itemId,
+                                'output_index' => $outputIndex,
+                                'content_index' => $contentIndex,
+                                'delta' => $refusal,
+                            ]);
+                        }
+
+                        $events[] = $makeEvent('response.refusal.done', [
+                            'response_id' => $responseId,
+                            'item_id' => $itemId,
+                            'output_index' => $outputIndex,
+                            'content_index' => $contentIndex,
+                            'refusal' => $refusal,
+                        ]);
+
+                        $events[] = $makeEvent('response.content_part.done', [
+                            'response_id' => $responseId,
+                            'item_id' => $itemId,
+                            'output_index' => $outputIndex,
+                            'content_index' => $contentIndex,
+                            'part' => $part,
+                        ]);
+
                         continue;
                     }
                     $text = $part['text'] ?? '';
@@ -596,10 +652,15 @@ class GatewayController extends Controller
         $responseStatus = $response['status'] ?? null;
         
         $terminalEvent = match ($responseStatus) {
+            'completed' => 'response.completed',
             'incomplete' => 'response.incomplete',
             'failed' => 'response.failed',
-            default => 'response.completed',
-        };
+            default => throw new \RuntimeException(
+                'Unsupported terminal response status: ' .
+                (string) $responseStatus
+            ),
+        }; 
+
 
         $events[] = $makeEvent($terminalEvent, [
             'response' => $response,
