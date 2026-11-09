@@ -286,7 +286,7 @@ class GatewayController extends Controller
                             $writeLog('CLIENT_HEARTBEAT_SENT');
                         };
 
-                                                $sentEventCount = 0;
+                        $sentEventCount = 0;
 
                         try {
                             $bufferedResponse = $this->fetchBufferedResponse(
@@ -338,7 +338,6 @@ class GatewayController extends Controller
 
                         $writeLog('BUFFERED_SSE_STREAM_CLOSED');
 
-                        $writeLog('BUFFERED_SSE_STREAM_CLOSED');
                     },
                     200,
                     [
