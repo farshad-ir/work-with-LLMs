@@ -47,6 +47,32 @@ def _gateway_log(*args, **kwargs):
         print(*args, **kwargs)
 
 
+RESPONSE_BUFFER_MODE = (
+    get_env_value("GATEWAY_RESPONSE_BUFFER_MODE").strip().lower()
+    or "direct"
+)
+
+if RESPONSE_BUFFER_MODE not in ("direct", "buffered"):
+    raise ValueError(
+        "GATEWAY_RESPONSE_BUFFER_MODE must be direct or buffered."
+    )
+
+RESPONSE_BUFFER_PATH = Path(
+    get_env_value("GATEWAY_RESPONSE_BUFFER_PATH")
+).expanduser()
+
+if RESPONSE_BUFFER_MODE == "buffered" and not str(RESPONSE_BUFFER_PATH):
+    raise ValueError(
+        "GATEWAY_RESPONSE_BUFFER_PATH is required in buffered mode."
+    )
+
+BUFFERED_RESPONSE_ACTIVE = False
+BACKGROUND_RESPONSE_TASKS = set()
+
+
+
+
+
 _SHORT_LOG_LOCK = Lock()
 
 
@@ -243,6 +269,44 @@ def _responses_to_sse_events(response: dict) -> list[str]:
     }))
 
     return events
+
+def _clear_final_response_buffer():
+    RESPONSE_BUFFER_PATH.unlink(missing_ok=True)
+
+
+def _write_final_response_buffer(response: dict):
+    path = RESPONSE_BUFFER_PATH
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    temp_path = None
+
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as file:
+            temp_path = Path(file.name)
+
+            json.dump(
+                response,
+                file,
+                ensure_ascii=False,
+            )
+
+            file.flush()
+            os.fsync(file.fileno())
+
+        os.replace(temp_path, path)
+
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+
+
 
 # Aliases for provider normalization
 def _normalize_provider_name(name: str) -> str:
