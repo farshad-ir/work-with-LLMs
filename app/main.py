@@ -160,6 +160,7 @@ def _short_gateway_log(
                 file.flush()
                 os.fsync(file.fileno())
 
+            os.chmod(temp_path,0o640)
             os.replace(temp_path, log_path)
 
     except OSError as exc:
