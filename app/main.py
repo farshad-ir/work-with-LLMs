@@ -737,13 +737,13 @@ async def consume_buffered_response(request: Request):
 
 
     if CODEX_RESETTING:
-    return JSONResponse(
-        status_code=503,
-        content={
-            "status": "reset_in_progress",
-            "message": "Codex gateway is resetting.",
-        },
-    )
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "reset_in_progress",
+                "message": "Codex gateway is resetting.",
+            },
+        )
     
 
     if not BUFFERED_RESPONSE_ACTIVE:
