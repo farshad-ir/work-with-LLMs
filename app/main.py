@@ -641,8 +641,9 @@ async def lifespan(app: FastAPI):
     yield
 
 
+
 class SequentialResponsesMiddleware:
-    """Serialize Codex requests to /v1/responses."""
+    """Serialize Codex requests and support priority reset."""
 
     LOCK = asyncio.Lock()
 
@@ -657,12 +658,49 @@ class SequentialResponsesMiddleware:
             await self.app(scope, receive, send)
             return
 
-        await self.LOCK.acquire()
+        current_task = asyncio.current_task()
+
+        if current_task is not None:
+            CODEX_REQUEST_TASKS.add(current_task)
+
+        lock_acquired = False
 
         try:
+            if CODEX_RESETTING:
+                response = JSONResponse(
+                    status_code=503,
+                    content={
+                        "status": "reset_in_progress",
+                        "message": "Codex gateway is resetting.",
+                    },
+                )
+                await response(scope, receive, send)
+                return
+
+            await self.LOCK.acquire()
+            lock_acquired = True
+
+            if CODEX_RESETTING:
+                response = JSONResponse(
+                    status_code=503,
+                    content={
+                        "status": "reset_in_progress",
+                        "message": "Codex gateway is resetting.",
+                    },
+                )
+                await response(scope, receive, send)
+                return
+
             await self.app(scope, receive, send)
+
         finally:
-            self.LOCK.release()
+            if lock_acquired:
+                self.LOCK.release()
+
+            if current_task is not None:
+                CODEX_REQUEST_TASKS.discard(current_task)
+
+
 
 MT5_REQUEST_LOCK = asyncio.Lock()
 
@@ -757,9 +795,12 @@ async def consume_buffered_response(request: Request):
 
 @app.post("/api/internal/admin/reset-codex")
 async def reset_codex(request: Request):
-    """Cancel buffered Codex work and clear its shared response state."""
+    """Cancel all Codex work and clear shared response state."""
+
     global BUFFERED_RESPONSE_ACTIVE
     global BUFFERED_RESPONSE_ERROR
+    global CODEX_RESETTING
+    global CODEX_GENERATION
 
     supplied_token = request.headers.get(
         "X-Gateway-Internal-Token",
@@ -787,34 +828,49 @@ async def reset_codex(request: Request):
             },
         )
 
-    # Prevent new Codex requests from starting during reset.
-    await SequentialResponsesMiddleware.LOCK.acquire()
+    if CODEX_RESETTING:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "status": "reset_in_progress",
+                "message": "A Codex reset is already running.",
+            },
+        )
+
+    CODEX_RESETTING = True
+    CODEX_GENERATION += 1
+
+    current_task = asyncio.current_task()
+
+    tasks = {
+        task
+        for task in (
+            CODEX_REQUEST_TASKS | BACKGROUND_RESPONSE_TASKS
+        )
+        if task is not current_task and not task.done()
+    }
 
     try:
-        tasks = list(BACKGROUND_RESPONSE_TASKS)
-
-        # Cancel all active buffered Codex tasks.
         for task in tasks:
-            if not task.done():
-                task.cancel()
+            task.cancel()
 
-        # Wait until cancellation and cleanup have completed.
         if tasks:
             await asyncio.gather(
                 *tasks,
                 return_exceptions=True,
             )
 
-        for task in tasks:
-            BACKGROUND_RESPONSE_TASKS.discard(task)
+        CODEX_REQUEST_TASKS.difference_update(tasks)
+        BACKGROUND_RESPONSE_TASKS.difference_update(tasks)
 
-        # Remove any stale response and reset the shared state.
         _clear_final_response_buffer()
+
         BUFFERED_RESPONSE_ERROR = None
         BUFFERED_RESPONSE_ACTIVE = False
 
         _gateway_log(
             f"[CODEX RESET] cancelled_tasks={len(tasks)} "
+            f"generation={CODEX_GENERATION} "
             "buffer_cleared=True"
         )
 
@@ -824,12 +880,13 @@ async def reset_codex(request: Request):
                 "status": "reset",
                 "cancelled_tasks": len(tasks),
                 "buffer_cleared": True,
+                "generation": CODEX_GENERATION,
                 "codex_ready": True,
             },
         )
 
     finally:
-        SequentialResponsesMiddleware.LOCK.release()
+        CODEX_RESETTING = False
 
 
 @app.get("/health")
@@ -1271,11 +1328,27 @@ async def codex_responses(request: Request):
     global BUFFERED_RESPONSE_ACTIVE
     global BUFFERED_RESPONSE_ERROR
 
+    global CODEX_RESETTING
+    global CODEX_GENERATION
+
     chat_body = responses_to_chat(body)
+
+    if CODEX_RESETTING:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "reset_in_progress",
+                "message": "Codex gateway is resetting.",
+            },
+        )
+
+    
     streaming = bool(chat_body.get("stream"))
 
     if RESPONSE_BUFFER_MODE == "buffered":
-
+        
+        request_generation = CODEX_GENERATION
+        
         if BUFFERED_RESPONSE_ACTIVE:
             return JSONResponse(
                 status_code=409,
@@ -1301,6 +1374,16 @@ async def codex_responses(request: Request):
 
         # چرخه Retry عمداً نامحدود است.
         while True:
+
+
+            if (
+                RESPONSE_BUFFER_MODE == "buffered"
+                and (
+                    CODEX_RESETTING
+                    or request_generation != CODEX_GENERATION
+                )
+            ):
+                raise asyncio.CancelledError
 
             attempt += 1
 
@@ -1581,6 +1664,12 @@ async def codex_responses(request: Request):
             try:
                 result = await fetch_with_retries()
 
+                if (
+                    CODEX_RESETTING
+                    or request_generation != CODEX_GENERATION
+                ):
+                    return
+
                 _write_final_response_buffer(
                     result["response"]
                 )
@@ -1590,13 +1679,22 @@ async def codex_responses(request: Request):
                 )
 
             except asyncio.CancelledError:
-                BUFFERED_RESPONSE_ERROR = (
-                    "Background response task was cancelled."
-                )
+                if (
+                    not CODEX_RESETTING
+                    and request_generation == CODEX_GENERATION
+                ):
+                    BUFFERED_RESPONSE_ERROR = (
+                        "Background response task was cancelled."
+                    )
+            
                 raise
 
             except Exception as exc:
-                BUFFERED_RESPONSE_ERROR = str(exc)
+                if (
+                    not CODEX_RESETTING
+                    and request_generation == CODEX_GENERATION
+                ):
+                    BUFFERED_RESPONSE_ERROR = str(exc)
 
                 _gateway_log(
                     f"[BUFFERED] Background task failed: {exc}"
