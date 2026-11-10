@@ -81,6 +81,7 @@ BACKGROUND_RESPONSE_TASKS = set()
 CODEX_RESETTING = False
 CODEX_GENERATION = 0
 CODEX_REQUEST_TASKS = set()
+CODEX_RESET_TASK = None
 
 RESPONSE_BUFFER_TOKEN = get_env_value(
     "GATEWAY_RESPONSE_BUFFER_TOKEN"
@@ -812,6 +813,7 @@ async def reset_codex(request: Request):
     global BUFFERED_RESPONSE_ERROR
     global CODEX_RESETTING
     global CODEX_GENERATION
+    global CODEX_RESET_TASK
 
     supplied_token = request.headers.get(
         "X-Gateway-Internal-Token",
@@ -861,43 +863,97 @@ async def reset_codex(request: Request):
         if task is not current_task and not task.done()
     }
 
-    try:
-        for task in tasks:
-            task.cancel()
+    async def perform_reset():
+        global BUFFERED_RESPONSE_ACTIVE
+        global BUFFERED_RESPONSE_ERROR
+        global CODEX_RESETTING
+        global CODEX_RESET_TASK
 
-        if tasks:
-            await asyncio.gather(
-                *tasks,
-                return_exceptions=True,
+        try:
+            for task in tasks:
+                task.cancel()
+
+            if tasks:
+                await asyncio.gather(
+                    *tasks,
+                    return_exceptions=True,
+                )
+
+            CODEX_REQUEST_TASKS.difference_update(tasks)
+            BACKGROUND_RESPONSE_TASKS.difference_update(tasks)
+
+            try:
+                _clear_final_response_buffer()
+
+            except OSError as exc:
+                BUFFERED_RESPONSE_ERROR = (
+                    f"Codex reset could not clear response buffer: {exc}"
+                )
+                BUFFERED_RESPONSE_ACTIVE = True
+
+                _gateway_log(
+                    f"[CODEX RESET] buffer cleanup failed: {exc}"
+                )
+
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "status": "reset_failed",
+                        "buffer_cleared": False,
+                        "codex_ready": False,
+                        "error": str(exc),
+                    },
+                )
+
+            BUFFERED_RESPONSE_ERROR = None
+            BUFFERED_RESPONSE_ACTIVE = False
+
+            _gateway_log(
+                f"[CODEX RESET] cancelled_tasks={len(tasks)} "
+                f"generation={CODEX_GENERATION} "
+                "buffer_cleared=True"
             )
 
-        CODEX_REQUEST_TASKS.difference_update(tasks)
-        BACKGROUND_RESPONSE_TASKS.difference_update(tasks)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "reset",
+                    "cancelled_tasks": len(tasks),
+                    "buffer_cleared": True,
+                    "generation": CODEX_GENERATION,
+                    "codex_ready": True,
+                },
+            )
 
-        _clear_final_response_buffer()
+        except Exception as exc:
+            BUFFERED_RESPONSE_ERROR = (
+                f"Codex reset failed: {exc}"
+            )
+            BUFFERED_RESPONSE_ACTIVE = True
 
-        BUFFERED_RESPONSE_ERROR = None
-        BUFFERED_RESPONSE_ACTIVE = False
+            _gateway_log(
+                f"[CODEX RESET] unexpected failure: {exc}"
+            )
 
-        _gateway_log(
-            f"[CODEX RESET] cancelled_tasks={len(tasks)} "
-            f"generation={CODEX_GENERATION} "
-            "buffer_cleared=True"
-        )
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "reset_failed",
+                    "buffer_cleared": False,
+                    "codex_ready": False,
+                    "error": str(exc),
+                },
+            )
 
-        return JSONResponse(
-            status_code=200,
-            content={
-                "status": "reset",
-                "cancelled_tasks": len(tasks),
-                "buffer_cleared": True,
-                "generation": CODEX_GENERATION,
-                "codex_ready": True,
-            },
-        )
+        finally:
+            CODEX_RESETTING = False
+            CODEX_RESET_TASK = None
 
-    finally:
-        CODEX_RESETTING = False
+    CODEX_RESET_TASK = asyncio.create_task(
+        perform_reset()
+    )
+
+    return await asyncio.shield(CODEX_RESET_TASK)
 
 
 @app.get("/health")
