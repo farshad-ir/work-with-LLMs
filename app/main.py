@@ -114,25 +114,61 @@ def _short_gateway_log(
     if value == "provider_connection_error":
         value = "(WebErr)"
     elif value.isdigit():
-        value = f"{int(value):,}"
+        if len(value) == 3 and value[0] in ("4", "5"):
+            value = f"({value})"
+        else:
+            value = f"{int(value):,}"
     elif value in ("TiOut", "WebErr"):
         value = f"({value})"
     elif value.startswith("(") and value.endswith(")"):
         pass
     elif value:
-        value = f"({value})"
+        value = f"({value[:8]})"
+
+    new_line = f"{value:<10} {provider:<15} {model}"
+
+    temp_path = None
 
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
 
         with _SHORT_LOG_LOCK:
-            with log_path.open("a", encoding="utf-8") as file:
-                file.write(
-                    f"{value:<10} {provider:<15} {model}\n"
-                )
+
+            if log_path.exists():
+                lines = log_path.read_text(
+                    encoding="utf-8"
+                ).splitlines()
+            else:
+                lines = []
+
+            # Keep the newest 39 lines and append the new one.
+            lines = (lines + [new_line])[-40:]
+
+            # Write atomically to avoid a partially written log.
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=log_dir,
+                prefix=".gateway.log.",
+                suffix=".tmp",
+                delete=False,
+            ) as file:
+
+                temp_path = Path(file.name)
+
+                file.write("\n".join(lines) + "\n")
+                file.flush()
+                os.fsync(file.fileno())
+
+            os.replace(temp_path, log_path)
 
     except OSError as exc:
         _gateway_log(f"[SHORT LOG] Could not write log: {exc}")
+
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+
 
 
 
