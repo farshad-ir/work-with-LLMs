@@ -751,6 +751,83 @@ async def consume_buffered_response(request: Request):
     )
 
 
+@app.post("/api/internal/admin/reset-codex")
+async def reset_codex(request: Request):
+    """Cancel buffered Codex work and clear its shared response state."""
+    global BUFFERED_RESPONSE_ACTIVE
+    global BUFFERED_RESPONSE_ERROR
+
+    supplied_token = request.headers.get(
+        "X-Gateway-Internal-Token",
+        "",
+    )
+
+    if not RESPONSE_BUFFER_TOKEN or not secrets.compare_digest(
+        supplied_token,
+        RESPONSE_BUFFER_TOKEN,
+    ):
+        return JSONResponse(
+            status_code=401,
+            content={
+                "status": "unauthorized",
+                "message": "Invalid internal token.",
+            },
+        )
+
+    if RESPONSE_BUFFER_MODE != "buffered":
+        return JSONResponse(
+            status_code=409,
+            content={
+                "status": "unsupported_mode",
+                "message": "Codex reset is available only in buffered mode.",
+            },
+        )
+
+    # Prevent new Codex requests from starting during reset.
+    await SequentialResponsesMiddleware.LOCK.acquire()
+
+    try:
+        tasks = list(BACKGROUND_RESPONSE_TASKS)
+
+        # Cancel all active buffered Codex tasks.
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+
+        # Wait until cancellation and cleanup have completed.
+        if tasks:
+            await asyncio.gather(
+                *tasks,
+                return_exceptions=True,
+            )
+
+        for task in tasks:
+            BACKGROUND_RESPONSE_TASKS.discard(task)
+
+        # Remove any stale response and reset the shared state.
+        _clear_final_response_buffer()
+        BUFFERED_RESPONSE_ERROR = None
+        BUFFERED_RESPONSE_ACTIVE = False
+
+        _gateway_log(
+            f"[CODEX RESET] cancelled_tasks={len(tasks)} "
+            "buffer_cleared=True"
+        )
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "reset",
+                "cancelled_tasks": len(tasks),
+                "buffer_cleared": True,
+                "codex_ready": True,
+            },
+        )
+
+    finally:
+        SequentialResponsesMiddleware.LOCK.release()
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "app": "MyCode Gateway", "version": "0.1.0"}
