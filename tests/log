@@ -50,7 +50,8 @@ class GatewayController extends Controller
 
                 case 'PREVIOUS_BUFFERED_REQUEST_DETECTED':
                     $code = '409';
-                    $info = 'previous_busy';
+                    $info = 'previous_busy attempt=' .
+                        ($context['attempt'] ?? 0);
                     break;
 
                 case 'PREVIOUS_BUFFERED_RESPONSE_RECEIVED':
@@ -73,6 +74,31 @@ class GatewayController extends Controller
                             (microtime(true) - $startedAt) * 1000
                         );
                     break;
+
+                case 'CURRENT_REQUEST_ACCEPTED':
+                    $code = '202';
+                    $info = 'attempts=' .
+                        ($context['attempts'] ?? 0) .
+                        ' total_ms=' .
+                        (int) round(
+                            (microtime(true) - $startedAt) * 1000
+                        );
+                    break;
+
+                case 'POLL_SUMMARY':
+                    $code = 'POLL';
+                    $info = 'kind=' .
+                        ($context['kind'] ?? 'unknown') .
+                        ' polls=' .
+                        ($context['polls'] ?? 0) .
+                        ' pending=' .
+                        ($context['pending'] ?? 0) .
+                        ' result=' .
+                        ($context['result'] ?? 'unknown') .
+                        ' elapsed_ms=' .
+                        ($context['elapsed_ms'] ?? 0);
+                    break;
+
 
                 case 'CURRENT_REQUEST_NOT_ACCEPTED':
                     $code = 'ERR';
@@ -330,9 +356,9 @@ class GatewayController extends Controller
         callable $log,
         callable $heartbeat
     ): array {
-
+        $sendAttempts = 0;
         while (true) {
-
+            $sendAttempts++;
             $initial = $this->sendPythonRequest(
                 $body,
                 $requestId,
@@ -352,7 +378,7 @@ class GatewayController extends Controller
                 ($pythonJson['status'] ?? null) === 'consumer_busy'
             ) {
 
-                $log('PREVIOUS_BUFFERED_REQUEST_DETECTED');
+                $log('PREVIOUS_BUFFERED_REQUEST_DETECTED', ['attempt' => $sendAttempts,]);
 
                 /*
                  * Wait until the previous response is consumed.
@@ -405,7 +431,9 @@ class GatewayController extends Controller
                     $errorStatus
                 );
             }
-
+            $log('CURRENT_REQUEST_ACCEPTED', [
+                'attempts' => $sendAttempts,
+            ]);
             break;
         }
 
@@ -508,7 +536,7 @@ class GatewayController extends Controller
     ): array {
 
         $pollCount = 0;
-
+        $pendingCount = 0;  $pollStartedAt = microtime(true);
         $pollInterval = max(
             0,
             (int) env('GATEWAY_POLL_INTERVAL_SECONDS', 2)
@@ -531,7 +559,7 @@ class GatewayController extends Controller
              */
 
             if ($pollStatus === 202) {
-
+                $pendingCount++;
                 $this->waitWithHeartbeat(
                     $pollInterval,
                     $heartbeat
@@ -581,6 +609,15 @@ class GatewayController extends Controller
                     );
                 }
 
+                $log('POLL_SUMMARY', [
+                    'kind' => $kind,
+                    'polls' => $pollCount,
+                    'pending' => $pendingCount,
+                    'result' => 'completed',
+                    'elapsed_ms' => (int) round(
+                        (microtime(true) - $pollStartedAt) * 1000
+                    ),
+                ]);
                 return $payload;
             }
 
