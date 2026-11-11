@@ -122,6 +122,52 @@ class GatewayController extends Controller
                         140
                     );
                     break;
+
+
+                    case 'SSE_CALLBACK_STARTED':
+                        $code = 'SSE+';
+                        $info = 'buffers=' .
+                            ($context['buffers'] ?? 0) .
+                            ' aborted=' .
+                            ($context['aborted'] ?? 0);
+                        break;
+                    
+                    case 'SSE_PYTHON_WAIT_STARTED':
+                        $code = 'PY+';
+                        $info = 'waiting_for_result';
+                        break;
+                    
+                    case 'SSE_PYTHON_RESULT_READY':
+                        $code = 'PY-';
+                        $info = 'status=' .
+                            ($context['response_status'] ?? 'unknown') .
+                            ' elapsed_ms=' .
+                            ($context['elapsed_ms'] ?? 0);
+                        break;
+                    
+                    case 'SSE_EVENT_SENT':
+                        $code = 'EVT';
+                        $info = 'index=' .
+                            ($context['index'] ?? 0) .
+                            ' type=' .
+                            ($context['type'] ?? 'unknown') .
+                            ' bytes=' .
+                            ($context['bytes'] ?? 0) .
+                            ' aborted=' .
+                            ($context['aborted'] ?? 0);
+                        break;
+                    
+                    case 'SSE_CALLBACK_FINISHED':
+                        $code = 'SSE-';
+                        $info = 'events=' .
+                            ($context['events'] ?? 0) .
+                            ' elapsed_ms=' .
+                            ($context['elapsed_ms'] ?? 0) .
+                            ' aborted=' .
+                            ($context['aborted'] ?? 0);
+                        break;
+
+
             }
 
             if ($code === null) {
@@ -208,12 +254,29 @@ class GatewayController extends Controller
                     $log
                 ): void {
 
+
+
+                    $callbackStartedAt = microtime(true);
+                    $initialBufferLevel = ob_get_level();
+                    $eventIndex = 0;
+
+
                     @set_time_limit(0);
                     @ini_set('zlib.output_compression', '0');
 
                     while (ob_get_level() > 0) {
                         @ob_end_flush();
                     }
+
+
+
+
+                    $log('SSE_CALLBACK_STARTED', [
+                        'buffers' => $initialBufferLevel,
+                        'aborted' => connection_aborted(),
+                    ]);
+
+
 
                     /*
                      * Send one heartbeat immediately,
@@ -247,6 +310,13 @@ class GatewayController extends Controller
                         // First bytes are sent immediately after HTTP 200.
                         $heartbeat();
 
+
+
+                        $pythonWaitStartedAt = microtime(true);
+
+                        $log('SSE_PYTHON_WAIT_STARTED');
+
+
                         $finalResponse = $this->processBufferedRequest(
                             $body,
                             $token,
@@ -255,13 +325,46 @@ class GatewayController extends Controller
                             $heartbeat
                         );
 
+
+                        $log('SSE_PYTHON_RESULT_READY', [
+                            'response_status' => $finalResponse['status'] ?? null,
+                            'elapsed_ms' => (int) round(
+                                (microtime(true) - $pythonWaitStartedAt) * 1000
+                            ),
+                        ]);
+
+
+
                         $events = $this->responsesToSseEvents(
                             $finalResponse
                         );
 
-                        foreach ($events as $event) {
+                       foreach ($events as $event) {
+                        
+                            $eventIndex++;
+                        
+                            $eventType = 'unknown';
+                        
+                            if (
+                                preg_match(
+                                    '/^event:\s*([^\r\n]+)/m',
+                                    $event,
+                                    $eventMatch
+                                ) === 1
+                            ) {
+                                $eventType = trim($eventMatch[1]);
+                            }
+                        
                             echo $event;
+                        
                             $this->flushOutput();
+                        
+                            $log('SSE_EVENT_SENT', [
+                                'index' => $eventIndex,
+                                'type' => $eventType,
+                                'bytes' => strlen($event),
+                                'aborted' => connection_aborted(),
+                            ]);
                         }
 
                     } catch (\Throwable $e) {
@@ -279,6 +382,16 @@ class GatewayController extends Controller
 
                         $this->flushOutput();
                     }
+                    
+                    $log('SSE_CALLBACK_FINISHED', [
+                        'events' => $eventIndex,
+                        'elapsed_ms' => (int) round(
+                            (microtime(true) - $callbackStartedAt) * 1000
+                        ),
+                        'aborted' => connection_aborted(),
+                    ]);
+
+
                 },
 
                 200,
