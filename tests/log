@@ -393,10 +393,18 @@ class GatewayController extends Controller
                     $log,
                     $heartbeat
                 );
-
+                
+                $previousResult = 'completed';
+                
+                if (!empty($previousResponse['_gateway_previous_already_consumed'])) {
+                    $previousResult = 'already_consumed';
+                } elseif (!empty($previousResponse['_gateway_previous_failed'])) {
+                    $previousResult = 'previous_failed';
+                }
+                
                 $log('PREVIOUS_BUFFERED_RESPONSE_RECEIVED', [
                     'response_status' =>
-                        $previousResponse['status'] ?? 'already_consumed',
+                        $previousResponse['status'] ?? $previousResult,
                 ]);
 
                 $log('CURRENT_REQUEST_RETRY_STARTED');
@@ -536,7 +544,11 @@ class GatewayController extends Controller
     ): array {
 
         $pollCount = 0;
-        $pendingCount = 0;  $pollStartedAt = microtime(true);
+
+        $pendingCount = 0;  
+
+        $pollStartedAt = microtime(true);
+        
         $pollInterval = max(
             0,
             (int) env('GATEWAY_POLL_INTERVAL_SECONDS', 2)
@@ -577,6 +589,18 @@ class GatewayController extends Controller
                 $kind === 'previous' &&
                 $pollStatus === 404
             ) {
+
+
+                $log('POLL_SUMMARY', [
+                    'kind' => $kind,
+                    'polls' => $pollCount,
+                    'pending' => $pendingCount,
+                    'result' => 'already_consumed',
+                    'elapsed_ms' => (int) round(
+                        (microtime(true) - $pollStartedAt) * 1000
+                    ),
+                ]);
+
                 return [
                     '_gateway_previous_already_consumed' => true,
                 ];
@@ -592,6 +616,18 @@ class GatewayController extends Controller
                 $kind === 'previous' &&
                 $pollStatus === 502
             ) {
+
+
+                $log('POLL_SUMMARY', [
+                    'kind' => $kind,
+                    'polls' => $pollCount,
+                    'pending' => $pendingCount,
+                    'result' => 'previous_failed',
+                    'elapsed_ms' => (int) round(
+                        (microtime(true) - $pollStartedAt) * 1000
+                    ),
+                ]);
+
                 return [
                     '_gateway_previous_failed' => true,
                 ];
