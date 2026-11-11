@@ -1,182 +1,607 @@
-[yhkcinki@nhs03 rezvan]$ cat storage/logs/gateway-private.log[yhkcinki@nhs03 rezvan]$ cat storage/logs/gateway-private.log
-2026-11-08 21:41:19 | request=3242f4b899a4d20b | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
-2026-11-08 21:41:19 | request=3242f4b899a4d20b | +0ms | PYTHON_CONNECTED2026-11-08 21:41:19 | request=3242f4b899a4d20b | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":25494}
-2026-11-08 21:41:19 | request=3242f4b899a4d20b | +1ms | REQUEST_SENT | {"bytes":25715}2026-11-08 21:41:19 | request=3242f4b899a4d20b | +1ms | WAITING_FOR_PYTHON_STATUS
-2026-11-08 21:41:19 | request=3242f4b899a4d20b | +4ms | PYTHON_STATUS_LINE_RECEIVED | {"status_line":"HTTP/1.1 200OK"}
-2026-11-08 21:41:19 | request=3242f4b899a4d20b | +4ms | PYTHON_HEADERS_RECEIVED
-2026-11-08 21:41:19 | request=3242f4b899a4d20b | +4ms | PYTHON_STATUS_RECEIVED: 2002026-11-08 21:41:19 | request=3242f4b899a4d20b | +5ms | PYTHON_BODY_MODE: chunked
-2026-11-08 21:41:19 | request=3242f4b899a4d20b | +5ms | LARAVEL_STREAM_RESPONSE_CREATED
-2026-11-08 21:41:19 | request=3242f4b899a4d20b | +23ms | RESPONSE_STREAM_STARTED
-2026-11-08 21:41:19 | request=1c460717e9b0e68f | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}2026-11-08 21:41:19 | request=1c460717e9b0e68f | +0ms | PYTHON_CONNECTED
-2026-11-08 21:41:19 | request=1c460717e9b0e68f | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":63926}
-2026-11-08 21:41:19 | request=1c460717e9b0e68f | +1ms | REQUEST_SENT | {"bytes":64147}
-2026-11-08 21:41:19 | request=1c460717e9b0e68f | +1ms | WAITING_FOR_PYTHON_STATUS
-2026-11-08 21:41:34 | request=3242f4b899a4d20b | +15004ms | UPSTREAM_HEARTBEAT_RECEIVED | {"heartbeat_count":1,"chunk":1}
-2026-11-08 21:41:39 | request=1c460717e9b0e68f | +20021ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":true,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
-2026-11-08 21:41:39 | request=1c460717e9b0e68f | +20021ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTP status line.
-2026-11-08 21:41:39 | request=646c219ca00e270e | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
-2026-11-08 21:41:39 | request=646c219ca00e270e | +0ms | PYTHON_CONNECTED
-2026-11-08 21:41:39 | request=646c219ca00e270e | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":63926}
-2026-11-08 21:41:39 | request=646c219ca00e270e | +2ms | REQUEST_SENT | {"bytes":64147}
-2026-11-08 21:41:39 | request=646c219ca00e270e | +2ms | WAITING_FOR_PYTHON_STATUS
-2026-11-08 21:41:49 | request=3242f4b899a4d20b | +30004ms | UPSTREAM_HEARTBEAT_RECEIVED | {"heartbeat_count":2,"chunk":2}
-2026-11-08 21:41:59 | request=646c219ca00e270e | +20022ms | PYTHON_STATUS_READ_FAILED | {"socket":{"timed_out":true,"blocked":true,"eof":false,"stream_type":"tcp_socket/ssl","mode":"r+","unread_bytes":0,"seekable":false,"uri":"tcp://127.0.0.1:8088"}}
-2026-11-08 21:41:59 | request=646c219ca00e270e | +20022ms | GATEWAY_ERROR: waiting_status | Could not read Python HTTP status line.
-2026-11-08 21:42:00 | request=58663733c718ded5 | +0ms | CODEX_CONTROLLER_ENTERED | {"method":"POST","path":"gateway/v1/responses","client_ip":"193.187.148.117"}
-2026-11-08 21:42:00 | request=58663733c718ded5 | +0ms | PYTHON_CONNECTED
-2026-11-08 21:42:00 | request=58663733c718ded5 | +1ms | REQUEST_STREAM_MODE | {"client_requested_stream":true,"gateway_stream":true,"body_bytes":63926}
-2026-11-08 21:42:00 | request=58663733c718ded5 | +1ms | REQUEST_SENT | {"bytes":64147}
-2026-11-08 21:42:00 | request=58663733c718ded5 | +1ms | WAITING_FOR_PYTHON_STATUS
-2026-11-08 21:42:04 | request=3242f4b899a4d20b | +45004ms | UPSTREAM_HEARTBEAT_RECEIVED | {"heartbeat_count":3,"chunk":3}
-2026-11-08 21:42:18 | request=3242f4b899a4d20b | +59127ms | UPSTREAM_CHUNKED_BODY_COMPLETE | {"chunks":12,"bytes":2653,"heartbeats":3}
-2026-11-08 21:42:18 | request=3242f4b899a4d20b | +59127ms | RESPONSE_BODY_READ_ENDED
-2026-11-08 21:42:18 | request=3242f4b899a4d20b | +59127ms | RESPONSE_STREAM_CLOSED
-2026-11-08 21:42:18 | request=58663733c718ded5 | +17916ms | PYTHON_STATUS_LINE_RECEIVED | {"status_line":"HTTP/1.1200 OK"}
-2026-11-08 21:42:18 | request=58663733c718ded5 | +17916ms | PYTHON_HEADERS_RECEIVED
-2026-11-08 21:42:18 | request=58663733c718ded5 | +17916ms | PYTHON_STATUS_RECEIVED: 200
-2026-11-08 21:42:18 | request=58663733c718ded5 | +17916ms | PYTHON_BODY_MODE: chunked
-2026-11-08 21:42:18 | request=58663733c718ded5 | +17916ms | LARAVEL_STREAM_RESPONSE_CREATED
-2026-11-08 21:42:18 | request=58663733c718ded5 | +17928ms | RESPONSE_STREAM_STARTED
-2026-11-08 21:42:33 | request=58663733c718ded5 | +32916ms | UPSTREAM_HEARTBEAT_RECEIVED | {"heartbeat_count":1,"chunk":1}
-[yhkcinki@nhs03 rezvan]$
-
-
-[yhkcinki@nhs03 work-with-LLMs]$ tail -f logs/uvicorn.log
-[CODEX] Request ID: 88ecaf6574f23b8f
-INFO:     127.0.0.1:45354 - "POST /v1/responses HTTP/1.1" 200 OK
-[CODEX] Waiting for request body
-[CODEX] Request body received: 25494 bytes
-[CODEX] Request ID: 4ae0802f969ff2a0
-INFO:     127.0.0.1:60260 - "POST /v1/responses HTTP/1.1" 200 OK
-[CODEX] Waiting for request body
-[CODEX] Request body received: 25494 bytes
-[CODEX] Request ID: 86b3aa2f3b3f183d
-INFO:     127.0.0.1:60268 - "POST /v1/responses HTTP/1.1" 200 OK
-[CODEX] Waiting for request body
-[CODEX] Request body received: 25494 bytes
-[CODEX] Request ID: 3242f4b899a4d20b
-INFO:     127.0.0.1:56334 - "POST /v1/responses HTTP/1.1" 200 OK
-[CODEX] Waiting for request body
-ERROR:    Exception in ASGI application
-Traceback (most recent call last):
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 422, in run_asgi
-    result = await app(  # type: ignore[func-returns-value]
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
-    return await self.app(scope, receive, send)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/applications.py", line 1194, in __call__
-    await super().__call__(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
-    raise exc
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
-    await self.app(scope, receive, _send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
-    await self.app(scope, receive, send)
-  File "/home/yhkcinki/apps/work-with-LLMs/app/main.py", line 540, in __call__
-    await self.app(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
-    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
-    raise exc
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
-    await app(scope, receive, sender)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
-    await self.app(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/routing.py", line 683, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 2811, in app
-    await route.handle(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 1330, in handle
-    await super().handle(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/routing.py", line 289, in handle
-    await self.app(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 166, in app
-    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
-    raise exc
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
-    await app(scope, receive, sender)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 152, in app
-    response = await f(request)
-               ^^^^^^^^^^^^^^^^
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 745, in app
-    raw_response = await run_endpoint_function(
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 372, in run_endpoint_function
-    return await dependant.call(**values)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/yhkcinki/apps/work-with-LLMs/app/main.py", line 967, in codex_responses
-    raw_body = await request.body()
-               ^^^^^^^^^^^^^^^^^^^^
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/requests.py", line 259, in body
-    async for chunk in stream:
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/requests.py", line 252, in stream
-    raise ClientDisconnect()
-starlette.requests.ClientDisconnect
-[CODEX] Waiting for request body
-ERROR:    Exception in ASGI application
-Traceback (most recent call last):
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 422, in run_asgi
-    result = await app(  # type: ignore[func-returns-value]
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
-    return await self.app(scope, receive, send)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/applications.py", line 1194, in __call__
-    await super().__call__(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
-    raise exc
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
-    await self.app(scope, receive, _send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
-    await self.app(scope, receive, send)
-  File "/home/yhkcinki/apps/work-with-LLMs/app/main.py", line 540, in __call__
-    await self.app(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
-    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
-    raise exc
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
-    await app(scope, receive, sender)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
-    await self.app(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/routing.py", line 683, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 2811, in app
-    await route.handle(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 1330, in handle
-    await super().handle(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/routing.py", line 289, in handle
-    await self.app(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 166, in app
-    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
-    raise exc
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
-    await app(scope, receive, sender)
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 152, in app
-    response = await f(request)
-               ^^^^^^^^^^^^^^^^
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 745, in app
-    raw_response = await run_endpoint_function(
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/fastapi/routing.py", line 372, in run_endpoint_function
-    return await dependant.call(**values)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/yhkcinki/apps/work-with-LLMs/app/main.py", line 967, in codex_responses
-    raw_body = await request.body()
-               ^^^^^^^^^^^^^^^^^^^^
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/requests.py", line 259, in body
-    async for chunk in stream:
-  File "/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/lib/python3.12/site-packages/starlette/requests.py", line 252, in stream
-    raise ClientDisconnect()
-starlette.requests.ClientDisconnect
-[CODEX] Waiting for request body
-[CODEX] Request body received: 63926 bytes
-[CODEX] Request ID: 58663733c718ded5
-INFO:     127.0.0.1:41512 - "POST /v1/responses HTTP/1.1" 200 OK
+2026-11-09 19:14:15	d5af3203dbeed43c	REQ	stream=1 bytes=25552
+2026-11-09 19:14:15	12f59d371aad191b	REQ	stream=1 bytes=73560
+2026-11-09 19:14:15	12f59d371aad191b	409	previous_busy
+2026-11-09 19:14:49	d5af3203dbeed43c	OK	status=completed total_ms=34069
+2026-11-09 19:14:49	12f59d371aad191b	OLD	status=already_consumed
+2026-11-09 19:14:49	12f59d371aad191b	RETRY	after_409
+2026-11-09 19:15:04	12f59d371aad191b	OK	status=completed total_ms=48077
+2026-11-09 19:19:17	378162b39060879d	REQ	stream=1 bytes=25747
+2026-11-09 19:19:17	5874ad3ca916f557	REQ	stream=1 bytes=74158
+2026-11-09 19:19:17	5874ad3ca916f557	409	previous_busy
+2026-11-09 19:20:11	378162b39060879d	OK	status=completed total_ms=54087
+2026-11-09 19:20:11	5874ad3ca916f557	OLD	status=already_consumed
+2026-11-09 19:20:11	5874ad3ca916f557	RETRY	after_409
+2026-11-09 19:21:33	5874ad3ca916f557	OK	status=completed total_ms=136176
+2026-11-09 19:29:40	cbbcdaf6746a63f0	REQ	stream=1 bytes=25862
+2026-11-09 19:29:40	1fc4ce8bcddfaa8f	REQ	stream=1 bytes=76234
+2026-11-09 19:29:40	1fc4ce8bcddfaa8f	409	previous_busy
+2026-11-09 19:30:46	cbbcdaf6746a63f0	OK	status=completed total_ms=66097
+2026-11-09 19:30:46	1fc4ce8bcddfaa8f	OLD	status=already_consumed
+2026-11-09 19:30:46	1fc4ce8bcddfaa8f	RETRY	after_409
+2026-11-09 19:34:41	ebf58d34f4e364c1	REQ	stream=1 bytes=76234
+2026-11-09 19:34:41	ebf58d34f4e364c1	409	previous_busy
+2026-11-09 19:37:24	ebf58d34f4e364c1	OLD	status=completed
+2026-11-09 19:37:24	ebf58d34f4e364c1	RETRY	after_409
+2026-11-09 19:39:44	fab922ff61a0868b	REQ	stream=1 bytes=76234
+2026-11-09 19:39:44	fab922ff61a0868b	409	previous_busy
+2026-11-09 19:41:28	fab922ff61a0868b	OLD	status=completed
+2026-11-09 19:41:28	fab922ff61a0868b	RETRY	after_409
+2026-11-09 19:41:50	11c957442ad57d12	REQ	stream=1 bytes=25862
+2026-11-09 19:41:50	11c957442ad57d12	409	previous_busy
+2026-11-09 19:41:50	2d54ccc07545944f	REQ	stream=1 bytes=77082
+2026-11-09 19:41:50	2d54ccc07545944f	409	previous_busy
+2026-11-09 19:46:51	6743b45a759db6fa	REQ	stream=1 bytes=77082
+2026-11-09 19:46:51	6743b45a759db6fa	409	previous_busy
+2026-11-09 19:46:52	da44b53a2a19009a	REQ	stream=1 bytes=25862
+2026-11-09 19:46:52	da44b53a2a19009a	409	previous_busy
+2026-11-09 19:51:48	6743b45a759db6fa	OLD	status=completed
+2026-11-09 19:51:48	6743b45a759db6fa	RETRY	after_409
+2026-11-09 19:51:53	0803f3096802d611	REQ	stream=1 bytes=25862
+2026-11-09 19:51:53	0803f3096802d611	409	previous_busy
+2026-11-09 19:51:53	699bc189183ed0b9	REQ	stream=1 bytes=77082
+2026-11-09 19:51:53	699bc189183ed0b9	409	previous_busy
+2026-11-09 19:52:15	0803f3096802d611	OLD	status=completed
+2026-11-09 19:52:15	0803f3096802d611	RETRY	after_409
+2026-11-09 19:52:43	0803f3096802d611	OK	status=completed total_ms=50084
+2026-11-09 19:52:43	699bc189183ed0b9	OLD	status=already_consumed
+2026-11-09 19:52:43	699bc189183ed0b9	RETRY	after_409
+2026-11-09 19:53:17	699bc189183ed0b9	OK	status=completed total_ms=84119
+2026-11-10 05:40:52	3b3127fa9bbd5606	REQ	stream=1 bytes=39158
+2026-11-10 05:41:43	3b3127fa9bbd5606	OK	status=completed total_ms=50083
+2026-11-10 05:41:55	bb926b68d6daf9de	REQ	stream=1 bytes=39158
+2026-11-10 05:43:35	bb926b68d6daf9de	OK	status=completed total_ms=100143
+2026-11-10 07:09:58	98069cd3db5fee22	REQ	stream=1 bytes=79866
+2026-11-10 07:09:58	f0d711eee55f4be9	REQ	stream=1 bytes=25494
+2026-11-10 07:09:58	f0d711eee55f4be9	409	previous_busy
+2026-11-10 07:10:02	98069cd3db5fee22	OK	status=completed total_ms=4044
+2026-11-10 07:10:02	f0d711eee55f4be9	OLD	status=already_consumed
+2026-11-10 07:10:02	f0d711eee55f4be9	RETRY	after_409
+2026-11-10 07:10:40	46f90745797c2b7d	REQ	stream=1 bytes=80205
+2026-11-10 07:10:40	46f90745797c2b7d	409	previous_busy
+2026-11-10 07:10:40	2a6be2ee3a97b082	REQ	stream=1 bytes=25528
+2026-11-10 07:10:40	2a6be2ee3a97b082	409	previous_busy
+2026-11-10 07:10:52	f0d711eee55f4be9	OK	status=completed total_ms=54082
+2026-11-10 07:10:52	46f90745797c2b7d	OLD	status=already_consumed
+2026-11-10 07:10:52	46f90745797c2b7d	RETRY	after_409
+2026-11-10 07:11:04	46f90745797c2b7d	OK	status=completed total_ms=24064
+2026-11-10 07:11:04	2a6be2ee3a97b082	OLD	status=already_consumed
+2026-11-10 07:11:04	2a6be2ee3a97b082	RETRY	after_409
+2026-11-10 07:11:20	2a6be2ee3a97b082	OK	status=completed total_ms=40079
+2026-11-10 07:11:27	7448cb0e1390d8e9	REQ	stream=1 bytes=80625
+2026-11-10 07:11:27	d73f6ccf74aeea11	REQ	stream=1 bytes=25517
+2026-11-10 07:11:27	d73f6ccf74aeea11	409	previous_busy
+2026-11-10 07:11:39	7448cb0e1390d8e9	OK	status=completed total_ms=12044
+2026-11-10 07:11:39	d73f6ccf74aeea11	OLD	status=already_consumed
+2026-11-10 07:11:39	d73f6ccf74aeea11	RETRY	after_409
+2026-11-10 07:12:07	d73f6ccf74aeea11	OK	status=completed total_ms=40072
+2026-11-10 16:53:29	f86ba275c819872f	REQ	stream=1 bytes=25494
+2026-11-10 16:53:30	fadf63daceacee96	REQ	stream=1 bytes=62839
+2026-11-10 16:53:30	fadf63daceacee96	409	previous_busy
+2026-11-10 16:54:06	f86ba275c819872f	OK	status=completed total_ms=36056
+2026-11-10 16:54:06	fadf63daceacee96	OLD	status=already_consumed
+2026-11-10 16:54:06	fadf63daceacee96	RETRY	after_409
+2026-11-10 16:54:16	fadf63daceacee96	OK	status=completed total_ms=46076
+2026-11-10 20:26:22	95cc7668be827723	REQ	stream=1 bytes=25661
+2026-11-10 20:26:22	a4bc06c594bee3c9	REQ	stream=1 bytes=58265
+2026-11-10 20:26:22	a4bc06c594bee3c9	409	previous_busy
+2026-11-10 20:27:34	95cc7668be827723	OK	status=completed total_ms=72115
+2026-11-10 20:27:34	a4bc06c594bee3c9	OLD	status=already_consumed
+2026-11-10 20:27:34	a4bc06c594bee3c9	RETRY	after_409
+2026-11-10 20:28:12	a4bc06c594bee3c9	OK	status=completed total_ms=110144
+2026-11-10 20:28:31	6ef155cd9a4ed8b0	REQ	stream=1 bytes=69150
+2026-11-10 20:29:16	6ef155cd9a4ed8b0	OK	status=completed total_ms=44079
+2026-11-10 20:29:18	822dbef36321105b	REQ	stream=1 bytes=80626
+2026-11-10 20:30:08	822dbef36321105b	OK	status=completed total_ms=50087
+2026-11-10 20:30:11	ff5288bcbce1a875	REQ	stream=1 bytes=82650
+2026-11-10 20:31:29	ff5288bcbce1a875	OK	status=completed total_ms=78117
+2026-11-10 20:31:32	a6a0f91f4c532629	REQ	stream=1 bytes=92692
+2026-11-10 20:32:12	a6a0f91f4c532629	OK	status=completed total_ms=40073
+2026-11-10 20:32:14	593449cdda9e3f1b	REQ	stream=1 bytes=93846
+2026-11-10 20:33:12	593449cdda9e3f1b	OK	status=completed total_ms=58105
+2026-11-10 20:33:15	42dfe60dc7adeae9	REQ	stream=1 bytes=95113
+2026-11-10 20:33:39	42dfe60dc7adeae9	OK	status=completed total_ms=24060
+2026-11-10 20:33:44	7d367740a5ee0709	REQ	stream=1 bytes=97218
+2026-11-10 20:34:02	7d367740a5ee0709	OK	status=completed total_ms=18044
+2026-11-10 20:34:05	00e3d58be5f4d988	REQ	stream=1 bytes=98453
+2026-11-10 20:34:27	00e3d58be5f4d988	OK	status=completed total_ms=22047
+2026-11-10 20:34:30	8e936ee98f4a1d5a	REQ	stream=1 bytes=99648
+2026-11-10 20:34:44	8e936ee98f4a1d5a	OK	status=completed total_ms=14046
+2026-11-10 20:34:46	36f7719017175388	REQ	stream=1 bytes=101657
+2026-11-10 20:35:08	36f7719017175388	OK	status=completed total_ms=22048
+2026-11-10 20:35:12	2c4de4c837d4d51b	REQ	stream=1 bytes=113023
+2026-11-10 20:35:32	2c4de4c837d4d51b	OK	status=completed total_ms=20066
+2026-11-10 20:35:35	6ef8c5a60914aaa9	REQ	stream=1 bytes=113655
+2026-11-10 20:35:45	6ef8c5a60914aaa9	OK	status=completed total_ms=10057
+2026-11-10 20:35:48	41009ebd8e2f018f	REQ	stream=1 bytes=114261
+2026-11-10 20:35:58	41009ebd8e2f018f	OK	status=completed total_ms=10045
+2026-11-10 20:36:02	ada570a46f8247f8	REQ	stream=1 bytes=114875
+2026-11-10 20:36:10	ada570a46f8247f8	OK	status=completed total_ms=8050
+2026-11-10 20:36:16	f971f93317089725	REQ	stream=1 bytes=116026
+2026-11-10 20:36:27	f971f93317089725	OK	status=completed total_ms=10053
+2026-11-10 20:36:30	d6f82341d2198f42	REQ	stream=1 bytes=116728
+2026-11-10 20:36:44	d6f82341d2198f42	OK	status=completed total_ms=14049
+2026-11-10 20:36:47	32c1d328e7afcf81	REQ	stream=1 bytes=117308
+2026-11-10 20:36:53	32c1d328e7afcf81	OK	status=completed total_ms=6041
+2026-11-10 20:36:57	7050524455c5aea4	REQ	stream=1 bytes=117962
+2026-11-10 20:37:09	7050524455c5aea4	OK	status=completed total_ms=12049
+2026-11-10 20:37:12	505b9dbc32eb1665	REQ	stream=1 bytes=118681
+2026-11-10 20:37:16	505b9dbc32eb1665	OK	status=completed total_ms=4044
+2026-11-10 20:37:20	b085a9e376b51d8f	REQ	stream=1 bytes=119438
+2026-11-10 20:37:24	b085a9e376b51d8f	OK	status=completed total_ms=4056
+2026-11-10 20:37:27	bb1cfed2e37abca5	REQ	stream=1 bytes=120039
+2026-11-10 20:37:31	bb1cfed2e37abca5	OK	status=completed total_ms=4040
+2026-11-10 20:37:34	e0d767f5fb3d4b53	REQ	stream=1 bytes=121795
+2026-11-10 20:37:48	e0d767f5fb3d4b53	OK	status=completed total_ms=14052
+2026-11-10 20:37:51	61953d175fdbb595	REQ	stream=1 bytes=122490
+2026-11-10 20:38:01	61953d175fdbb595	OK	status=completed total_ms=10055
+2026-11-10 20:38:05	7d2ea1ecd2c5646b	REQ	stream=1 bytes=123591
+2026-11-10 20:38:11	7d2ea1ecd2c5646b	OK	status=completed total_ms=6040
+2026-11-10 20:38:15	727a95ea520263f2	REQ	stream=1 bytes=124302
+2026-11-10 20:38:19	727a95ea520263f2	OK	status=completed total_ms=4040
+2026-11-10 20:38:22	5901c0eddd492be9	REQ	stream=1 bytes=124910
+2026-11-10 20:38:30	5901c0eddd492be9	OK	status=completed total_ms=8035
+2026-11-10 20:38:34	22f7a90736fb7cd4	REQ	stream=1 bytes=125552
+2026-11-10 20:38:38	22f7a90736fb7cd4	OK	status=completed total_ms=4041
+2026-11-10 20:38:41	062426b9625f113e	REQ	stream=1 bytes=126636
+2026-11-10 20:38:43	062426b9625f113e	OK	status=completed total_ms=2040
+2026-11-10 20:38:46	3b20db83c0f0c03b	REQ	stream=1 bytes=127292
+2026-11-10 20:38:48	3b20db83c0f0c03b	OK	status=completed total_ms=2043
+2026-11-10 20:38:51	3515fe1c74b04a65	REQ	stream=1 bytes=127944
+2026-11-10 20:38:53	3515fe1c74b04a65	OK	status=completed total_ms=2035
+2026-11-10 20:38:57	9e5677c1c9f2e720	REQ	stream=1 bytes=128596
+2026-11-10 20:38:59	9e5677c1c9f2e720	OK	status=completed total_ms=2038
+2026-11-10 20:39:02	cde3e759b8d180e1	REQ	stream=1 bytes=129286
+2026-11-10 20:39:06	cde3e759b8d180e1	OK	status=completed total_ms=4033
+2026-11-10 20:39:09	588dc3a2628c9110	REQ	stream=1 bytes=129922
+2026-11-10 20:39:11	588dc3a2628c9110	OK	status=completed total_ms=2036
+2026-11-10 20:39:13	41f86d731488f679	REQ	stream=1 bytes=130506
+2026-11-10 20:39:15	41f86d731488f679	OK	status=completed total_ms=2039
+2026-11-10 20:39:19	6e4dca474ddf0b9c	REQ	stream=1 bytes=132326
+2026-11-10 20:39:21	6e4dca474ddf0b9c	OK	status=completed total_ms=2039
+2026-11-10 20:39:24	df707bddd5b03e52	REQ	stream=1 bytes=132962
+2026-11-10 20:39:26	df707bddd5b03e52	OK	status=completed total_ms=2038
+2026-11-10 20:39:30	a8b8d1deb923d455	REQ	stream=1 bytes=136214
+2026-11-10 20:39:38	a8b8d1deb923d455	OK	status=completed total_ms=8043
+2026-11-10 20:39:41	1e87ed123183aa2c	REQ	stream=1 bytes=137325
+2026-11-10 20:39:43	1e87ed123183aa2c	OK	status=completed total_ms=2044
+2026-11-10 20:39:46	1baa220fe1fd4f6a	REQ	stream=1 bytes=138044
+2026-11-10 20:39:50	1baa220fe1fd4f6a	OK	status=completed total_ms=4046
+2026-11-10 20:39:53	53756b70335160c9	REQ	stream=1 bytes=138764
+2026-11-10 20:39:59	53756b70335160c9	OK	status=completed total_ms=6040
+2026-11-10 20:40:02	80fc58fda8a2b60b	REQ	stream=1 bytes=139348
+2026-11-10 20:40:04	80fc58fda8a2b60b	OK	status=completed total_ms=2029
+2026-11-10 20:40:29	8ad553b902c48396	REQ	stream=1 bytes=25504
+2026-11-10 20:40:29	6809fd73b4c654fe	REQ	stream=1 bytes=139485
+2026-11-10 20:40:29	6809fd73b4c654fe	409	previous_busy
+2026-11-10 20:40:35	8ad553b902c48396	OK	status=completed total_ms=6046
+2026-11-10 20:40:35	6809fd73b4c654fe	OLD	status=already_consumed
+2026-11-10 20:40:35	6809fd73b4c654fe	RETRY	after_409
+2026-11-10 20:40:41	6809fd73b4c654fe	OK	status=completed total_ms=12053
+2026-11-10 20:40:46	2dd1ad4a7f9e8f1a	REQ	stream=1 bytes=140082
+2026-11-10 20:40:50	2dd1ad4a7f9e8f1a	OK	status=completed total_ms=4058
+2026-11-10 20:40:53	35d13d33f9ce7b38	REQ	stream=1 bytes=141117
+2026-11-10 20:40:59	35d13d33f9ce7b38	OK	status=completed total_ms=6035
+2026-11-10 20:41:02	9a1cc24148002211	REQ	stream=1 bytes=143005
+2026-11-10 20:41:14	9a1cc24148002211	OK	status=completed total_ms=12053
+2026-11-10 20:41:19	5d065b1d45dbf37c	REQ	stream=1 bytes=144205
+2026-11-10 20:41:23	5d065b1d45dbf37c	OK	status=completed total_ms=4049
+2026-11-10 20:41:26	25b86404381c3a4d	REQ	stream=1 bytes=145362
+2026-11-10 20:41:30	25b86404381c3a4d	OK	status=completed total_ms=4046
+2026-11-10 20:41:33	ea701d70f80ac435	REQ	stream=1 bytes=146242
+2026-11-10 20:41:37	ea701d70f80ac435	OK	status=completed total_ms=4054
+2026-11-10 20:41:41	40d752f9b3cb98ca	REQ	stream=1 bytes=148118
+2026-11-10 20:41:45	40d752f9b3cb98ca	OK	status=completed total_ms=4046
+2026-11-10 20:41:48	d629f2bb6ab4d944	REQ	stream=1 bytes=150766
+2026-11-10 20:41:52	d629f2bb6ab4d944	OK	status=completed total_ms=4043
+2026-11-10 20:41:55	2540c441661a2073	REQ	stream=1 bytes=152060
+2026-11-10 20:41:59	2540c441661a2073	OK	status=completed total_ms=4035
+2026-11-10 20:42:02	f1d085d9d9d02af6	REQ	stream=1 bytes=152679
+2026-11-10 20:42:11	f1d085d9d9d02af6	OK	status=completed total_ms=8047
+2026-11-10 20:42:14	821a651112e31387	REQ	stream=1 bytes=153859
+2026-11-10 20:42:18	821a651112e31387	OK	status=completed total_ms=4047
+2026-11-10 20:42:22	174ff01c9abd52d8	REQ	stream=1 bytes=155430
+2026-11-10 20:42:26	174ff01c9abd52d8	OK	status=completed total_ms=4037
+2026-11-10 20:42:29	438f13c1ae6aa7b3	REQ	stream=1 bytes=157492
+2026-11-10 20:42:37	438f13c1ae6aa7b3	OK	status=completed total_ms=8043
+2026-11-10 20:42:40	26714fc8369a958d	REQ	stream=1 bytes=162637
+2026-11-10 20:42:44	26714fc8369a958d	OK	status=completed total_ms=4041
+2026-11-10 20:42:47	386d3eeac843b780	REQ	stream=1 bytes=165001
+2026-11-10 20:42:55	386d3eeac843b780	OK	status=completed total_ms=8050
+2026-11-10 21:47:45	fc532428bc7ea6fe	REQ	stream=1 bytes=25607
+2026-11-10 21:47:45	604e1089f4b4cfb0	REQ	stream=1 bytes=166621
+2026-11-10 21:47:45	604e1089f4b4cfb0	409	previous_busy
+2026-11-10 21:47:47	fc532428bc7ea6fe	OK	status=completed total_ms=2039
+2026-11-10 21:47:47	604e1089f4b4cfb0	OLD	status=already_consumed
+2026-11-10 21:47:47	604e1089f4b4cfb0	RETRY	after_409
+2026-11-10 21:47:57	604e1089f4b4cfb0	OK	status=completed total_ms=12057
+2026-11-10 21:48:34	b2203e897fc7d294	REQ	stream=1 bytes=25502
+2026-11-10 21:48:34	8ae58094764b3657	REQ	stream=1 bytes=167454
+2026-11-10 21:48:34	8ae58094764b3657	409	previous_busy
+2026-11-10 21:48:50	b2203e897fc7d294	OK	status=completed total_ms=16104
+2026-11-10 21:48:50	8ae58094764b3657	OLD	status=already_consumed
+2026-11-10 21:48:50	8ae58094764b3657	RETRY	after_409
+2026-11-10 21:48:55	8ae58094764b3657	OK	status=completed total_ms=20066
+2026-11-10 21:51:31	d78df2aaea70ab45	REQ	stream=1 bytes=25674
+2026-11-10 21:51:32	299d972053bc7bd2	REQ	stream=1 bytes=168204
+2026-11-10 21:51:32	299d972053bc7bd2	409	previous_busy
+2026-11-10 21:51:33	d78df2aaea70ab45	OK	status=completed total_ms=2043
+2026-11-10 21:51:34	299d972053bc7bd2	OLD	status=already_consumed
+2026-11-10 21:51:34	299d972053bc7bd2	RETRY	after_409
+2026-11-10 21:51:36	299d972053bc7bd2	OK	status=completed total_ms=4055
+2026-11-10 21:51:46	669a081d87f4838c	REQ	stream=1 bytes=169438
+2026-11-10 21:51:50	669a081d87f4838c	OK	status=completed total_ms=4038
+2026-11-10 21:54:13	fcea703894ec91ca	REQ	stream=1 bytes=25557
+2026-11-10 21:54:14	292f8d057e7cfbc7	REQ	stream=1 bytes=170675
+2026-11-10 21:54:14	292f8d057e7cfbc7	409	previous_busy
+2026-11-10 21:54:15	fcea703894ec91ca	OK	status=completed total_ms=2031
+2026-11-10 21:54:16	292f8d057e7cfbc7	OLD	status=already_consumed
+2026-11-10 21:54:16	292f8d057e7cfbc7	RETRY	after_409
+2026-11-10 21:54:18	292f8d057e7cfbc7	OK	status=completed total_ms=4048
+2026-11-10 21:54:21	138194ea2b80fb3b	REQ	stream=1 bytes=182177
+2026-11-10 21:54:25	138194ea2b80fb3b	OK	status=completed total_ms=4052
+2026-11-10 21:55:56	1f64aaf337c84f66	REQ	stream=1 bytes=25497
+2026-11-10 21:55:56	f234772aeddbe047	REQ	stream=1 bytes=183362
+2026-11-10 21:55:56	f234772aeddbe047	409	previous_busy
+2026-11-10 21:55:58	1f64aaf337c84f66	OK	status=completed total_ms=2036
+2026-11-10 21:55:58	f234772aeddbe047	OLD	status=already_consumed
+2026-11-10 21:55:58	f234772aeddbe047	RETRY	after_409
+2026-11-10 21:56:02	f234772aeddbe047	OK	status=completed total_ms=6057
+2026-11-10 21:56:06	0df40534ea232586	REQ	stream=1 bytes=184443
+2026-11-10 21:56:10	0df40534ea232586	OK	status=completed total_ms=4042
+2026-11-10 21:56:12	54dc614656d469c8	REQ	stream=1 bytes=185503
+2026-11-10 21:56:14	54dc614656d469c8	OK	status=completed total_ms=2045
+2026-11-10 21:58:06	3eab968ba96c0e27	REQ	stream=1 bytes=25691
+2026-11-10 21:58:06	9116939a0d64b604	REQ	stream=1 bytes=186333
+2026-11-10 21:58:06	9116939a0d64b604	409	previous_busy
+2026-11-10 21:58:08	3eab968ba96c0e27	OK	status=completed total_ms=2032
+2026-11-10 21:58:08	9116939a0d64b604	OLD	status=already_consumed
+2026-11-10 21:58:08	9116939a0d64b604	RETRY	after_409
+2026-11-10 21:58:10	9116939a0d64b604	OK	status=completed total_ms=4057
+2026-11-10 21:59:52	466f98ac7a45942c	REQ	stream=1 bytes=25579
+2026-11-10 21:59:52	6bdb1b0284056960	REQ	stream=1 bytes=187168
+2026-11-10 21:59:52	6bdb1b0284056960	409	previous_busy
+2026-11-10 21:59:54	466f98ac7a45942c	OK	status=completed total_ms=2040
+2026-11-10 21:59:54	6bdb1b0284056960	OLD	status=already_consumed
+2026-11-10 21:59:54	6bdb1b0284056960	RETRY	after_409
+2026-11-10 21:59:58	6bdb1b0284056960	OK	status=completed total_ms=6061
+2026-11-10 22:00:01	8c950976d0280d38	REQ	stream=1 bytes=188228
+2026-11-10 22:00:07	8c950976d0280d38	OK	status=completed total_ms=6047
+2026-11-10 22:00:28	09b7094751b28056	REQ	stream=1 bytes=25493
+2026-11-10 22:00:28	358e1bfad09dd8ef	REQ	stream=1 bytes=188813
+2026-11-10 22:00:29	358e1bfad09dd8ef	409	previous_busy
+2026-11-10 22:01:16	09b7094751b28056	OK	status=completed total_ms=48093
+2026-11-10 22:01:17	358e1bfad09dd8ef	OLD	status=already_consumed
+2026-11-10 22:01:17	358e1bfad09dd8ef	RETRY	after_409
+2026-11-10 22:01:29	358e1bfad09dd8ef	OK	status=completed total_ms=60103
+2026-11-10 22:01:31	79c9d96632699c7c	REQ	stream=1 bytes=189901
+2026-11-10 22:01:48	79c9d96632699c7c	OK	status=completed total_ms=16071
+2026-11-10 22:01:51	feb4c85e6a8d821e	REQ	stream=1 bytes=190942
+2026-11-10 22:01:55	feb4c85e6a8d821e	OK	status=completed total_ms=4041
+2026-11-10 22:01:59	dae7275d91d60262	REQ	stream=1 bytes=192884
+2026-11-10 22:02:11	dae7275d91d60262	OK	status=completed total_ms=12045
+2026-11-10 22:02:14	cdd77bb0892ac1ad	REQ	stream=1 bytes=194686
+2026-11-10 22:02:24	cdd77bb0892ac1ad	OK	status=completed total_ms=10044
+2026-11-10 22:02:27	c7f914b834508187	REQ	stream=1 bytes=195921
+2026-11-10 22:02:33	c7f914b834508187	OK	status=completed total_ms=6046
+2026-11-10 22:02:36	aaac643b57b601f0	REQ	stream=1 bytes=197659
+2026-11-10 22:02:40	aaac643b57b601f0	OK	status=completed total_ms=4036
+2026-11-10 22:02:42	44d21461cd93bd21	REQ	stream=1 bytes=200103
+2026-11-10 22:02:48	44d21461cd93bd21	OK	status=completed total_ms=6044
+2026-11-10 22:02:52	8a6b7ac37644b3f1	REQ	stream=1 bytes=203349
+2026-11-10 22:02:56	8a6b7ac37644b3f1	OK	status=completed total_ms=4038
+2026-11-10 22:02:59	7b1f52bbdd4d08ff	REQ	stream=1 bytes=206071
+2026-11-10 22:03:07	7b1f52bbdd4d08ff	OK	status=completed total_ms=8042
+2026-11-10 22:03:09	76ce695d0a05ad39	REQ	stream=1 bytes=206872
+2026-11-10 22:03:15	76ce695d0a05ad39	OK	status=completed total_ms=6049
+2026-11-10 22:03:18	dc3424e311885e99	REQ	stream=1 bytes=209897
+2026-11-10 22:03:22	dc3424e311885e99	OK	status=completed total_ms=4037
+2026-11-10 22:03:29	65ee1d8205839771	REQ	stream=1 bytes=213523
+2026-11-10 22:03:35	65ee1d8205839771	OK	status=completed total_ms=6049
+2026-11-10 22:03:39	6197edf136863a41	REQ	stream=1 bytes=215858
+2026-11-10 22:03:43	6197edf136863a41	OK	status=completed total_ms=4045
+2026-11-10 22:03:47	3ceeb616437332a5	REQ	stream=1 bytes=217853
+2026-11-10 22:03:53	3ceeb616437332a5	OK	status=completed total_ms=6048
+2026-11-10 22:03:55	ace8804d771290c7	REQ	stream=1 bytes=221499
+2026-11-10 22:03:59	ace8804d771290c7	OK	status=completed total_ms=4043
+2026-11-10 22:04:02	70ae7b63f76e73f7	REQ	stream=1 bytes=225424
+2026-11-10 22:04:08	70ae7b63f76e73f7	OK	status=completed total_ms=6035
+2026-11-10 22:04:12	43462da6995038d6	REQ	stream=1 bytes=228481
+2026-11-10 22:04:16	43462da6995038d6	OK	status=completed total_ms=4043
+2026-11-10 22:04:20	4732e925d912f422	REQ	stream=1 bytes=233025
+2026-11-10 22:04:24	4732e925d912f422	OK	status=completed total_ms=4047
+2026-11-10 22:04:28	101bde52820be868	REQ	stream=1 bytes=233601
+2026-11-10 22:04:34	101bde52820be868	OK	status=completed total_ms=6036
+2026-11-10 22:04:39	e14afc60297afd47	REQ	stream=1 bytes=236303
+2026-11-10 22:05:07	e14afc60297afd47	OK	status=completed total_ms=28073
+2026-11-10 22:06:14	97807126879f11ce	REQ	stream=1 bytes=25527
+2026-11-10 22:06:15	67ac7d762c25127f	REQ	stream=1 bytes=236676
+2026-11-10 22:06:15	67ac7d762c25127f	409	previous_busy
+2026-11-10 22:07:02	97807126879f11ce	OK	status=completed total_ms=48079
+2026-11-10 22:07:03	67ac7d762c25127f	OLD	status=already_consumed
+2026-11-10 22:07:03	67ac7d762c25127f	RETRY	after_409
+2026-11-10 22:07:41	67ac7d762c25127f	OK	status=completed total_ms=86144
+2026-11-10 22:07:46	8f97f99c375e42c4	REQ	stream=1 bytes=239450
+2026-11-10 22:10:50	8f97f99c375e42c4	OK	status=completed total_ms=184228
+2026-11-10 22:10:53	78b93a221af1bc28	REQ	stream=1 bytes=240064
+2026-11-10 22:10:55	78b93a221af1bc28	OK	status=completed total_ms=2042
+2026-11-10 22:10:57	8ae5e2bffbb76cdc	REQ	stream=1 bytes=240672
+2026-11-10 22:10:59	8ae5e2bffbb76cdc	OK	status=completed total_ms=2041
+2026-11-10 22:11:02	7e43a9d33b027399	REQ	stream=1 bytes=241289
+2026-11-10 22:11:06	7e43a9d33b027399	OK	status=completed total_ms=4044
+2026-11-10 22:11:08	07bbb2750bd0cfe2	REQ	stream=1 bytes=241893
+2026-11-10 22:11:10	07bbb2750bd0cfe2	OK	status=completed total_ms=2041
+2026-11-10 22:11:13	29dca81409b001e6	REQ	stream=1 bytes=242479
+2026-11-10 22:11:15	29dca81409b001e6	OK	status=completed total_ms=2040
+2026-11-10 22:11:17	6378023168ba9044	REQ	stream=1 bytes=243050
+2026-11-10 22:11:19	6378023168ba9044	OK	status=completed total_ms=2039
+2026-11-10 22:11:22	32670a806b6f7609	REQ	stream=1 bytes=243695
+2026-11-10 22:11:24	32670a806b6f7609	OK	status=completed total_ms=2039
+2026-11-10 22:11:26	921ef358e108b5c3	REQ	stream=1 bytes=244360
+2026-11-10 22:11:30	921ef358e108b5c3	OK	status=completed total_ms=4051
+2026-11-10 22:11:32	de26d297dd479d1a	REQ	stream=1 bytes=245196
+2026-11-10 22:11:37	de26d297dd479d1a	OK	status=completed total_ms=4032
+2026-11-10 22:11:39	051a05d63ae5f8da	REQ	stream=1 bytes=246062
+2026-11-10 22:11:45	051a05d63ae5f8da	OK	status=completed total_ms=6055
+2026-11-10 22:11:50	2364a9cb35b99e68	REQ	stream=1 bytes=246696
+2026-11-10 22:11:54	2364a9cb35b99e68	OK	status=completed total_ms=4040
+2026-11-10 22:11:56	47394ac0d0bf7bcb	REQ	stream=1 bytes=247360
+2026-11-10 22:12:02	47394ac0d0bf7bcb	OK	status=completed total_ms=6042
+2026-11-10 22:12:05	c4cf580e465dfb01	REQ	stream=1 bytes=247938
+2026-11-10 22:12:07	c4cf580e465dfb01	OK	status=completed total_ms=2042
+2026-11-10 22:12:09	53639c1901417d5b	REQ	stream=1 bytes=248547
+2026-11-10 22:12:13	53639c1901417d5b	OK	status=completed total_ms=4090
+2026-11-10 22:12:17	8427fdb33269e280	REQ	stream=1 bytes=249817
+2026-11-10 22:12:23	8427fdb33269e280	OK	status=completed total_ms=6051
+2026-11-10 22:13:05	e34a8b1560176724	REQ	stream=1 bytes=25516
+2026-11-10 22:13:05	47d1d861547664d5	REQ	stream=1 bytes=250246
+2026-11-10 22:13:05	47d1d861547664d5	409	previous_busy
+2026-11-10 22:13:09	e34a8b1560176724	OK	status=completed total_ms=4035
+2026-11-10 22:13:09	47d1d861547664d5	OLD	status=already_consumed
+2026-11-10 22:13:09	47d1d861547664d5	RETRY	after_409
+2026-11-10 22:13:13	47d1d861547664d5	OK	status=completed total_ms=8053
+2026-11-10 22:13:18	b44cebead3cf8113	REQ	stream=1 bytes=250913
+2026-11-10 22:13:22	b44cebead3cf8113	OK	status=completed total_ms=4053
+2026-11-10 22:13:26	0ccb9a78fef87236	REQ	stream=1 bytes=251484
+2026-11-10 22:13:28	0ccb9a78fef87236	OK	status=completed total_ms=2035
+2026-11-10 22:13:30	1f9ad2c146d9c68e	REQ	stream=1 bytes=252101
+2026-11-10 22:13:32	1f9ad2c146d9c68e	OK	status=completed total_ms=2033
+2026-11-10 22:13:35	5abb2fc7d0016aee	REQ	stream=1 bytes=252724
+2026-11-10 22:13:37	5abb2fc7d0016aee	OK	status=completed total_ms=2053
+2026-11-10 22:13:39	f4a8709a1ff073ba	REQ	stream=1 bytes=253295
+2026-11-10 22:13:41	f4a8709a1ff073ba	OK	status=completed total_ms=2050
+2026-11-10 22:13:44	a2347cd5020e6575	REQ	stream=1 bytes=253897
+2026-11-10 22:13:46	a2347cd5020e6575	OK	status=completed total_ms=2038
+2026-11-10 22:13:48	26cf233a3c9eaeff	REQ	stream=1 bytes=254491
+2026-11-10 22:13:50	26cf233a3c9eaeff	OK	status=completed total_ms=2039
+2026-11-10 22:13:53	d62ee8335c6afa3c	REQ	stream=1 bytes=255087
+2026-11-10 22:13:55	d62ee8335c6afa3c	OK	status=completed total_ms=2061
+2026-11-10 22:13:57	0767f363e4f5ae69	REQ	stream=1 bytes=255658
+2026-11-10 22:13:59	0767f363e4f5ae69	OK	status=completed total_ms=2053
+2026-11-10 22:14:02	b9bc7fcf63852df5	REQ	stream=1 bytes=256272
+2026-11-10 22:14:04	b9bc7fcf63852df5	OK	status=completed total_ms=2040
+2026-11-10 22:14:06	e6ea955d92f5edf2	REQ	stream=1 bytes=256880
+2026-11-10 22:14:11	e6ea955d92f5edf2	OK	status=completed total_ms=4042
+2026-11-10 22:14:13	374aa5dcb07bf687	REQ	stream=1 bytes=257497
+2026-11-10 22:14:17	374aa5dcb07bf687	OK	status=completed total_ms=4047
+2026-11-10 22:14:19	b5f4d08a255c307a	REQ	stream=1 bytes=258101
+2026-11-10 22:14:21	b5f4d08a255c307a	OK	status=completed total_ms=2048
+2026-11-10 22:14:24	c6c8150aa955636d	REQ	stream=1 bytes=258687
+2026-11-10 22:14:26	c6c8150aa955636d	OK	status=completed total_ms=2049
+2026-11-10 22:14:28	d3ff398cf361612e	REQ	stream=1 bytes=259258
+2026-11-10 22:14:34	d3ff398cf361612e	OK	status=completed total_ms=6048
+2026-11-10 22:14:37	513f8b662baccbdf	REQ	stream=1 bytes=259903
+2026-11-10 22:14:41	513f8b662baccbdf	OK	status=completed total_ms=4043
+2026-11-10 22:14:43	21b190db83cbd3ab	REQ	stream=1 bytes=260568
+2026-11-10 22:14:45	21b190db83cbd3ab	OK	status=completed total_ms=2045
+2026-11-10 22:14:48	ddd93976572dd3af	REQ	stream=1 bytes=261202
+2026-11-10 22:14:54	ddd93976572dd3af	OK	status=completed total_ms=6045
+2026-11-10 22:14:57	35aa2882916fa6ce	REQ	stream=1 bytes=261866
+2026-11-10 22:15:01	35aa2882916fa6ce	OK	status=completed total_ms=4050
+2026-11-10 22:15:04	2f6a677f3332872e	REQ	stream=1 bytes=264158
+2026-11-10 22:15:08	2f6a677f3332872e	OK	status=completed total_ms=4036
+2026-11-10 22:15:12	635cfa42d57406ca	REQ	stream=1 bytes=265232
+2026-11-10 22:15:16	635cfa42d57406ca	OK	status=completed total_ms=4036
+2026-11-10 22:15:20	747df9a23be86324	REQ	stream=1 bytes=266610
+2026-11-10 22:15:24	747df9a23be86324	OK	status=completed total_ms=4054
+2026-11-10 22:16:05	15cbe96c91d4f78c	REQ	stream=1 bytes=267198
+2026-11-10 22:16:13	15cbe96c91d4f78c	OK	status=completed total_ms=8047
+2026-11-10 22:16:17	eca3edf827e9982e	REQ	stream=1 bytes=268924
+2026-11-10 22:16:21	eca3edf827e9982e	OK	status=completed total_ms=4037
+2026-11-10 22:16:23	af05acae1bb7a63f	REQ	stream=1 bytes=269507
+2026-11-10 22:16:25	af05acae1bb7a63f	OK	status=completed total_ms=2043
+2026-11-10 22:16:28	7500c4e648fb3c6c	REQ	stream=1 bytes=270840
+2026-11-10 22:16:35	7500c4e648fb3c6c	OK	status=completed total_ms=6052
+2026-11-10 22:16:37	31527ea916fb46a3	REQ	stream=1 bytes=279445
+2026-11-10 22:16:47	31527ea916fb46a3	OK	status=completed total_ms=10048
+2026-11-10 22:26:35	dec5309c33435fe6	REQ	stream=1 bytes=25614
+2026-11-10 22:26:35	72fa6c91be3e83fa	REQ	stream=1 bytes=281888
+2026-11-10 22:26:36	24be5d9410487829	REQ	stream=1 bytes=25614
+2026-11-10 22:26:36	d1204c1f7828c737	REQ	stream=1 bytes=281888
+2026-11-10 22:26:37	6edd2179aa5f6fed	REQ	stream=1 bytes=25614
+2026-11-10 22:26:38	c5e7046aa3739ca5	REQ	stream=1 bytes=281888
+2026-11-10 22:26:38	568eb9e94acab7ee	REQ	stream=1 bytes=25614
+2026-11-10 22:26:40	ddb774a9eff1d8c6	REQ	stream=1 bytes=281888
+2026-11-10 22:26:41	6bd9d341dbf628fb	REQ	stream=1 bytes=25614
+2026-11-10 22:26:44	8e0116e3b62d6cd1	REQ	stream=1 bytes=281888
+2026-11-10 22:26:45	ca95d3d586056bd3	REQ	stream=1 bytes=25614
+2026-11-10 22:26:48	4528d1b424d39f9a	REQ	stream=1 bytes=281888
+2026-11-10 22:27:10	f48414670488ac0a	REQ	stream=1 bytes=25614
+2026-11-10 22:27:10	4a4cfef987c8cf10	REQ	stream=1 bytes=282135
+2026-11-10 22:27:11	046918212cca6aad	REQ	stream=1 bytes=25614
+2026-11-10 22:27:12	77335d12863b3ff8	REQ	stream=1 bytes=282135
+2026-11-10 22:27:12	e1d69da4ff178eca	REQ	stream=1 bytes=25614
+2026-11-10 22:27:13	7f97bb4ffca594c2	REQ	stream=1 bytes=282135
+2026-11-10 22:27:13	833f276b9b326142	REQ	stream=1 bytes=25614
+2026-11-10 22:27:15	aadbd7b832d638a9	REQ	stream=1 bytes=282135
+2026-11-10 22:27:16	8373225fc605c459	REQ	stream=1 bytes=25614
+2026-11-10 22:27:17	8d0b50609990fb9f	REQ	stream=1 bytes=282135
+2026-11-10 22:27:20	ddf0ed738bccc460	REQ	stream=1 bytes=25614
+2026-11-10 22:27:21	7ca7042b12a0b934	REQ	stream=1 bytes=282135
+2026-11-10 22:28:13	5b1271b31b1fdaee	REQ	stream=1 bytes=25614
+2026-11-10 22:28:13	2db00a559bad17f0	REQ	stream=1 bytes=282382
+2026-11-10 22:28:14	df25e3ff5fccca77	REQ	stream=1 bytes=25614
+2026-11-10 22:28:14	a45444b5036189d4	REQ	stream=1 bytes=282382
+2026-11-10 22:28:15	bb22dcb8516c0339	REQ	stream=1 bytes=25614
+2026-11-10 22:28:16	ad1723a9210f9167	REQ	stream=1 bytes=282382
+2026-11-10 22:28:16	e168e5bc31f9aad7	REQ	stream=1 bytes=25614
+2026-11-10 22:28:17	1751669959f23269	REQ	stream=1 bytes=282382
+2026-11-10 22:28:18	b314d2826f96b1d7	REQ	stream=1 bytes=25614
+2026-11-10 22:28:21	a55c0ea635dc1594	REQ	stream=1 bytes=282382
+2026-11-10 22:28:22	7629d93e8f4cea8a	REQ	stream=1 bytes=25614
+2026-11-10 22:28:25	8c79e8b730c2b037	REQ	stream=1 bytes=282382
+2026-11-10 22:28:40	9e764aa1b9b5444f	REQ	stream=1 bytes=25614
+2026-11-10 22:28:40	25d5ea3e6ad50e68	REQ	stream=1 bytes=282629
+2026-11-10 22:28:40	6c723d6065cbc649	REQ	stream=1 bytes=25614
+2026-11-10 22:28:41	0aca788dd7a0cb1b	REQ	stream=1 bytes=282629
+2026-11-10 22:28:42	f902c5692d6ff46a	REQ	stream=1 bytes=25614
+2026-11-10 22:28:43	901fb364d59fc5d9	REQ	stream=1 bytes=282629
+2026-11-10 22:28:43	cfb90a2dbbd174bb	REQ	stream=1 bytes=25614
+2026-11-10 22:28:44	b6a429ca18bb2542	REQ	stream=1 bytes=282629
+2026-11-10 22:28:45	98afb51b663ae73c	REQ	stream=1 bytes=25614
+2026-11-10 22:28:47	cccee289f866a426	REQ	stream=1 bytes=282629
+2026-11-10 22:28:49	c7eaf9f55c31da9f	REQ	stream=1 bytes=25614
+2026-11-10 22:28:51	838dacf16d3b3ce9	REQ	stream=1 bytes=282629
+2026-11-10 22:29:02	782b3630cb72bdae	REQ	stream=1 bytes=25494
+2026-11-10 22:29:02	02caad0d25d87e2d	REQ	stream=1 bytes=282756
+2026-11-10 22:29:02	ac2abd591c565abc	REQ	stream=1 bytes=25494
+2026-11-10 22:29:03	33b13701dabdb432	REQ	stream=1 bytes=282756
+2026-11-10 22:29:04	1b7155e02eca2d46	REQ	stream=1 bytes=25494
+2026-11-10 22:29:04	24c3fcb3e79a715c	REQ	stream=1 bytes=282756
+2026-11-10 22:29:05	44141265fe662f2f	REQ	stream=1 bytes=25494
+2026-11-10 22:29:06	2fdfe6d15b03d8c4	REQ	stream=1 bytes=282756
+2026-11-10 22:29:07	56b28c6a88f2b602	REQ	stream=1 bytes=25494
+2026-11-10 22:29:09	235df358abb5b010	REQ	stream=1 bytes=282756
+2026-11-10 22:29:11	1b8c2291413532fa	REQ	stream=1 bytes=25494
+2026-11-10 22:29:13	a120d7d62a797849	REQ	stream=1 bytes=282756
+2026-11-10 22:32:42	ff179665a6a20288	REQ	stream=1 bytes=25494
+2026-11-10 22:32:43	6bf5511127c9800a	REQ	stream=1 bytes=282883
+2026-11-10 22:32:43	9cb79b549fa4659d	REQ	stream=1 bytes=25494
+2026-11-10 22:32:44	46d2c94296662543	REQ	stream=1 bytes=282883
+2026-11-10 22:32:44	da990334341fafc5	REQ	stream=1 bytes=25494
+2026-11-10 22:32:46	039d752b9d1affeb	REQ	stream=1 bytes=25494
+2026-11-10 22:32:46	389d2e109756e61d	REQ	stream=1 bytes=282883
+2026-11-10 22:32:47	03f4742806704a74	REQ	stream=1 bytes=282883
+2026-11-10 22:32:48	a16ac736708c8942	REQ	stream=1 bytes=25494
+2026-11-10 22:32:50	a20900cf6c98bbca	REQ	stream=1 bytes=282883
+2026-11-10 22:32:52	209fe14e84aa6361	REQ	stream=1 bytes=25494
+2026-11-10 22:32:55	b0e995ac4bfce2bd	REQ	stream=1 bytes=282883
+2026-11-10 23:06:17	cc8ac3e2ff639ec0	REQ	stream=1 bytes=34547
+2026-11-10 23:06:18	58c6c734b63e6bf2	REQ	stream=1 bytes=34547
+2026-11-10 23:06:19	37631e1ec3428fc6	REQ	stream=1 bytes=34547
+2026-11-10 23:06:21	da5641999a93a0e3	REQ	stream=1 bytes=34547
+2026-11-10 23:06:23	2b750f05e8e973c2	REQ	stream=1 bytes=34547
+2026-11-10 23:06:27	497fcbb13fed1d47	REQ	stream=1 bytes=34547
+2026-11-10 23:06:59	9084ae80a74444f8	REQ	stream=1 bytes=34547
+2026-11-10 23:07:01	ab7d2ad57ac4ee32	REQ	stream=1 bytes=34547
+2026-11-10 23:07:02	cc8eaf53d8b35db1	REQ	stream=1 bytes=34547
+2026-11-10 23:07:03	963d2b48ac3b3981	REQ	stream=1 bytes=34547
+2026-11-10 23:07:05	a83c3cf32189542e	REQ	stream=1 bytes=34547
+2026-11-10 23:07:09	d5d7b90cba5a32f8	REQ	stream=1 bytes=34547
+2026-11-10 23:57:45	5a463c3a31b1833f	REQ	stream=1 bytes=25494
+2026-11-10 23:57:45	13d5018a6a1cee8e	REQ	stream=1 bytes=283010
+2026-11-10 23:57:46	ba6b99b83efdd93e	REQ	stream=1 bytes=25494
+2026-11-10 23:57:46	7d1212c81a9943fc	REQ	stream=1 bytes=283010
+2026-11-10 23:57:47	f7b9bf14965fe4b7	REQ	stream=1 bytes=25494
+2026-11-10 23:57:48	6c82b10df3ca4152	REQ	stream=1 bytes=283010
+2026-11-10 23:57:48	59a18b0ecb2de02c	REQ	stream=1 bytes=25494
+2026-11-10 23:57:50	3c0dcab56f10db56	REQ	stream=1 bytes=283010
+2026-11-10 23:57:51	2ff27ffa91d604ef	REQ	stream=1 bytes=25494
+2026-11-10 23:57:52	925bfd4a39c9eabc	REQ	stream=1 bytes=283010
+2026-11-10 23:57:55	2a3d609ed459e57d	REQ	stream=1 bytes=25494
+2026-11-10 23:57:56	b8153b556fe3e19d	REQ	stream=1 bytes=283010
+2026-11-11 00:20:08	130eea9dcbe4197d	REQ	stream=1 bytes=25494
+2026-11-11 00:20:08	1cdf6d7f931bd9c0	REQ	stream=1 bytes=283137
+2026-11-11 00:20:09	10a76e4152579799	REQ	stream=1 bytes=25494
+2026-11-11 00:20:10	a115bef0daa70baf	REQ	stream=1 bytes=283137
+2026-11-11 00:20:10	edab9109a4dad820	REQ	stream=1 bytes=25494
+2026-11-11 00:20:12	71fea36aeb5a6d57	REQ	stream=1 bytes=25494
+2026-11-11 00:20:12	3a486bcc39061812	REQ	stream=1 bytes=283137
+2026-11-11 00:20:14	df33f4c5d3767d87	REQ	stream=1 bytes=25494
+2026-11-11 00:20:15	0d5531f984f95726	REQ	stream=1 bytes=283137
+2026-11-11 00:20:18	f7f7a907fe1d384d	REQ	stream=1 bytes=25494
+2026-11-11 00:20:18	48d0f67117174810	REQ	stream=1 bytes=283137
+2026-11-11 00:20:22	405ed2b45c45b8f2	REQ	stream=1 bytes=283137
+2026-11-11 00:37:44	42d0a997e820dafd	REQ	stream=1 bytes=25500
+2026-11-11 00:37:44	642c4f329661d83d	REQ	stream=1 bytes=283270
+2026-11-11 00:37:45	451e9915c8510782	REQ	stream=1 bytes=25500
+2026-11-11 00:37:45	24bc0d90fdbc2bd4	REQ	stream=1 bytes=283270
+2026-11-11 00:37:46	34fa6fb4547902f7	REQ	stream=1 bytes=25500
+2026-11-11 00:37:47	384d2a46f0f0c83d	REQ	stream=1 bytes=283270
+2026-11-11 00:37:47	6b96c5271751c402	REQ	stream=1 bytes=25500
+2026-11-11 00:37:49	dfb111ee7ec2a886	REQ	stream=1 bytes=283270
+2026-11-11 00:37:49	77f5aaed25073ba5	REQ	stream=1 bytes=25500
+2026-11-11 00:37:51	37064278b741c9ed	REQ	stream=1 bytes=283270
+2026-11-11 00:37:53	63e657a8931194f7	REQ	stream=1 bytes=25500
+2026-11-11 00:37:55	4b9234893decaec5	REQ	stream=1 bytes=283270
+2026-11-11 00:38:18	be4d2125d585b3d5	REQ	stream=1 bytes=25500
+2026-11-11 00:38:19	6398ef59af9373aa	REQ	stream=1 bytes=283403
+2026-11-11 00:38:19	83ab9b20d3dd8650	REQ	stream=1 bytes=25500
+2026-11-11 00:38:20	11ec85f5b9be45a5	REQ	stream=1 bytes=283403
+2026-11-11 00:38:20	be18dde08c3de0aa	REQ	stream=1 bytes=25500
+2026-11-11 00:38:22	55c0b4eaeeb8b3b2	REQ	stream=1 bytes=25500
+2026-11-11 00:38:22	dbfdc0d9becdc316	REQ	stream=1 bytes=283403
+2026-11-11 00:38:24	9a76bdac917027d2	REQ	stream=1 bytes=283403
+2026-11-11 00:38:24	23fed812b2390ad5	REQ	stream=1 bytes=25500
+2026-11-11 00:38:26	d071a396e20dc7cb	REQ	stream=1 bytes=283403
+2026-11-11 00:38:28	f372a9c6613946d7	REQ	stream=1 bytes=25500
+2026-11-11 00:38:31	4c00035096ad94ad	REQ	stream=1 bytes=283403
+2026-11-11 07:16:01	b09f1094d7154294	REQ	stream=1 bytes=31513
+2026-11-11 07:16:02	1198a576be7c6b83	REQ	stream=1 bytes=31513
+2026-11-11 07:16:03	196a373f2000e1ed	REQ	stream=1 bytes=31513
+2026-11-11 07:16:04	5eb64a0f8e5dad0c	REQ	stream=1 bytes=31513
+2026-11-11 07:16:07	27ef34b0fca7f68b	REQ	stream=1 bytes=31513
+2026-11-11 07:16:10	f4210ddaa68b9c16	REQ	stream=1 bytes=31513
+2026-11-11 07:16:44	ed5f89ed5efb0099	REQ	stream=1 bytes=31513
+2026-11-11 07:16:45	708eb24bda2e4725	REQ	stream=1 bytes=31513
+2026-11-11 07:16:46	fba61523901eae21	REQ	stream=1 bytes=31513
+2026-11-11 07:16:48	249cd0745ce4f95c	REQ	stream=1 bytes=31513
+2026-11-11 07:16:50	ad1834a00381480e	REQ	stream=1 bytes=31513
+2026-11-11 07:16:55	6ae9f71e824eebe8	REQ	stream=1 bytes=31513
+2026-11-11 07:17:15	93e8d3c68658a251	REQ	stream=1 bytes=25500
+2026-11-11 07:17:15	77a0982cfaa580c6	REQ	stream=1 bytes=283536
+2026-11-11 07:17:16	7b56f146396d8f7e	REQ	stream=1 bytes=25500
+2026-11-11 07:17:16	1cebe798bec045d6	REQ	stream=1 bytes=283536
+2026-11-11 07:17:17	a09e419d6ace5087	REQ	stream=1 bytes=25500
+2026-11-11 07:17:18	1d923a81a8acf93a	REQ	stream=1 bytes=283536
+2026-11-11 07:17:18	401ac5d6ab848403	REQ	stream=1 bytes=25500
+2026-11-11 07:17:19	10ca5c80d604a4b3	REQ	stream=1 bytes=283536
+2026-11-11 07:17:20	1e376e641c4335af	REQ	stream=1 bytes=25500
+2026-11-11 07:17:22	3a6a09dda6e8a62b	REQ	stream=1 bytes=283536
+2026-11-11 07:17:24	b4a6509ed37092d4	REQ	stream=1 bytes=25500
+2026-11-11 07:17:26	2e9e8de9bc9efbd5	REQ	stream=1 bytes=283536
+2026-11-11 08:21:26	a1a6b3c4c8d23ebd	REQ	stream=1 bytes=283669
+2026-11-11 08:21:26	13c9a23c66c04e34	REQ	stream=1 bytes=25500
+2026-11-11 08:21:27	5ca773301e4d1520	REQ	stream=1 bytes=25500
+2026-11-11 08:21:27	f2a56997766e8c28	REQ	stream=1 bytes=283669
+2026-11-11 08:21:29	67378aafd76daa2c	REQ	stream=1 bytes=283669
+2026-11-11 08:21:30	865b0adb985358bc	REQ	stream=1 bytes=25500
+2026-11-11 08:21:31	49d007f063591e8b	REQ	stream=1 bytes=283669
+2026-11-11 08:21:32	ea3dc6d7e841b9d3	REQ	stream=1 bytes=25500
+2026-11-11 08:21:33	f6e02e1efc9ed133	REQ	stream=1 bytes=283669
+2026-11-11 08:21:34	7e8b20ae751aaa2b	REQ	stream=1 bytes=25500
+2026-11-11 08:21:38	3219e7b23428e884	REQ	stream=1 bytes=283669
+2026-11-11 08:21:38	cad0ce478abe80ae	REQ	stream=1 bytes=25500
+2026-11-11 08:25:53	ae279b1a6778310c	REQ	stream=1 bytes=25494
+2026-11-11 08:25:54	a1de2181d03cad25	REQ	stream=1 bytes=25494
+2026-11-11 08:25:55	daed212d2fa6565b	REQ	stream=1 bytes=283923
+2026-11-11 08:25:55	cd9465e507d0064c	REQ	stream=1 bytes=25494
+2026-11-11 08:25:57	41cd80bdb62c0910	REQ	stream=1 bytes=283923
+2026-11-11 08:25:57	2c146893a182071f	REQ	stream=1 bytes=25494
+2026-11-11 08:25:58	00906e3849e863cf	REQ	stream=1 bytes=283923
+2026-11-11 08:25:59	4810d9932a392b3a	REQ	stream=1 bytes=25494
+2026-11-11 08:26:00	94adde8e176dae5b	REQ	stream=1 bytes=283923
+2026-11-11 08:26:02	8a21480dd6f6eb95	REQ	stream=1 bytes=283923
+2026-11-11 08:26:03	8f776bc3438de856	REQ	stream=1 bytes=25494
+2026-11-11 08:26:07	4ec4bd8d50edf5c2	REQ	stream=1 bytes=283923
+2026-11-11 12:58:59	8fa6fa132e94a682	REQ	stream=1 bytes=58098
+2026-11-11 12:58:59	8679a17feefb0c2b	REQ	stream=1 bytes=25494
+2026-11-11 12:58:59	69b3854113212b06	REQ	stream=1 bytes=25494
+2026-11-11 12:59:00	7857c2e21a381ade	REQ	stream=1 bytes=58098
+2026-11-11 12:59:01	4ff892817bee8e58	REQ	stream=1 bytes=25494
+2026-11-11 12:59:01	94c3a630bfa3649c	REQ	stream=1 bytes=58098
+2026-11-11 12:59:02	eb5c492a93345421	REQ	stream=1 bytes=25494
+2026-11-11 12:59:02	8c3cdd0c90623b15	REQ	stream=1 bytes=58098
+2026-11-11 12:59:05	90dc8dfe31a31f23	REQ	stream=1 bytes=25494
+2026-11-11 12:59:05	a8e2b7be31ea942d	REQ	stream=1 bytes=58098
+2026-11-11 12:59:09	8da67eedcfa93fec	REQ	stream=1 bytes=25494
+2026-11-11 12:59:09	04e04ec59e278e35	REQ	stream=1 bytes=58098
