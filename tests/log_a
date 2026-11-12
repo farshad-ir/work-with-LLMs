@@ -272,6 +272,42 @@ string BuildCandleObject(
    return data;
 }
 
+//+------------------------------------------------------------------+
+//| Build INIT JSON with H1 and H6 candle arrays                     |
+//+------------------------------------------------------------------+
+string BuildInitJson(
+   const string h1Candles,
+   const string h6Candles
+)
+{
+   string messageId =
+      "INIT-" +
+      IntegerToString((long)TimeCurrent()) +
+      "-" +
+      IntegerToString(GetTickCount());
+
+   string data = "{";
+
+   data += "\"message_type\":\"INIT\",";
+   data += "\"message_id\":\"" + messageId + "\",";
+   data += "\"symbol\":\"" + _Symbol + "\",";
+
+   data += "\"timeframes\":{";
+
+   data += "\"H1\":{";
+   data += "\"candles\":[" + h1Candles + "]";
+   data += "},";
+
+   data += "\"H6\":{";
+   data += "\"candles\":[" + h6Candles + "]";
+   data += "}";
+
+   data += "}";
+
+   data += "}";
+
+   return data;
+}
 
 //+------------------------------------------------------------------+
 //| Build one candle JSON                                             |
