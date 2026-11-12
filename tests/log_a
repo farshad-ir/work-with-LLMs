@@ -605,6 +605,9 @@ bool BootstrapHistory()
 
    Print("========== BOOTSTRAP START ==========");
 
+   string h1Candles = "";
+   string h6Candles = "";
+
    g_ma_h1.Update();
    g_ma_h6.Update();
 
@@ -621,7 +624,7 @@ bool BootstrapHistory()
       ProcessH1Candle(
          h1Rates[i],
          shift,
-         true
+         false
       );
 
    }
@@ -639,7 +642,7 @@ bool BootstrapHistory()
       ProcessH6Candle(
          h6Rates[i],
          shift,
-         true
+         false
       );
 
    }
