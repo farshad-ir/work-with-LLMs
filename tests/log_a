@@ -736,286 +736,1006 @@ void OnTick()
 
 
 //OUTPUT LOG
-[INIT] H1/H6 collector initialized.
 ========== BOOTSTRAP START ==========
-[H1] 2026.11.09 16:00 | Close=1.11967 | Center=1.11846 | Width=16.60 | Bifurcation=UNKNOWN
-[COLLECTOR] Sending H1 candle: 2026.11.09 16:00 | Bifurcation=UNKNOWN
+[H1 FEED] 2026.11.06 01:00 | UNKNOWN
+[H1] 2026.11.06 01:00 | Close=1.12278 | Center=1.12257 | Width=3.10 | Bifurcation=UNKNOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 01:00 | Bifurcation=UNKNOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=168 Bytes=601164 Characters=601164 Words=5619
+[SENDER] Requests=239 Bytes=621762 Characters=621762 Words=5974
+[H1 FEED] 2026.11.06 02:00 | DOWN
+[H1] 2026.11.06 02:00 | Close=1.12190 | Center=1.12242 | Width=4.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 02:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=240 Bytes=622052 Characters=622052 Words=5979
+[H1 FEED] 2026.11.06 03:00 | DOWN
+[H1] 2026.11.06 03:00 | Close=1.12096 | Center=1.12218 | Width=4.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 03:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=241 Bytes=622342 Characters=622342 Words=5984
+[H1 FEED] 2026.11.06 04:00 | DOWN
+[H1] 2026.11.06 04:00 | Close=1.12058 | Center=1.12190 | Width=5.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 04:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=242 Bytes=622632 Characters=622632 Words=5989
+[H1 FEED] 2026.11.06 05:00 | DOWN
+[H1] 2026.11.06 05:00 | Close=1.11987 | Center=1.12161 | Width=8.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 05:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=243 Bytes=622922 Characters=622922 Words=5994
+[H1 FEED] 2026.11.06 06:00 | DOWN
+[H1] 2026.11.06 06:00 | Close=1.11987 | Center=1.12139 | Width=10.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=244 Bytes=623213 Characters=623213 Words=5999
+[H1 FEED] 2026.11.06 07:00 | DOWN
+[H1] 2026.11.06 07:00 | Close=1.11963 | Center=1.12112 | Width=11.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 07:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=245 Bytes=623504 Characters=623504 Words=6004
+[H1 FEED] 2026.11.06 08:00 | DOWN
+[H1] 2026.11.06 08:00 | Close=1.11820 | Center=1.12064 | Width=13.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 08:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=246 Bytes=623795 Characters=623795 Words=6009
+[H1 FEED] 2026.11.06 09:00 | DOWN
+[H1] 2026.11.06 09:00 | Close=1.11768 | Center=1.12013 | Width=14.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 09:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=247 Bytes=624086 Characters=624086 Words=6014
+[H1 FEED] 2026.11.06 10:00 | DOWN
+[H1] 2026.11.06 10:00 | Close=1.11788 | Center=1.11977 | Width=15.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 10:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=248 Bytes=624377 Characters=624377 Words=6019
+[H1 FEED] 2026.11.06 11:00 | DOWN
+[H1] 2026.11.06 11:00 | Close=1.11712 | Center=1.11934 | Width=16.10 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 11:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=249 Bytes=624668 Characters=624668 Words=6024
+[H1 FEED] 2026.11.06 12:00 | DOWN
+[H1] 2026.11.06 12:00 | Close=1.11726 | Center=1.11902 | Width=15.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=250 Bytes=624959 Characters=624959 Words=6029
+[H1 FEED] 2026.11.06 13:00 | DOWN
+[H1] 2026.11.06 13:00 | Close=1.11727 | Center=1.11867 | Width=16.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 13:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=251 Bytes=625250 Characters=625250 Words=6034
+[H1 FEED] 2026.11.06 14:00 | DOWN
+[H1] 2026.11.06 14:00 | Close=1.11682 | Center=1.11830 | Width=16.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 14:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=252 Bytes=625541 Characters=625541 Words=6039
+[H1 FEED] 2026.11.06 15:00 | DOWN
+[H1] 2026.11.06 15:00 | Close=1.11450 | Center=1.11772 | Width=16.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 15:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=253 Bytes=625833 Characters=625833 Words=6044
+[H1 FEED] 2026.11.06 16:00 | DOWN
+[H1] 2026.11.06 16:00 | Close=1.11503 | Center=1.11724 | Width=16.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 16:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=254 Bytes=626124 Characters=626124 Words=6049
+[H1 FEED] 2026.11.06 17:00 | DOWN
+[H1] 2026.11.06 17:00 | Close=1.11446 | Center=1.11676 | Width=16.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 17:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=255 Bytes=626415 Characters=626415 Words=6054
+[H1 FEED] 2026.11.06 18:00 | DOWN
+[H1] 2026.11.06 18:00 | Close=1.11534 | Center=1.11650 | Width=14.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=256 Bytes=626706 Characters=626706 Words=6059
+[H1 FEED] 2026.11.06 19:00 | DOWN
+[H1] 2026.11.06 19:00 | Close=1.11449 | Center=1.11612 | Width=14.10 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 19:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=257 Bytes=626997 Characters=626997 Words=6064
+[H1 FEED] 2026.11.06 20:00 | DOWN
+[H1] 2026.11.06 20:00 | Close=1.11447 | Center=1.11573 | Width=14.30 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 20:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=258 Bytes=627288 Characters=627288 Words=6069
+[H1 FEED] 2026.11.06 21:00 | DOWN
+[H1] 2026.11.06 21:00 | Close=1.11397 | Center=1.11536 | Width=15.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 21:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=259 Bytes=627579 Characters=627579 Words=6074
+[H1 FEED] 2026.11.06 22:00 | DOWN
+[H1] 2026.11.06 22:00 | Close=1.11421 | Center=1.11521 | Width=12.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 22:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=260 Bytes=627870 Characters=627870 Words=6079
+[H1 FEED] 2026.11.06 23:00 | DOWN
+[H1] 2026.11.06 23:00 | Close=1.11366 | Center=1.11497 | Width=11.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.06 23:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=261 Bytes=628161 Characters=628161 Words=6084
+[H1 FEED] 2026.11.09 00:00 | DOWN
+[H1] 2026.11.09 00:00 | Close=1.11464 | Center=1.11492 | Width=10.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.09 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=262 Bytes=628452 Characters=628452 Words=6089
+[H1 FEED] 2026.11.09 01:00 | DOWN
+[H1] 2026.11.09 01:00 | Close=1.11471 | Center=1.11483 | Width=10.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.09 01:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=263 Bytes=628743 Characters=628743 Words=6094
+[H1 FEED] 2026.11.09 02:00 | DOWN
+[H1] 2026.11.09 02:00 | Close=1.11473 | Center=1.11480 | Width=9.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.09 02:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=264 Bytes=629033 Characters=629033 Words=6099
+[H1 FEED] 2026.11.09 03:00 | DOWN
+[H1] 2026.11.09 03:00 | Close=1.11556 | Center=1.11490 | Width=8.10 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.09 03:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=265 Bytes=629323 Characters=629323 Words=6104
+[H1 FEED] 2026.11.09 04:00 | UP
+[H1] 2026.11.09 04:00 | Close=1.11548 | Center=1.11499 | Width=6.70 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 04:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=266 Bytes=629611 Characters=629611 Words=6109
+[H1 FEED] 2026.11.09 05:00 | UP
+[H1] 2026.11.09 05:00 | Close=1.11526 | Center=1.11502 | Width=6.00 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 05:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=267 Bytes=629899 Characters=629899 Words=6114
+[H1 FEED] 2026.11.09 06:00 | UP
+[H1] 2026.11.09 06:00 | Close=1.11583 | Center=1.11508 | Width=6.10 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 06:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=268 Bytes=630187 Characters=630187 Words=6119
+[H1 FEED] 2026.11.09 07:00 | UP
+[H1] 2026.11.09 07:00 | Close=1.11595 | Center=1.11517 | Width=5.80 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 07:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=269 Bytes=630475 Characters=630475 Words=6124
+[H1 FEED] 2026.11.09 08:00 | UP
+[H1] 2026.11.09 08:00 | Close=1.11652 | Center=1.11533 | Width=7.40 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 08:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=270 Bytes=630763 Characters=630763 Words=6129
+[H1 FEED] 2026.11.09 09:00 | UP
+[H1] 2026.11.09 09:00 | Close=1.11714 | Center=1.11561 | Width=9.10 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 09:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=271 Bytes=631051 Characters=631051 Words=6134
+[H1 FEED] 2026.11.09 10:00 | UP
+[H1] 2026.11.09 10:00 | Close=1.11871 | Center=1.11609 | Width=12.70 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 10:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=272 Bytes=631340 Characters=631340 Words=6139
+[H1 FEED] 2026.11.09 11:00 | UP
+[H1] 2026.11.09 11:00 | Close=1.11926 | Center=1.11660 | Width=15.30 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 11:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=273 Bytes=631629 Characters=631629 Words=6144
+[H1 FEED] 2026.11.09 12:00 | UP
+[H1] 2026.11.09 12:00 | Close=1.11919 | Center=1.11700 | Width=16.30 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 12:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=274 Bytes=631918 Characters=631918 Words=6149
+[H1 FEED] 2026.11.09 13:00 | UP
+[H1] 2026.11.09 13:00 | Close=1.11891 | Center=1.11733 | Width=15.30 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 13:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=275 Bytes=632207 Characters=632207 Words=6154
+[H1 FEED] 2026.11.09 14:00 | UP
+[H1] 2026.11.09 14:00 | Close=1.11923 | Center=1.11766 | Width=15.30 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 14:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=276 Bytes=632496 Characters=632496 Words=6159
+[H1 FEED] 2026.11.09 15:00 | UP
+[H1] 2026.11.09 15:00 | Close=1.12004 | Center=1.11810 | Width=16.50 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 15:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=277 Bytes=632785 Characters=632785 Words=6164
+[H1 FEED] 2026.11.09 16:00 | UP
+[H1] 2026.11.09 16:00 | Close=1.11967 | Center=1.11846 | Width=16.60 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 16:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=278 Bytes=633074 Characters=633074 Words=6169
+[H1 FEED] 2026.11.09 17:00 | UP
 [H1] 2026.11.09 17:00 | Close=1.11953 | Center=1.11866 | Width=15.00 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.09 17:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=169 Bytes=601453 Characters=601453 Words=5624
+[SENDER] Requests=279 Bytes=633363 Characters=633363 Words=6174
+[H1 FEED] 2026.11.09 18:00 | UP
 [H1] 2026.11.09 18:00 | Close=1.12036 | Center=1.11891 | Width=13.00 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.09 18:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=170 Bytes=601742 Characters=601742 Words=5629
+[SENDER] Requests=280 Bytes=633652 Characters=633652 Words=6179
+[H1 FEED] 2026.11.09 19:00 | UP
 [H1] 2026.11.09 19:00 | Close=1.12031 | Center=1.11917 | Width=11.00 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.09 19:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=171 Bytes=602031 Characters=602031 Words=5634
+[SENDER] Requests=281 Bytes=633941 Characters=633941 Words=6184
+[H1 FEED] 2026.11.09 20:00 | UP
 [H1] 2026.11.09 20:00 | Close=1.12051 | Center=1.11945 | Width=10.00 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.09 20:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=172 Bytes=602320 Characters=602320 Words=5639
+[SENDER] Requests=282 Bytes=634230 Characters=634230 Words=6189
+[H1 FEED] 2026.11.09 21:00 | UP
 [H1] 2026.11.09 21:00 | Close=1.12235 | Center=1.11995 | Width=10.80 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.09 21:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=173 Bytes=602609 Characters=602609 Words=5644
+[SENDER] Requests=283 Bytes=634519 Characters=634519 Words=6194
+[H1 FEED] 2026.11.09 22:00 | UP
 [H1] 2026.11.09 22:00 | Close=1.12218 | Center=1.12036 | Width=11.00 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.09 22:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=174 Bytes=602898 Characters=602898 Words=5649
+[SENDER] Requests=284 Bytes=634808 Characters=634808 Words=6199
+[H1 FEED] 2026.11.09 23:00 | UP
 [H1] 2026.11.09 23:00 | Close=1.12227 | Center=1.12070 | Width=11.10 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.09 23:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=175 Bytes=603187 Characters=603187 Words=5654
+[SENDER] Requests=285 Bytes=635097 Characters=635097 Words=6204
+[H1 FEED] 2026.11.10 00:00 | UP
 [H1] 2026.11.10 00:00 | Close=1.12187 | Center=1.12089 | Width=10.30 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.10 00:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=176 Bytes=603475 Characters=603475 Words=5659
+[SENDER] Requests=286 Bytes=635385 Characters=635385 Words=6209
+[H1 FEED] 2026.11.10 01:00 | UP
 [H1] 2026.11.10 01:00 | Close=1.12221 | Center=1.12114 | Width=10.60 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.10 01:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=177 Bytes=603763 Characters=603763 Words=5664
+[SENDER] Requests=287 Bytes=635673 Characters=635673 Words=6214
+[H1 FEED] 2026.11.10 02:00 | UP
 [H1] 2026.11.10 02:00 | Close=1.12206 | Center=1.12137 | Width=11.10 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.10 02:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=178 Bytes=604052 Characters=604052 Words=5669
+[SENDER] Requests=288 Bytes=635962 Characters=635962 Words=6219
+[H1 FEED] 2026.11.10 03:00 | UP
 [H1] 2026.11.10 03:00 | Close=1.12226 | Center=1.12159 | Width=11.70 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.10 03:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=179 Bytes=604341 Characters=604341 Words=5674
+[SENDER] Requests=289 Bytes=636251 Characters=636251 Words=6224
+[H1 FEED] 2026.11.10 04:00 | UP
 [H1] 2026.11.10 04:00 | Close=1.12198 | Center=1.12163 | Width=9.80 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.10 04:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=180 Bytes=604629 Characters=604629 Words=5679
+[SENDER] Requests=290 Bytes=636539 Characters=636539 Words=6229
+[H1 FEED] 2026.11.10 05:00 | UP
 [H1] 2026.11.10 05:00 | Close=1.12228 | Center=1.12171 | Width=8.50 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.10 05:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=181 Bytes=604917 Characters=604917 Words=5684
+[SENDER] Requests=291 Bytes=636827 Characters=636827 Words=6234
+[H1 FEED] 2026.11.10 06:00 | UP
 [H1] 2026.11.10 06:00 | Close=1.12281 | Center=1.12185 | Width=7.20 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.10 06:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=182 Bytes=605205 Characters=605205 Words=5689
+[SENDER] Requests=292 Bytes=637115 Characters=637115 Words=6239
+[H1 FEED] 2026.11.10 07:00 | UP
 [H1] 2026.11.10 07:00 | Close=1.12244 | Center=1.12195 | Width=6.70 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.10 07:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=183 Bytes=605493 Characters=605493 Words=5694
+[SENDER] Requests=293 Bytes=637403 Characters=637403 Words=6244
+[H1 FEED] 2026.11.10 08:00 | UP
 [H1] 2026.11.10 08:00 | Close=1.12281 | Center=1.12208 | Width=6.20 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.10 08:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=184 Bytes=605781 Characters=605781 Words=5699
+[SENDER] Requests=294 Bytes=637691 Characters=637691 Words=6249
+[H1 FEED] 2026.11.10 09:00 | UP
 [H1] 2026.11.10 09:00 | Close=1.12415 | Center=1.12246 | Width=7.40 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.10 09:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=185 Bytes=606069 Characters=606069 Words=5704
+[SENDER] Requests=295 Bytes=637979 Characters=637979 Words=6254
+[H1 FEED] 2026.11.10 10:00 | UP
 [H1] 2026.11.10 10:00 | Close=1.12502 | Center=1.12293 | Width=9.00 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.10 10:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=186 Bytes=606357 Characters=606357 Words=5709
+[SENDER] Requests=296 Bytes=638267 Characters=638267 Words=6259
+[H1 FEED] 2026.11.10 11:00 | UP
 [H1] 2026.11.10 11:00 | Close=1.12267 | Center=1.12285 | Width=6.90 | Bifurcation=UP
 [COLLECTOR] Sending H1 candle: 2026.11.10 11:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=187 Bytes=606645 Characters=606645 Words=5714
+[SENDER] Requests=297 Bytes=638555 Characters=638555 Words=6264
+[H1 FEED] 2026.11.10 12:00 | DOWN
 [H1] 2026.11.10 12:00 | Close=1.12239 | Center=1.12284 | Width=6.90 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.10 12:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=188 Bytes=606935 Characters=606935 Words=5719
+[SENDER] Requests=298 Bytes=638845 Characters=638845 Words=6269
+[H1 FEED] 2026.11.10 13:00 | DOWN
 [H1] 2026.11.10 13:00 | Close=1.12172 | Center=1.12271 | Width=6.40 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.10 13:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=189 Bytes=607225 Characters=607225 Words=5724
+[SENDER] Requests=299 Bytes=639135 Characters=639135 Words=6274
+[H1 FEED] 2026.11.10 14:00 | DOWN
 [H1] 2026.11.10 14:00 | Close=1.12143 | Center=1.12257 | Width=6.20 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.10 14:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=190 Bytes=607515 Characters=607515 Words=5729
+[SENDER] Requests=300 Bytes=639425 Characters=639425 Words=6279
+[H1 FEED] 2026.11.10 15:00 | DOWN
 [H1] 2026.11.10 15:00 | Close=1.11864 | Center=1.12188 | Width=9.00 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.10 15:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=191 Bytes=607806 Characters=607806 Words=5734
+[SENDER] Requests=301 Bytes=639716 Characters=639716 Words=6284
+[H1 FEED] 2026.11.10 16:00 | DOWN
 [H1] 2026.11.10 16:00 | Close=1.11783 | Center=1.12128 | Width=15.00 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.10 16:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=192 Bytes=608097 Characters=608097 Words=5739
+[SENDER] Requests=302 Bytes=640007 Characters=640007 Words=6289
+[H1 FEED] 2026.11.10 17:00 | DOWN
 [H1] 2026.11.10 17:00 | Close=1.11597 | Center=1.12049 | Width=21.90 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.10 17:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=193 Bytes=608388 Characters=608388 Words=5744
+[SENDER] Requests=303 Bytes=640298 Characters=640298 Words=6294
+[H1 FEED] 2026.11.10 18:00 | DOWN
 [H1] 2026.11.10 18:00 | Close=1.11523 | Center=1.11973 | Width=27.50 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.10 18:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=194 Bytes=608679 Characters=608679 Words=5749
+[SENDER] Requests=304 Bytes=640589 Characters=640589 Words=6299
+[H1 FEED] 2026.11.10 19:00 | DOWN
 [H1] 2026.11.10 19:00 | Close=1.11564 | Center=1.11915 | Width=29.50 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.10 19:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=195 Bytes=608970 Characters=608970 Words=5754
+[SENDER] Requests=305 Bytes=640880 Characters=640880 Words=6304
+[H1 FEED] 2026.11.10 20:00 | DOWN
 [H1] 2026.11.10 20:00 | Close=1.11631 | Center=1.11873 | Width=28.70 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.10 20:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=196 Bytes=609261 Characters=609261 Words=5759
+[SENDER] Requests=306 Bytes=641171 Characters=641171 Words=6309
+[H1 FEED] 2026.11.10 21:00 | DOWN
 [H1] 2026.11.10 21:00 | Close=1.11656 | Center=1.11817 | Width=31.40 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.10 21:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=197 Bytes=609552 Characters=609552 Words=5764
+[SENDER] Requests=307 Bytes=641462 Characters=641462 Words=6314
+[H1 FEED] 2026.11.10 22:00 | DOWN
 [H1] 2026.11.10 22:00 | Close=1.11634 | Center=1.11777 | Width=30.10 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.10 22:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=198 Bytes=609843 Characters=609843 Words=5769
+[SENDER] Requests=308 Bytes=641753 Characters=641753 Words=6319
+[H1 FEED] 2026.11.10 23:00 | DOWN
 [H1] 2026.11.10 23:00 | Close=1.11621 | Center=1.11737 | Width=26.70 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.10 23:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=199 Bytes=610134 Characters=610134 Words=5774
+[SENDER] Requests=309 Bytes=642044 Characters=642044 Words=6324
+[H1 FEED] 2026.11.11 00:00 | DOWN
 [H1] 2026.11.11 00:00 | Close=1.11651 | Center=1.11711 | Width=19.90 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 00:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=200 Bytes=610424 Characters=610424 Words=5779
+[SENDER] Requests=310 Bytes=642334 Characters=642334 Words=6329
+[H1 FEED] 2026.11.11 01:00 | DOWN
 [H1] 2026.11.11 01:00 | Close=1.11685 | Center=1.11702 | Width=13.40 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 01:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=201 Bytes=610714 Characters=610714 Words=5784
+[SENDER] Requests=311 Bytes=642624 Characters=642624 Words=6334
+[H1 FEED] 2026.11.11 02:00 | DOWN
 [H1] 2026.11.11 02:00 | Close=1.11656 | Center=1.11700 | Width=10.50 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 02:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=202 Bytes=611005 Characters=611005 Words=5789
+[SENDER] Requests=312 Bytes=642915 Characters=642915 Words=6339
+[H1 FEED] 2026.11.11 03:00 | DOWN
 [H1] 2026.11.11 03:00 | Close=1.11689 | Center=1.11700 | Width=8.80 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 03:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=203 Bytes=611295 Characters=611295 Words=5794
+[SENDER] Requests=313 Bytes=643205 Characters=643205 Words=6344
+[H1 FEED] 2026.11.11 04:00 | DOWN
 [H1] 2026.11.11 04:00 | Close=1.11655 | Center=1.11694 | Width=7.60 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 04:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=204 Bytes=611585 Characters=611585 Words=5799
+[SENDER] Requests=314 Bytes=643495 Characters=643495 Words=6349
+[H1 FEED] 2026.11.11 05:00 | DOWN
 [H1] 2026.11.11 05:00 | Close=1.11631 | Center=1.11680 | Width=7.80 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 05:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=205 Bytes=611875 Characters=611875 Words=5804
+[SENDER] Requests=315 Bytes=643785 Characters=643785 Words=6354
+[H1 FEED] 2026.11.11 06:00 | DOWN
 [H1] 2026.11.11 06:00 | Close=1.11653 | Center=1.11671 | Width=7.80 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 06:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=206 Bytes=612164 Characters=612164 Words=5809
+[SENDER] Requests=316 Bytes=644074 Characters=644074 Words=6359
+[H1 FEED] 2026.11.11 07:00 | DOWN
 [H1] 2026.11.11 07:00 | Close=1.11603 | Center=1.11664 | Width=6.30 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 07:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=207 Bytes=612454 Characters=612454 Words=5814
+[SENDER] Requests=317 Bytes=644364 Characters=644364 Words=6364
+[H1 FEED] 2026.11.11 08:00 | DOWN
 [H1] 2026.11.11 08:00 | Close=1.11555 | Center=1.11649 | Width=5.50 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 08:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=208 Bytes=612744 Characters=612744 Words=5819
+[SENDER] Requests=318 Bytes=644654 Characters=644654 Words=6369
+[H1 FEED] 2026.11.11 09:00 | DOWN
 [H1] 2026.11.11 09:00 | Close=1.11549 | Center=1.11632 | Width=5.60 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 09:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=209 Bytes=613034 Characters=613034 Words=5824
+[SENDER] Requests=319 Bytes=644944 Characters=644944 Words=6374
+[H1 FEED] 2026.11.11 10:00 | DOWN
 [H1] 2026.11.11 10:00 | Close=1.11480 | Center=1.11604 | Width=6.30 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 10:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=210 Bytes=613324 Characters=613324 Words=5829
+[SENDER] Requests=320 Bytes=645234 Characters=645234 Words=6379
+[H1 FEED] 2026.11.11 11:00 | DOWN
 [H1] 2026.11.11 11:00 | Close=1.11381 | Center=1.11564 | Width=7.80 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 11:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=211 Bytes=613614 Characters=613614 Words=5834
+[SENDER] Requests=321 Bytes=645524 Characters=645524 Words=6384
+[H1 FEED] 2026.11.11 12:00 | DOWN
 [H1] 2026.11.11 12:00 | Close=1.11396 | Center=1.11539 | Width=9.30 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 12:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=212 Bytes=613904 Characters=613904 Words=5839
+[SENDER] Requests=322 Bytes=645814 Characters=645814 Words=6389
+[H1 FEED] 2026.11.11 13:00 | DOWN
 [H1] 2026.11.11 13:00 | Close=1.11355 | Center=1.11513 | Width=10.90 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 13:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=213 Bytes=614195 Characters=614195 Words=5844
+[SENDER] Requests=323 Bytes=646105 Characters=646105 Words=6394
+[H1 FEED] 2026.11.11 14:00 | DOWN
 [H1] 2026.11.11 14:00 | Close=1.11318 | Center=1.11483 | Width=12.00 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 14:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=214 Bytes=614486 Characters=614486 Words=5849
+[SENDER] Requests=324 Bytes=646396 Characters=646396 Words=6399
+[H1 FEED] 2026.11.11 15:00 | DOWN
 [H1] 2026.11.11 15:00 | Close=1.11046 | Center=1.11413 | Width=16.90 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 15:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=215 Bytes=614777 Characters=614777 Words=5854
+[SENDER] Requests=325 Bytes=646687 Characters=646687 Words=6404
+[H1 FEED] 2026.11.11 16:00 | DOWN
 [H1] 2026.11.11 16:00 | Close=1.10853 | Center=1.11325 | Width=23.00 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 16:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=216 Bytes=615068 Characters=615068 Words=5859
+[SENDER] Requests=326 Bytes=646978 Characters=646978 Words=6409
+[H1 FEED] 2026.11.11 17:00 | DOWN
 [H1] 2026.11.11 17:00 | Close=1.10963 | Center=1.11268 | Width=24.00 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 17:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=217 Bytes=615359 Characters=615359 Words=5864
+[SENDER] Requests=327 Bytes=647269 Characters=647269 Words=6414
+[H1 FEED] 2026.11.11 18:00 | DOWN
 [H1] 2026.11.11 18:00 | Close=1.10933 | Center=1.11216 | Width=24.20 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 18:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=218 Bytes=615650 Characters=615650 Words=5869
+[SENDER] Requests=328 Bytes=647560 Characters=647560 Words=6419
+[H1 FEED] 2026.11.11 19:00 | DOWN
 [H1] 2026.11.11 19:00 | Close=1.10927 | Center=1.11170 | Width=23.40 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 19:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=219 Bytes=615941 Characters=615941 Words=5874
+[SENDER] Requests=329 Bytes=647851 Characters=647851 Words=6424
+[H1 FEED] 2026.11.11 20:00 | DOWN
 [H1] 2026.11.11 20:00 | Close=1.10893 | Center=1.11111 | Width=24.20 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 20:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=220 Bytes=616232 Characters=616232 Words=5879
+[SENDER] Requests=330 Bytes=648142 Characters=648142 Words=6429
+[H1 FEED] 2026.11.11 21:00 | DOWN
 [H1] 2026.11.11 21:00 | Close=1.10914 | Center=1.11058 | Width=25.00 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 21:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=221 Bytes=616523 Characters=616523 Words=5884
+[SENDER] Requests=331 Bytes=648433 Characters=648433 Words=6434
+[H1 FEED] 2026.11.11 22:00 | DOWN
 [H1] 2026.11.11 22:00 | Close=1.10885 | Center=1.11022 | Width=22.50 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 22:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=222 Bytes=616813 Characters=616813 Words=5889
+[SENDER] Requests=332 Bytes=648723 Characters=648723 Words=6439
+[H1 FEED] 2026.11.11 23:00 | DOWN
 [H1] 2026.11.11 23:00 | Close=1.10879 | Center=1.11000 | Width=17.40 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.11 23:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=223 Bytes=617103 Characters=617103 Words=5894
+[SENDER] Requests=333 Bytes=649013 Characters=649013 Words=6444
+[H1 FEED] 2026.11.12 18:00 | DOWN
 [H1] 2026.11.12 18:00 | Close=1.10560 | Center=1.10934 | Width=17.60 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.12 18:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=224 Bytes=617393 Characters=617393 Words=5899
+[SENDER] Requests=334 Bytes=649303 Characters=649303 Words=6449
+[H1 FEED] 2026.11.12 19:00 | DOWN
 [H1] 2026.11.12 19:00 | Close=1.10473 | Center=1.10855 | Width=20.40 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.12 19:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=225 Bytes=617684 Characters=617684 Words=5904
+[SENDER] Requests=335 Bytes=649594 Characters=649594 Words=6454
+[H1 FEED] 2026.11.12 20:00 | DOWN
 [H1] 2026.11.12 20:00 | Close=1.10510 | Center=1.10793 | Width=20.10 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.12 20:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=226 Bytes=617975 Characters=617975 Words=5909
+[SENDER] Requests=336 Bytes=649885 Characters=649885 Words=6459
+[H1 FEED] 2026.11.12 21:00 | DOWN
 [H1] 2026.11.12 21:00 | Close=1.10557 | Center=1.10748 | Width=17.90 | Bifurcation=DOWN
 [COLLECTOR] Sending H1 candle: 2026.11.12 21:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=227 Bytes=618266 Characters=618266 Words=5914
-[H6] 2026.11.09 12:00 | Close=1.11953 | Center=1.11989 | Width=33.20 | Bifurcation=UNKNOWN
-[COLLECTOR] Sending H6 candle: 2026.11.09 12:00 | Bifurcation=UNKNOWN
+[SENDER] Requests=337 Bytes=650176 Characters=650176 Words=6464
+[H1 FEED] 2026.11.12 22:00 | DOWN
+[H1] 2026.11.12 22:00 | Close=1.10567 | Center=1.10717 | Width=16.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.12 22:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=228 Bytes=618561 Characters=618561 Words=5919
-[H6] 2026.11.09 18:00 | Close=1.12227 | Center=1.11992 | Width=32.90 | Bifurcation=UP
-[COLLECTOR] Sending H6 candle: 2026.11.09 18:00 | Bifurcation=UP
+[SENDER] Requests=338 Bytes=650467 Characters=650467 Words=6469
+[H6 FEED] 2026.10.08 00:00 | UNKNOWN
+[H6] 2026.10.08 00:00 | Close=1.12021 | Center=1.13561 | Width=115.30 | Bifurcation=UNKNOWN
+[COLLECTOR] Sending H6 candle: 2026.10.08 00:00 | Bifurcation=UNKNOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=229 Bytes=618851 Characters=618851 Words=5924
+[SENDER] Requests=339 Bytes=650762 Characters=650762 Words=6474
+[H6 FEED] 2026.10.08 06:00 | DOWN
+[H6] 2026.10.08 06:00 | Close=1.11901 | Center=1.13510 | Width=115.10 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.08 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=340 Bytes=651055 Characters=651055 Words=6479
+[H6 FEED] 2026.10.08 12:00 | DOWN
+[H6] 2026.10.08 12:00 | Close=1.12079 | Center=1.13464 | Width=113.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.08 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=341 Bytes=651348 Characters=651348 Words=6484
+[H6 FEED] 2026.10.08 18:00 | DOWN
+[H6] 2026.10.08 18:00 | Close=1.12096 | Center=1.13420 | Width=112.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.08 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=342 Bytes=651641 Characters=651641 Words=6489
+[H6 FEED] 2026.10.09 00:00 | DOWN
+[H6] 2026.10.09 00:00 | Close=1.12278 | Center=1.13382 | Width=110.30 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.09 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=343 Bytes=651933 Characters=651933 Words=6494
+[H6 FEED] 2026.10.09 06:00 | DOWN
+[H6] 2026.10.09 06:00 | Close=1.12181 | Center=1.13342 | Width=108.30 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.09 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=344 Bytes=652226 Characters=652226 Words=6499
+[H6 FEED] 2026.10.09 12:00 | DOWN
+[H6] 2026.10.09 12:00 | Close=1.11959 | Center=1.13297 | Width=107.10 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.09 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=345 Bytes=652519 Characters=652519 Words=6504
+[H6 FEED] 2026.10.09 18:00 | DOWN
+[H6] 2026.10.09 18:00 | Close=1.12020 | Center=1.13255 | Width=105.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.09 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=346 Bytes=652812 Characters=652812 Words=6509
+[H6 FEED] 2026.10.12 00:00 | DOWN
+[H6] 2026.10.12 00:00 | Close=1.12068 | Center=1.13212 | Width=104.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.12 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=347 Bytes=653104 Characters=653104 Words=6514
+[H6 FEED] 2026.10.12 06:00 | DOWN
+[H6] 2026.10.12 06:00 | Close=1.11930 | Center=1.13164 | Width=104.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.12 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=348 Bytes=653397 Characters=653397 Words=6519
+[H6 FEED] 2026.10.12 12:00 | DOWN
+[H6] 2026.10.12 12:00 | Close=1.11730 | Center=1.13112 | Width=104.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.12 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=349 Bytes=653690 Characters=653690 Words=6524
+[H6 FEED] 2026.10.12 18:00 | DOWN
+[H6] 2026.10.12 18:00 | Close=1.11547 | Center=1.13059 | Width=104.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.12 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=350 Bytes=653982 Characters=653982 Words=6529
+[H6 FEED] 2026.10.13 00:00 | DOWN
+[H6] 2026.10.13 00:00 | Close=1.11771 | Center=1.13013 | Width=104.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.13 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=351 Bytes=654274 Characters=654274 Words=6534
+[H6 FEED] 2026.10.13 06:00 | DOWN
+[H6] 2026.10.13 06:00 | Close=1.11815 | Center=1.12969 | Width=104.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.13 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=352 Bytes=654567 Characters=654567 Words=6539
+[H6 FEED] 2026.10.13 12:00 | DOWN
+[H6] 2026.10.13 12:00 | Close=1.11937 | Center=1.12928 | Width=104.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.13 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=353 Bytes=654860 Characters=654860 Words=6544
+[H6 FEED] 2026.10.13 18:00 | DOWN
+[H6] 2026.10.13 18:00 | Close=1.11984 | Center=1.12889 | Width=103.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.13 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=354 Bytes=655153 Characters=655153 Words=6549
+[H6 FEED] 2026.10.14 00:00 | DOWN
+[H6] 2026.10.14 00:00 | Close=1.12098 | Center=1.12854 | Width=103.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.14 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=355 Bytes=655445 Characters=655445 Words=6554
+[H6 FEED] 2026.10.14 06:00 | DOWN
+[H6] 2026.10.14 06:00 | Close=1.11949 | Center=1.12817 | Width=102.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.14 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=356 Bytes=655738 Characters=655738 Words=6559
+[H6 FEED] 2026.10.14 12:00 | DOWN
+[H6] 2026.10.14 12:00 | Close=1.11223 | Center=1.12766 | Width=102.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.14 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=357 Bytes=656031 Characters=656031 Words=6564
+[H6 FEED] 2026.10.14 18:00 | DOWN
+[H6] 2026.10.14 18:00 | Close=1.11559 | Center=1.12719 | Width=102.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.14 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=358 Bytes=656324 Characters=656324 Words=6569
+[H6 FEED] 2026.10.15 00:00 | DOWN
+[H6] 2026.10.15 00:00 | Close=1.12352 | Center=1.12686 | Width=102.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.15 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=359 Bytes=656617 Characters=656617 Words=6574
+[H6 FEED] 2026.10.15 06:00 | DOWN
+[H6] 2026.10.15 06:00 | Close=1.12159 | Center=1.12653 | Width=101.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.15 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=360 Bytes=656910 Characters=656910 Words=6579
+[H6 FEED] 2026.10.15 12:00 | DOWN
+[H6] 2026.10.15 12:00 | Close=1.12017 | Center=1.12618 | Width=99.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.15 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=361 Bytes=657202 Characters=657202 Words=6584
+[H6 FEED] 2026.10.15 18:00 | DOWN
+[H6] 2026.10.15 18:00 | Close=1.12183 | Center=1.12595 | Width=98.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.15 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=362 Bytes=657494 Characters=657494 Words=6589
+[H6 FEED] 2026.10.16 00:00 | DOWN
+[H6] 2026.10.16 00:00 | Close=1.12177 | Center=1.12575 | Width=97.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.16 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=363 Bytes=657785 Characters=657785 Words=6594
+[H6 FEED] 2026.10.16 06:00 | DOWN
+[H6] 2026.10.16 06:00 | Close=1.12452 | Center=1.12562 | Width=94.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.16 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=364 Bytes=658077 Characters=658077 Words=6599
+[H6 FEED] 2026.10.16 12:00 | DOWN
+[H6] 2026.10.16 12:00 | Close=1.12535 | Center=1.12549 | Width=91.30 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.16 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=365 Bytes=658369 Characters=658369 Words=6604
+[H6 FEED] 2026.10.16 18:00 | DOWN
+[H6] 2026.10.16 18:00 | Close=1.12387 | Center=1.12533 | Width=88.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.16 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=366 Bytes=658661 Characters=658661 Words=6609
+[H6 FEED] 2026.10.19 00:00 | DOWN
+[H6] 2026.10.19 00:00 | Close=1.12250 | Center=1.12512 | Width=87.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.19 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=367 Bytes=658953 Characters=658953 Words=6614
+[H6 FEED] 2026.10.19 06:00 | DOWN
+[H6] 2026.10.19 06:00 | Close=1.12128 | Center=1.12492 | Width=84.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.19 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=368 Bytes=659245 Characters=659245 Words=6619
+[H6 FEED] 2026.10.19 12:00 | DOWN
+[H6] 2026.10.19 12:00 | Close=1.12174 | Center=1.12488 | Width=81.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.19 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=369 Bytes=659537 Characters=659537 Words=6624
+[H6 FEED] 2026.10.19 18:00 | DOWN
+[H6] 2026.10.19 18:00 | Close=1.12102 | Center=1.12479 | Width=80.10 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.19 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=370 Bytes=659829 Characters=659829 Words=6629
+[H6 FEED] 2026.10.20 00:00 | DOWN
+[H6] 2026.10.20 00:00 | Close=1.12266 | Center=1.12474 | Width=78.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.20 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=371 Bytes=660120 Characters=660120 Words=6634
+[H6 FEED] 2026.10.20 06:00 | DOWN
+[H6] 2026.10.20 06:00 | Close=1.12212 | Center=1.12466 | Width=76.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.20 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=372 Bytes=660412 Characters=660412 Words=6639
+[H6 FEED] 2026.10.20 12:00 | DOWN
+[H6] 2026.10.20 12:00 | Close=1.12420 | Center=1.12465 | Width=75.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.20 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=373 Bytes=660704 Characters=660704 Words=6644
+[H6 FEED] 2026.10.20 18:00 | DOWN
+[H6] 2026.10.20 18:00 | Close=1.12371 | Center=1.12458 | Width=74.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.20 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=374 Bytes=660996 Characters=660996 Words=6649
+[H6 FEED] 2026.10.21 00:00 | DOWN
+[H6] 2026.10.21 00:00 | Close=1.12266 | Center=1.12448 | Width=73.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.21 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=375 Bytes=661287 Characters=661287 Words=6654
+[H6 FEED] 2026.10.21 06:00 | DOWN
+[H6] 2026.10.21 06:00 | Close=1.12209 | Center=1.12437 | Width=72.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.21 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=376 Bytes=661579 Characters=661579 Words=6659
+[H6 FEED] 2026.10.21 12:00 | DOWN
+[H6] 2026.10.21 12:00 | Close=1.12241 | Center=1.12429 | Width=71.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.21 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=377 Bytes=661871 Characters=661871 Words=6664
+[H6 FEED] 2026.10.21 18:00 | DOWN
+[H6] 2026.10.21 18:00 | Close=1.12314 | Center=1.12427 | Width=69.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.21 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=378 Bytes=662163 Characters=662163 Words=6669
+[H6 FEED] 2026.10.22 00:00 | DOWN
+[H6] 2026.10.22 00:00 | Close=1.12434 | Center=1.12429 | Width=67.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.22 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=379 Bytes=662454 Characters=662454 Words=6674
+[H6 FEED] 2026.10.22 06:00 | DOWN
+[H6] 2026.10.22 06:00 | Close=1.12342 | Center=1.12429 | Width=66.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.22 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=380 Bytes=662746 Characters=662746 Words=6679
+[H6 FEED] 2026.10.22 12:00 | DOWN
+[H6] 2026.10.22 12:00 | Close=1.11974 | Center=1.12419 | Width=64.30 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.22 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=381 Bytes=663038 Characters=663038 Words=6684
+[H6 FEED] 2026.10.22 18:00 | DOWN
+[H6] 2026.10.22 18:00 | Close=1.12148 | Center=1.12415 | Width=62.30 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.22 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=382 Bytes=663330 Characters=663330 Words=6689
+[H6 FEED] 2026.10.23 00:00 | DOWN
+[H6] 2026.10.23 00:00 | Close=1.12116 | Center=1.12408 | Width=60.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.23 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=383 Bytes=663622 Characters=663622 Words=6694
+[H6 FEED] 2026.10.23 06:00 | DOWN
+[H6] 2026.10.23 06:00 | Close=1.11898 | Center=1.12396 | Width=59.30 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.23 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=384 Bytes=663914 Characters=663914 Words=6699
+[H6 FEED] 2026.10.23 12:00 | DOWN
+[H6] 2026.10.23 12:00 | Close=1.12038 | Center=1.12385 | Width=58.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.23 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=385 Bytes=664206 Characters=664206 Words=6704
+[H6 FEED] 2026.10.23 18:00 | DOWN
+[H6] 2026.10.23 18:00 | Close=1.12008 | Center=1.12376 | Width=57.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.23 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=386 Bytes=664498 Characters=664498 Words=6709
+[H6 FEED] 2026.10.26 00:00 | DOWN
+[H6] 2026.10.26 00:00 | Close=1.12219 | Center=1.12373 | Width=55.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.26 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=387 Bytes=664790 Characters=664790 Words=6714
+[H6 FEED] 2026.10.26 06:00 | DOWN
+[H6] 2026.10.26 06:00 | Close=1.12046 | Center=1.12367 | Width=54.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.26 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=388 Bytes=665082 Characters=665082 Words=6719
+[H6 FEED] 2026.10.26 12:00 | DOWN
+[H6] 2026.10.26 12:00 | Close=1.11779 | Center=1.12353 | Width=52.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.26 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=389 Bytes=665374 Characters=665374 Words=6724
+[H6 FEED] 2026.10.26 18:00 | DOWN
+[H6] 2026.10.26 18:00 | Close=1.11753 | Center=1.12341 | Width=51.10 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.26 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=390 Bytes=665665 Characters=665665 Words=6729
+[H6 FEED] 2026.10.27 00:00 | DOWN
+[H6] 2026.10.27 00:00 | Close=1.11724 | Center=1.12330 | Width=49.10 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.27 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=391 Bytes=665956 Characters=665956 Words=6734
+[H6 FEED] 2026.10.27 06:00 | DOWN
+[H6] 2026.10.27 06:00 | Close=1.11416 | Center=1.12315 | Width=46.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.27 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=392 Bytes=666248 Characters=666248 Words=6739
+[H6 FEED] 2026.10.27 12:00 | DOWN
+[H6] 2026.10.27 12:00 | Close=1.11438 | Center=1.12298 | Width=44.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.27 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=393 Bytes=666540 Characters=666540 Words=6744
+[H6 FEED] 2026.10.27 18:00 | DOWN
+[H6] 2026.10.27 18:00 | Close=1.11259 | Center=1.12272 | Width=44.10 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.27 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=394 Bytes=666831 Characters=666831 Words=6749
+[H6 FEED] 2026.10.28 00:00 | DOWN
+[H6] 2026.10.28 00:00 | Close=1.11234 | Center=1.12238 | Width=44.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.28 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=395 Bytes=667122 Characters=667122 Words=6754
+[H6 FEED] 2026.10.28 06:00 | DOWN
+[H6] 2026.10.28 06:00 | Close=1.11271 | Center=1.12207 | Width=45.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.28 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=396 Bytes=667414 Characters=667414 Words=6759
+[H6 FEED] 2026.10.28 12:00 | DOWN
+[H6] 2026.10.28 12:00 | Close=1.11393 | Center=1.12181 | Width=45.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.28 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=397 Bytes=667706 Characters=667706 Words=6764
+[H6 FEED] 2026.10.28 18:00 | DOWN
+[H6] 2026.10.28 18:00 | Close=1.11526 | Center=1.12161 | Width=45.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.28 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=398 Bytes=667998 Characters=667998 Words=6769
+[H6 FEED] 2026.10.29 00:00 | DOWN
+[H6] 2026.10.29 00:00 | Close=1.11444 | Center=1.12138 | Width=45.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.29 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=399 Bytes=668290 Characters=668290 Words=6774
+[H6 FEED] 2026.10.29 06:00 | DOWN
+[H6] 2026.10.29 06:00 | Close=1.11341 | Center=1.12113 | Width=46.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.29 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=400 Bytes=668582 Characters=668582 Words=6779
+[H6 FEED] 2026.10.29 12:00 | DOWN
+[H6] 2026.10.29 12:00 | Close=1.11637 | Center=1.12099 | Width=45.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.29 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=401 Bytes=668874 Characters=668874 Words=6784
+[H6 FEED] 2026.10.29 18:00 | DOWN
+[H6] 2026.10.29 18:00 | Close=1.11760 | Center=1.12090 | Width=44.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.29 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=402 Bytes=669166 Characters=669166 Words=6789
+[H6 FEED] 2026.10.30 00:00 | DOWN
+[H6] 2026.10.30 00:00 | Close=1.11908 | Center=1.12086 | Width=43.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.30 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=403 Bytes=669458 Characters=669458 Words=6794
+[H6 FEED] 2026.10.30 06:00 | DOWN
+[H6] 2026.10.30 06:00 | Close=1.11985 | Center=1.12085 | Width=42.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.30 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=404 Bytes=669750 Characters=669750 Words=6799
+[H6 FEED] 2026.10.30 12:00 | DOWN
+[H6] 2026.10.30 12:00 | Close=1.11630 | Center=1.12072 | Width=41.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.30 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=405 Bytes=670042 Characters=670042 Words=6804
+[H6 FEED] 2026.10.30 18:00 | DOWN
+[H6] 2026.10.30 18:00 | Close=1.11663 | Center=1.12060 | Width=41.30 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.10.30 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=406 Bytes=670334 Characters=670334 Words=6809
+[H6 FEED] 2026.11.02 00:00 | DOWN
+[H6] 2026.11.02 00:00 | Close=1.11706 | Center=1.12050 | Width=40.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.02 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=407 Bytes=670626 Characters=670626 Words=6814
+[H6 FEED] 2026.11.02 06:00 | DOWN
+[H6] 2026.11.02 06:00 | Close=1.12180 | Center=1.12057 | Width=38.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.02 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=408 Bytes=670918 Characters=670918 Words=6819
+[H6 FEED] 2026.11.02 12:00 | DOWN
+[H6] 2026.11.02 12:00 | Close=1.11967 | Center=1.12056 | Width=37.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.02 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=409 Bytes=671210 Characters=671210 Words=6824
+[H6 FEED] 2026.11.02 18:00 | DOWN
+[H6] 2026.11.02 18:00 | Close=1.11865 | Center=1.12051 | Width=36.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.02 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=410 Bytes=671502 Characters=671502 Words=6829
+[H6 FEED] 2026.11.03 00:00 | DOWN
+[H6] 2026.11.03 00:00 | Close=1.11900 | Center=1.12048 | Width=35.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.03 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=411 Bytes=671794 Characters=671794 Words=6834
+[H6 FEED] 2026.11.03 06:00 | DOWN
+[H6] 2026.11.03 06:00 | Close=1.11909 | Center=1.12045 | Width=35.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.03 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=412 Bytes=672086 Characters=672086 Words=6839
+[H6 FEED] 2026.11.03 12:00 | DOWN
+[H6] 2026.11.03 12:00 | Close=1.11939 | Center=1.12043 | Width=34.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.03 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=413 Bytes=672378 Characters=672378 Words=6844
+[H6 FEED] 2026.11.03 18:00 | DOWN
+[H6] 2026.11.03 18:00 | Close=1.11911 | Center=1.12039 | Width=33.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.03 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=414 Bytes=672670 Characters=672670 Words=6849
+[H6 FEED] 2026.11.04 00:00 | DOWN
+[H6] 2026.11.04 00:00 | Close=1.12443 | Center=1.12042 | Width=34.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.04 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=415 Bytes=672962 Characters=672962 Words=6854
+[H6 FEED] 2026.11.04 06:00 | UP
+[H6] 2026.11.04 06:00 | Close=1.12572 | Center=1.12048 | Width=34.40 | Bifurcation=UP
+[COLLECTOR] Sending H6 candle: 2026.11.04 06:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=416 Bytes=673252 Characters=673252 Words=6859
+[H6 FEED] 2026.11.04 12:00 | UP
+[H6] 2026.11.04 12:00 | Close=1.12350 | Center=1.12051 | Width=34.50 | Bifurcation=UP
+[COLLECTOR] Sending H6 candle: 2026.11.04 12:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=417 Bytes=673542 Characters=673542 Words=6864
+[H6 FEED] 2026.11.04 18:00 | UP
+[H6] 2026.11.04 18:00 | Close=1.12287 | Center=1.12053 | Width=34.50 | Bifurcation=UP
+[COLLECTOR] Sending H6 candle: 2026.11.04 18:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=418 Bytes=673832 Characters=673832 Words=6869
+[H6 FEED] 2026.11.05 00:00 | UP
+[H6] 2026.11.05 00:00 | Close=1.12653 | Center=1.12063 | Width=34.50 | Bifurcation=UP
+[COLLECTOR] Sending H6 candle: 2026.11.05 00:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=419 Bytes=674122 Characters=674122 Words=6874
+[H6 FEED] 2026.11.05 06:00 | UP
+[H6] 2026.11.05 06:00 | Close=1.12315 | Center=1.12063 | Width=34.70 | Bifurcation=UP
+[COLLECTOR] Sending H6 candle: 2026.11.05 06:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=420 Bytes=674412 Characters=674412 Words=6879
+[H6 FEED] 2026.11.05 12:00 | UP
+[H6] 2026.11.05 12:00 | Close=1.12269 | Center=1.12062 | Width=35.20 | Bifurcation=UP
+[COLLECTOR] Sending H6 candle: 2026.11.05 12:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=421 Bytes=674702 Characters=674702 Words=6884
+[H6 FEED] 2026.11.05 18:00 | DOWN
+[H6] 2026.11.05 18:00 | Close=1.12184 | Center=1.12059 | Width=35.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.05 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=422 Bytes=674994 Characters=674994 Words=6889
+[H6 FEED] 2026.11.06 00:00 | DOWN
+[H6] 2026.11.06 00:00 | Close=1.11987 | Center=1.12057 | Width=34.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.06 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=423 Bytes=675286 Characters=675286 Words=6894
+[H6 FEED] 2026.11.06 06:00 | DOWN
+[H6] 2026.11.06 06:00 | Close=1.11712 | Center=1.12045 | Width=34.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.06 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=424 Bytes=675578 Characters=675578 Words=6899
+[H6 FEED] 2026.11.06 12:00 | DOWN
+[H6] 2026.11.06 12:00 | Close=1.11446 | Center=1.12028 | Width=34.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.06 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=425 Bytes=675870 Characters=675870 Words=6904
+[H6 FEED] 2026.11.06 18:00 | DOWN
+[H6] 2026.11.06 18:00 | Close=1.11366 | Center=1.12012 | Width=33.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.06 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=426 Bytes=676162 Characters=676162 Words=6909
+[H6 FEED] 2026.11.09 00:00 | DOWN
+[H6] 2026.11.09 00:00 | Close=1.11526 | Center=1.11998 | Width=33.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.09 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=427 Bytes=676454 Characters=676454 Words=6914
+[H6 FEED] 2026.11.09 06:00 | DOWN
+[H6] 2026.11.09 06:00 | Close=1.11926 | Center=1.11995 | Width=33.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.09 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=428 Bytes=676746 Characters=676746 Words=6919
+[H6 FEED] 2026.11.09 12:00 | DOWN
+[H6] 2026.11.09 12:00 | Close=1.11953 | Center=1.11989 | Width=33.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.09 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=429 Bytes=677038 Characters=677038 Words=6924
+[H6 FEED] 2026.11.09 18:00 | DOWN
+[H6] 2026.11.09 18:00 | Close=1.12227 | Center=1.11992 | Width=32.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.09 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=430 Bytes=677330 Characters=677330 Words=6929
+[H6 FEED] 2026.11.10 00:00 | UP
 [H6] 2026.11.10 00:00 | Close=1.12228 | Center=1.11998 | Width=32.00 | Bifurcation=UP
 [COLLECTOR] Sending H6 candle: 2026.11.10 00:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=230 Bytes=619140 Characters=619140 Words=5929
+[SENDER] Requests=431 Bytes=677619 Characters=677619 Words=6934
+[H6 FEED] 2026.11.10 06:00 | UP
 [H6] 2026.11.10 06:00 | Close=1.12267 | Center=1.12006 | Width=31.00 | Bifurcation=UP
 [COLLECTOR] Sending H6 candle: 2026.11.10 06:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=231 Bytes=619430 Characters=619430 Words=5934
+[SENDER] Requests=432 Bytes=677909 Characters=677909 Words=6939
+[H6 FEED] 2026.11.10 12:00 | UP
 [H6] 2026.11.10 12:00 | Close=1.11597 | Center=1.11997 | Width=30.00 | Bifurcation=UP
 [COLLECTOR] Sending H6 candle: 2026.11.10 12:00 | Bifurcation=UP
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=232 Bytes=619720 Characters=619720 Words=5939
+[SENDER] Requests=433 Bytes=678199 Characters=678199 Words=6944
+[H6 FEED] 2026.11.10 18:00 | DOWN
 [H6] 2026.11.10 18:00 | Close=1.11621 | Center=1.11994 | Width=28.30 | Bifurcation=DOWN
 [COLLECTOR] Sending H6 candle: 2026.11.10 18:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=233 Bytes=620012 Characters=620012 Words=5944
+[SENDER] Requests=434 Bytes=678491 Characters=678491 Words=6949
+[H6 FEED] 2026.11.11 00:00 | DOWN
 [H6] 2026.11.11 00:00 | Close=1.11631 | Center=1.11990 | Width=26.60 | Bifurcation=DOWN
 [COLLECTOR] Sending H6 candle: 2026.11.11 00:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=234 Bytes=620303 Characters=620303 Words=5949
+[SENDER] Requests=435 Bytes=678782 Characters=678782 Words=6954
+[H6 FEED] 2026.11.11 06:00 | DOWN
 [H6] 2026.11.11 06:00 | Close=1.11381 | Center=1.11983 | Width=24.60 | Bifurcation=DOWN
 [COLLECTOR] Sending H6 candle: 2026.11.11 06:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=235 Bytes=620595 Characters=620595 Words=5954
+[SENDER] Requests=436 Bytes=679074 Characters=679074 Words=6959
+[H6 FEED] 2026.11.11 12:00 | DOWN
 [H6] 2026.11.11 12:00 | Close=1.10963 | Center=1.11966 | Width=22.50 | Bifurcation=DOWN
 [COLLECTOR] Sending H6 candle: 2026.11.11 12:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=236 Bytes=620887 Characters=620887 Words=5959
+[SENDER] Requests=437 Bytes=679366 Characters=679366 Words=6964
+[H6 FEED] 2026.11.11 18:00 | DOWN
 [H6] 2026.11.11 18:00 | Close=1.10879 | Center=1.11934 | Width=23.40 | Bifurcation=DOWN
 [COLLECTOR] Sending H6 candle: 2026.11.11 18:00 | Bifurcation=DOWN
 [SENDER] SendLatestJson result: 200
-[SENDER] Requests=237 Bytes=621178 Characters=621178 Words=5964
-========== BOOTSTRAP COMPLETE ========== H1=60 H6=10
+[SENDER] Requests=438 Bytes=679657 Characters=679657 Words=6969
+[STOP] Collector stopped. Reason=9
+========== BOOTSTRAP COMPLETE ========== H1=100 H6=100
