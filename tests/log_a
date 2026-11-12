@@ -1,3 +1,11 @@
+//+------------------------------------------------------------------+
+//| H1_Diagnostic.mq5                                                |
+//| Sequential H1/H6 Candle Collector                                |
+//| MT5 -> egg.dll -> Laravel -> Python                              |
+//+------------------------------------------------------------------+
+#property strict
+
+//--- Existing DLL sender (unchanged)
 #import "egg.dll"
 int SendLatestJson();
 #import
@@ -8,139 +16,246 @@ int PollResponses(string clientId, uchar &output[], int outputCapacity);
 
 #include <JAson.mqh>
 
-#property copyright "forex-decision-skill (MIT)"
-#property strict
+#include "Common.mqh"
+#include "SimpleLogger.mqh"
+#include "MovingAverages.mqh"
+#include "Structure.mqh"
+
+#include "MA_RIVER\\MaRiverObserver.mqh"
+
+#include "MA_BOX\\FractalGeometry.mqh"
+#include "MA_BOX\\FlatZoneSmallBoxObserver.mqh"
+
+#include "MA_INERTIA\\RainBowDynamics.mqh"
+#include "MA_INERTIA\\ZigZagEngine.mqh"
+#include "MA_INERTIA\\MABifurcation.mqh"
+#include "MA_INERTIA\\ZigZagAdvisor.mqh"
+
+
+//+------------------------------------------------------------------+
+//| Configuration                                                    |
+//+------------------------------------------------------------------+
+#define HISTORY_CAPACITY 100
+
+#define H1_INITIAL_COUNT 60
+#define H6_INITIAL_COUNT 10
+
+
+//+------------------------------------------------------------------+
+//| Global objects                                                    |
+//+------------------------------------------------------------------+
+CMovingAverages g_ma_h1;
+CMovingAverages g_ma_h6;
+
+CMaRiver H1_river;
+CMaRiver H6_river;
+
+CMABifurcation mabif_h1;
+CMABifurcation mabif_h6;
 
 CJAVal json;
 
-datetime lastBarTime = 0;
 uchar response[4096];
 
 
 //+------------------------------------------------------------------+
-//| Get timeframe as plain text                                      |
+//| Bifurcation history                                               |
 //+------------------------------------------------------------------+
-string GetTimeframe()
+struct BifurcationRecord
 {
-   string tf = EnumToString(_Period);
-   StringReplace(tf, "PERIOD_", "");
-   return tf;
+   datetime candleTime;
+   int      direction;
+};
+
+BifurcationRecord g_h1History[HISTORY_CAPACITY];
+BifurcationRecord g_h6History[HISTORY_CAPACITY];
+
+int g_h1HistoryCount = 0;
+int g_h6HistoryCount = 0;
+
+int g_h1HistoryNext = 0;
+int g_h6HistoryNext = 0;
+
+
+//+------------------------------------------------------------------+
+//| Runtime state                                                     |
+//+------------------------------------------------------------------+
+datetime g_lastH1BarTime = 0;
+datetime g_lastH6BarTime = 0;
+
+bool g_bootstrapped = false;
+
+
+//+------------------------------------------------------------------+
+//| Direction to text                                                 |
+//+------------------------------------------------------------------+
+string DirectionText(const int direction)
+{
+   if(direction == 1)
+      return "UP";
+
+   if(direction == -1)
+      return "DOWN";
+
+   return "UNKNOWN";
 }
 
 
 //+------------------------------------------------------------------+
-//| Build JSON with five closed candles                              |
+//| Find H1 history record                                            |
 //+------------------------------------------------------------------+
-string BuildCandleJson()
+int FindH1Record(const datetime candleTime)
 {
-   MqlRates rates[];
-
-   // Copy five closed candles
-   int copied = CopyRates(_Symbol, _Period, 1, 5, rates);
-
-   if(copied != 5)
+   for(int i = 0; i < g_h1HistoryCount; i++)
    {
-      Print("Could not copy candles. Error: ", GetLastError());
-      return "";
+      if(g_h1History[i].candleTime == candleTime)
+         return i;
    }
 
-   string a_json = "{";
+   return -1;
+}
 
-   a_json += "\"cover_letter\":\"From MT5 to AI\",";
-   a_json += "\"symbol\":\"" + _Symbol + "\",";
-   a_json += "\"timeframe\":\"" + GetTimeframe() + "\",";
-   a_json += "\"candles\":[";
 
-   for(int i = 4; i >= 0; i--)
+//+------------------------------------------------------------------+
+//| Find H6 history record                                            |
+//+------------------------------------------------------------------+
+int FindH6Record(const datetime candleTime)
+{
+   for(int i = 0; i < g_h6HistoryCount; i++)
    {
-      string timeStr = TimeToString(
-         rates[i].time,
-         TIME_DATE | TIME_MINUTES
-      );
-
-      if(i != 4)
-         a_json += ",";
-
-      a_json += "{";
-      a_json += "\"time\":\"" + timeStr + "\",";
-      a_json += "\"open\":" + DoubleToString(rates[i].open, _Digits) + ",";
-      a_json += "\"high\":" + DoubleToString(rates[i].high, _Digits) + ",";
-      a_json += "\"low\":" + DoubleToString(rates[i].low, _Digits) + ",";
-      a_json += "\"close\":" + DoubleToString(rates[i].close, _Digits);
-      a_json += "}";
+      if(g_h6History[i].candleTime == candleTime)
+         return i;
    }
 
-   a_json += "]}";
-
-   return a_json;
+   return -1;
 }
 
 
 //+------------------------------------------------------------------+
-//| Expert initialization                                            |
+//| Add H1 history record (FIFO)                                      |
 //+------------------------------------------------------------------+
-int OnInit()
+void AddH1Record(
+   const datetime candleTime,
+   const int direction
+)
 {
-   lastBarTime = iTime(_Symbol, _Period, 0);
+   g_h1History[g_h1HistoryNext].candleTime = candleTime;
+   g_h1History[g_h1HistoryNext].direction = direction;
 
-   Print("MT5 JSON Builder started.");
-   Print("Symbol: ", _Symbol);
-   Print("Timeframe: ", GetTimeframe());
+   g_h1HistoryNext++;
 
-   return INIT_SUCCEEDED;
+   if(g_h1HistoryNext >= HISTORY_CAPACITY)
+      g_h1HistoryNext = 0;
+
+   if(g_h1HistoryCount < HISTORY_CAPACITY)
+      g_h1HistoryCount++;
 }
 
 
 //+------------------------------------------------------------------+
-//| Tick event                                                       |
+//| Add H6 history record (FIFO)                                      |
 //+------------------------------------------------------------------+
-void OnTick()
+void AddH6Record(
+   const datetime candleTime,
+   const int direction
+)
 {
-   datetime currentBarTime = iTime(_Symbol, _Period, 0);
+   g_h6History[g_h6HistoryNext].candleTime = candleTime;
+   g_h6History[g_h6HistoryNext].direction = direction;
 
-   if(currentBarTime == 0 || currentBarTime == lastBarTime)
-      return;
+   g_h6HistoryNext++;
 
-   lastBarTime = currentBarTime;
+   if(g_h6HistoryNext >= HISTORY_CAPACITY)
+      g_h6HistoryNext = 0;
 
-   string a_json = BuildCandleJson();
-
-   if(a_json == "")
-      return;
-
-   SaveSendFile(a_json);
-   ReadPoling();
+   if(g_h6HistoryCount < HISTORY_CAPACITY)
+      g_h6HistoryCount++;
 }
 
 
 //+------------------------------------------------------------------+
-//| Save JSON file and send through DLL                              |
+//| Build one candle JSON                                             |
 //+------------------------------------------------------------------+
-void SaveSendFile(string data)
+string BuildCandleJson(
+   const MqlRates &bar,
+   const string timeframe,
+   const double riverCenter,
+   const double riverWidth,
+   const int direction
+)
+{
+   string timeStr = TimeToString(
+      bar.time,
+      TIME_DATE | TIME_MINUTES
+   );
+
+   string data = "{";
+
+   data += "\"cover_letter\":\"From MT5 to AI\",";
+   data += "\"symbol\":\"" + _Symbol + "\",";
+   data += "\"timeframe\":\"" + timeframe + "\",";
+   data += "\"candles\":[";
+
+   data += "{";
+
+   data += "\"time\":\"" + timeStr + "\",";
+   data += "\"open\":" + DoubleToString(bar.open, _Digits) + ",";
+   data += "\"high\":" + DoubleToString(bar.high, _Digits) + ",";
+   data += "\"low\":" + DoubleToString(bar.low, _Digits) + ",";
+   data += "\"close\":" + DoubleToString(bar.close, _Digits) + ",";
+
+   data += "\"tick_volume\":" + IntegerToString((long)bar.tick_volume) + ",";
+   data += "\"spread_points\":" + IntegerToString(bar.spread) + ",";
+
+   data += "\"river_center\":" + DoubleToString(riverCenter, _Digits) + ",";
+   data += "\"river_width_pips\":" + DoubleToString(riverWidth, 2) + ",";
+
+   data += "\"ma_bifurcation\":{";
+   data += "\"direction\":\"" + DirectionText(direction) + "\"";
+   data += "}";
+
+   data += "}";
+
+   data += "]}";
+
+   return data;
+}
+
+
+//+------------------------------------------------------------------+
+//| Send JSON through existing DLL sender                             |
+//+------------------------------------------------------------------+
+void SaveSendFile(const string data)
 {
    int fileH = FileOpen(
       "LLM-LQ/mt5_feed.json",
       FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_UNICODE
    );
 
-   if(fileH != INVALID_HANDLE)
+   if(fileH == INVALID_HANDLE)
    {
-      FileWriteString(fileH, data);
-      FileClose(fileH);
+      Print(
+         "[SENDER] FileOpen failed. Error: ",
+         GetLastError()
+      );
 
-      int result = SendLatestJson();
+      return;
+   }
 
-      Print("MT5 SendLatestJson result: ", result);
-   }
-   else
-   {
-      Print("FileOpen failed. Error: ", GetLastError());
-   }
+   FileWriteString(fileH, data);
+   FileClose(fileH);
+
+   int result = SendLatestJson();
+
+   Print(
+      "[SENDER] SendLatestJson result: ",
+      result
+   );
 }
 
 
 //+------------------------------------------------------------------+
-//| Read statistics from Gateway                                    |
+//| Read response from existing DLL                                   |
 //+------------------------------------------------------------------+
 void ReadPoling()
 {
@@ -151,10 +266,7 @@ void ReadPoling()
    );
 
    if(bytesRead <= 0)
-   {
-      Print("MT5 statistics GET failed. Result: ", bytesRead);
       return;
-   }
 
    string jsonResponse = CharArrayToString(
       response,
@@ -165,28 +277,676 @@ void ReadPoling()
 
    if(!json.Deserialize(jsonResponse, CP_UTF8))
    {
-      Print("Could not parse MT5 statistics JSON.");
+      Print("[SENDER] Could not parse response.");
       return;
    }
 
    if(!json["success"].ToBool())
    {
-      Print("MT5 statistics request was not successful.");
+      Print("[SENDER] Response success=false");
       return;
    }
 
    CJAVal statistics = json["statistics"];
 
-   long requests    = statistics["requests"].ToInt();
-   long bytes       = statistics["bytes"].ToInt();
-   long characters  = statistics["characters"].ToInt();
-   long words       = statistics["words"].ToInt();
-
-   Print("========== MT5 STATISTICS ==========");
-   Print("Client ID: ", json["client_id"].ToStr());
-   Print("Requests: ", requests);
-   Print("Bytes: ", bytes);
-   Print("Characters: ", characters);
-   Print("Words: ", words);
-   Print("====================================");
+   Print(
+      "[SENDER] Requests=",
+      statistics["requests"].ToInt(),
+      " Bytes=",
+      statistics["bytes"].ToInt(),
+      " Characters=",
+      statistics["characters"].ToInt(),
+      " Words=",
+      statistics["words"].ToInt()
+   );
 }
+
+
+//+------------------------------------------------------------------+
+//| Send one candle                                                   |
+//+------------------------------------------------------------------+
+void SendOneCandle(
+   const MqlRates &bar,
+   const string timeframe,
+   const double center,
+   const double width,
+   const int direction
+)
+{
+   string data = BuildCandleJson(
+      bar,
+      timeframe,
+      center,
+      width,
+      direction
+   );
+
+   Print(
+      "[COLLECTOR] Sending ",
+      timeframe,
+      " candle: ",
+      TimeToString(bar.time, TIME_DATE | TIME_MINUTES),
+      " | Bifurcation=",
+      DirectionText(direction)
+   );
+
+   SaveSendFile(data);
+
+   ReadPoling();
+}
+
+
+//+------------------------------------------------------------------+
+//| Process one H1 candle                                             |
+//+------------------------------------------------------------------+
+void ProcessH1Candle(
+   const MqlRates &bar,
+   const int shift,
+   const bool send
+)
+{
+   H1_river.Update(shift);
+
+   int recordIndex = FindH1Record(bar.time);
+
+   int direction;
+
+   if(recordIndex >= 0)
+   {
+      // Already calculated: reuse stored result.
+      direction = g_h1History[recordIndex].direction;
+   }
+   else
+   {
+      // New candle: feed exactly once.
+      direction = mabif_h1.AddPoint(
+         H1_river.Center()
+      );
+
+      AddH1Record(
+         bar.time,
+         direction
+      );
+   }
+
+   PrintFormat(
+      "[H1] %s | Close=%.5f | Center=%.5f | Width=%.2f | Bifurcation=%s",
+      TimeToString(bar.time, TIME_DATE | TIME_MINUTES),
+      bar.close,
+      H1_river.Center(),
+      H1_river.Width(),
+      DirectionText(direction)
+   );
+
+   if(send)
+   {
+      SendOneCandle(
+         bar,
+         "H1",
+         H1_river.Center(),
+         H1_river.Width(),
+         direction
+      );
+   }
+}
+
+
+//+------------------------------------------------------------------+
+//| Process one H6 candle                                             |
+//+------------------------------------------------------------------+
+void ProcessH6Candle(
+   const MqlRates &bar,
+   const int shift,
+   const bool send
+)
+{
+   H6_river.Update(shift);
+
+   int recordIndex = FindH6Record(bar.time);
+
+   int direction;
+
+   if(recordIndex >= 0)
+   {
+      direction = g_h6History[recordIndex].direction;
+   }
+   else
+   {
+      direction = mabif_h6.AddPoint(
+         H6_river.Center()
+      );
+
+      AddH6Record(
+         bar.time,
+         direction
+      );
+   }
+
+   PrintFormat(
+      "[H6] %s | Close=%.5f | Center=%.5f | Width=%.2f | Bifurcation=%s",
+      TimeToString(bar.time, TIME_DATE | TIME_MINUTES),
+      bar.close,
+      H6_river.Center(),
+      H6_river.Width(),
+      DirectionText(direction)
+   );
+
+   if(send)
+   {
+      SendOneCandle(
+         bar,
+         "H6",
+         H6_river.Center(),
+         H6_river.Width(),
+         direction
+      );
+   }
+}
+
+
+//+------------------------------------------------------------------+
+//| Initial history synchronization                                   |
+//+------------------------------------------------------------------+
+bool BootstrapHistory()
+{
+   MqlRates h1Rates[];
+   MqlRates h6Rates[];
+
+   ArraySetAsSeries(h1Rates, true);
+   ArraySetAsSeries(h6Rates, true);
+
+   int h1Copied = CopyRates(
+      _Symbol,
+      PERIOD_H1,
+      1,
+      H1_INITIAL_COUNT,
+      h1Rates
+   );
+
+   int h6Copied = CopyRates(
+      _Symbol,
+      PERIOD_H6,
+      1,
+      H6_INITIAL_COUNT,
+      h6Rates
+   );
+
+   if(h1Copied != H1_INITIAL_COUNT)
+   {
+      Print("[BOOTSTRAP] H1 history not ready: ", h1Copied);
+      return false;
+   }
+
+   if(h6Copied != H6_INITIAL_COUNT)
+   {
+      Print("[BOOTSTRAP] H6 history not ready: ", h6Copied);
+      return false;
+   }
+
+   Print("========== BOOTSTRAP START ==========");
+
+   g_ma_h1.Update();
+   g_ma_h6.Update();
+
+   // H1: oldest to newest.
+   for(int i = H1_INITIAL_COUNT - 1; i >= 0; i--)
+   {
+      int shift = i + 1;
+
+      ProcessH1Candle(
+         h1Rates[i],
+         shift,
+         true
+      );
+   }
+
+   // H6: oldest to newest.
+   for(int i = H6_INITIAL_COUNT - 1; i >= 0; i--)
+   {
+      int shift = i + 1;
+
+      ProcessH6Candle(
+         h6Rates[i],
+         shift,
+         true
+      );
+   }
+
+   // Remember current open candle times.
+   g_lastH1BarTime = iTime(
+      _Symbol,
+      PERIOD_H1,
+      0
+   );
+
+   g_lastH6BarTime = iTime(
+      _Symbol,
+      PERIOD_H6,
+      0
+   );
+
+   g_bootstrapped = true;
+
+   Print(
+      "========== BOOTSTRAP COMPLETE ==========",
+      " H1=", g_h1HistoryCount,
+      " H6=", g_h6HistoryCount
+   );
+
+   return true;
+}
+
+
+//+------------------------------------------------------------------+
+//| Process newly closed H1 candle                                   |
+//+------------------------------------------------------------------+
+void CheckNewH1Candle()
+{
+   datetime currentBarTime = iTime(
+      _Symbol,
+      PERIOD_H1,
+      0
+   );
+
+   if(currentBarTime == 0)
+      return;
+
+   if(currentBarTime == g_lastH1BarTime)
+      return;
+
+   MqlRates bar[];
+
+   ArraySetAsSeries(bar, true);
+
+   if(CopyRates(_Symbol, PERIOD_H1, 1, 1, bar) != 1)
+      return;
+
+   g_lastH1BarTime = currentBarTime;
+
+   g_ma_h1.Update();
+
+   ProcessH1Candle(
+      bar[0],
+      1,
+      true
+   );
+}
+
+
+//+------------------------------------------------------------------+
+//| Process newly closed H6 candle                                   |
+//+------------------------------------------------------------------+
+void CheckNewH6Candle()
+{
+   datetime currentBarTime = iTime(
+      _Symbol,
+      PERIOD_H6,
+      0
+   );
+
+   if(currentBarTime == 0)
+      return;
+
+   if(currentBarTime == g_lastH6BarTime)
+      return;
+
+   MqlRates bar[];
+
+   ArraySetAsSeries(bar, true);
+
+   if(CopyRates(_Symbol, PERIOD_H6, 1, 1, bar) != 1)
+      return;
+
+   g_lastH6BarTime = currentBarTime;
+
+   g_ma_h6.Update();
+
+   ProcessH6Candle(
+      bar[0],
+      1,
+      true
+   );
+}
+
+
+//+------------------------------------------------------------------+
+//| Expert initialization                                             |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   if(!g_ma_h1.Init(7, 14, PERIOD_H1))
+   {
+      Print("[INIT] H1 MA initialization failed.");
+      return INIT_FAILED;
+   }
+
+   if(!g_ma_h6.Init(42, 84, PERIOD_H6))
+   {
+      Print("[INIT] H6 MA initialization failed.");
+      return INIT_FAILED;
+   }
+
+   H1_river.Set(g_ma_h1);
+   H6_river.Set(g_ma_h6);
+
+   Print("[INIT] H1/H6 collector initialized.");
+
+   return INIT_SUCCEEDED;
+}
+
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization                                           |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+   Print(
+      "[STOP] Collector stopped. Reason=",
+      reason
+   );
+}
+
+
+//+------------------------------------------------------------------+
+//| Expert tick                                                       |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   if(!g_bootstrapped)
+   {
+      BootstrapHistory();
+      return;
+   }
+
+   CheckNewH1Candle();
+
+   CheckNewH6Candle();
+}
+
+//+------------------------------------------------------------------+
+
+
+//OUTPUT LOG
+[INIT] H1/H6 collector initialized.
+========== BOOTSTRAP START ==========
+[H1] 2026.11.09 16:00 | Close=1.11967 | Center=1.11846 | Width=16.60 | Bifurcation=UNKNOWN
+[COLLECTOR] Sending H1 candle: 2026.11.09 16:00 | Bifurcation=UNKNOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=168 Bytes=601164 Characters=601164 Words=5619
+[H1] 2026.11.09 17:00 | Close=1.11953 | Center=1.11866 | Width=15.00 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 17:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=169 Bytes=601453 Characters=601453 Words=5624
+[H1] 2026.11.09 18:00 | Close=1.12036 | Center=1.11891 | Width=13.00 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 18:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=170 Bytes=601742 Characters=601742 Words=5629
+[H1] 2026.11.09 19:00 | Close=1.12031 | Center=1.11917 | Width=11.00 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 19:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=171 Bytes=602031 Characters=602031 Words=5634
+[H1] 2026.11.09 20:00 | Close=1.12051 | Center=1.11945 | Width=10.00 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 20:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=172 Bytes=602320 Characters=602320 Words=5639
+[H1] 2026.11.09 21:00 | Close=1.12235 | Center=1.11995 | Width=10.80 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 21:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=173 Bytes=602609 Characters=602609 Words=5644
+[H1] 2026.11.09 22:00 | Close=1.12218 | Center=1.12036 | Width=11.00 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 22:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=174 Bytes=602898 Characters=602898 Words=5649
+[H1] 2026.11.09 23:00 | Close=1.12227 | Center=1.12070 | Width=11.10 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.09 23:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=175 Bytes=603187 Characters=603187 Words=5654
+[H1] 2026.11.10 00:00 | Close=1.12187 | Center=1.12089 | Width=10.30 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.10 00:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=176 Bytes=603475 Characters=603475 Words=5659
+[H1] 2026.11.10 01:00 | Close=1.12221 | Center=1.12114 | Width=10.60 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.10 01:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=177 Bytes=603763 Characters=603763 Words=5664
+[H1] 2026.11.10 02:00 | Close=1.12206 | Center=1.12137 | Width=11.10 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.10 02:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=178 Bytes=604052 Characters=604052 Words=5669
+[H1] 2026.11.10 03:00 | Close=1.12226 | Center=1.12159 | Width=11.70 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.10 03:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=179 Bytes=604341 Characters=604341 Words=5674
+[H1] 2026.11.10 04:00 | Close=1.12198 | Center=1.12163 | Width=9.80 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.10 04:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=180 Bytes=604629 Characters=604629 Words=5679
+[H1] 2026.11.10 05:00 | Close=1.12228 | Center=1.12171 | Width=8.50 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.10 05:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=181 Bytes=604917 Characters=604917 Words=5684
+[H1] 2026.11.10 06:00 | Close=1.12281 | Center=1.12185 | Width=7.20 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.10 06:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=182 Bytes=605205 Characters=605205 Words=5689
+[H1] 2026.11.10 07:00 | Close=1.12244 | Center=1.12195 | Width=6.70 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.10 07:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=183 Bytes=605493 Characters=605493 Words=5694
+[H1] 2026.11.10 08:00 | Close=1.12281 | Center=1.12208 | Width=6.20 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.10 08:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=184 Bytes=605781 Characters=605781 Words=5699
+[H1] 2026.11.10 09:00 | Close=1.12415 | Center=1.12246 | Width=7.40 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.10 09:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=185 Bytes=606069 Characters=606069 Words=5704
+[H1] 2026.11.10 10:00 | Close=1.12502 | Center=1.12293 | Width=9.00 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.10 10:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=186 Bytes=606357 Characters=606357 Words=5709
+[H1] 2026.11.10 11:00 | Close=1.12267 | Center=1.12285 | Width=6.90 | Bifurcation=UP
+[COLLECTOR] Sending H1 candle: 2026.11.10 11:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=187 Bytes=606645 Characters=606645 Words=5714
+[H1] 2026.11.10 12:00 | Close=1.12239 | Center=1.12284 | Width=6.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.10 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=188 Bytes=606935 Characters=606935 Words=5719
+[H1] 2026.11.10 13:00 | Close=1.12172 | Center=1.12271 | Width=6.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.10 13:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=189 Bytes=607225 Characters=607225 Words=5724
+[H1] 2026.11.10 14:00 | Close=1.12143 | Center=1.12257 | Width=6.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.10 14:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=190 Bytes=607515 Characters=607515 Words=5729
+[H1] 2026.11.10 15:00 | Close=1.11864 | Center=1.12188 | Width=9.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.10 15:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=191 Bytes=607806 Characters=607806 Words=5734
+[H1] 2026.11.10 16:00 | Close=1.11783 | Center=1.12128 | Width=15.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.10 16:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=192 Bytes=608097 Characters=608097 Words=5739
+[H1] 2026.11.10 17:00 | Close=1.11597 | Center=1.12049 | Width=21.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.10 17:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=193 Bytes=608388 Characters=608388 Words=5744
+[H1] 2026.11.10 18:00 | Close=1.11523 | Center=1.11973 | Width=27.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.10 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=194 Bytes=608679 Characters=608679 Words=5749
+[H1] 2026.11.10 19:00 | Close=1.11564 | Center=1.11915 | Width=29.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.10 19:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=195 Bytes=608970 Characters=608970 Words=5754
+[H1] 2026.11.10 20:00 | Close=1.11631 | Center=1.11873 | Width=28.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.10 20:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=196 Bytes=609261 Characters=609261 Words=5759
+[H1] 2026.11.10 21:00 | Close=1.11656 | Center=1.11817 | Width=31.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.10 21:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=197 Bytes=609552 Characters=609552 Words=5764
+[H1] 2026.11.10 22:00 | Close=1.11634 | Center=1.11777 | Width=30.10 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.10 22:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=198 Bytes=609843 Characters=609843 Words=5769
+[H1] 2026.11.10 23:00 | Close=1.11621 | Center=1.11737 | Width=26.70 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.10 23:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=199 Bytes=610134 Characters=610134 Words=5774
+[H1] 2026.11.11 00:00 | Close=1.11651 | Center=1.11711 | Width=19.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=200 Bytes=610424 Characters=610424 Words=5779
+[H1] 2026.11.11 01:00 | Close=1.11685 | Center=1.11702 | Width=13.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 01:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=201 Bytes=610714 Characters=610714 Words=5784
+[H1] 2026.11.11 02:00 | Close=1.11656 | Center=1.11700 | Width=10.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 02:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=202 Bytes=611005 Characters=611005 Words=5789
+[H1] 2026.11.11 03:00 | Close=1.11689 | Center=1.11700 | Width=8.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 03:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=203 Bytes=611295 Characters=611295 Words=5794
+[H1] 2026.11.11 04:00 | Close=1.11655 | Center=1.11694 | Width=7.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 04:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=204 Bytes=611585 Characters=611585 Words=5799
+[H1] 2026.11.11 05:00 | Close=1.11631 | Center=1.11680 | Width=7.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 05:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=205 Bytes=611875 Characters=611875 Words=5804
+[H1] 2026.11.11 06:00 | Close=1.11653 | Center=1.11671 | Width=7.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=206 Bytes=612164 Characters=612164 Words=5809
+[H1] 2026.11.11 07:00 | Close=1.11603 | Center=1.11664 | Width=6.30 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 07:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=207 Bytes=612454 Characters=612454 Words=5814
+[H1] 2026.11.11 08:00 | Close=1.11555 | Center=1.11649 | Width=5.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 08:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=208 Bytes=612744 Characters=612744 Words=5819
+[H1] 2026.11.11 09:00 | Close=1.11549 | Center=1.11632 | Width=5.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 09:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=209 Bytes=613034 Characters=613034 Words=5824
+[H1] 2026.11.11 10:00 | Close=1.11480 | Center=1.11604 | Width=6.30 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 10:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=210 Bytes=613324 Characters=613324 Words=5829
+[H1] 2026.11.11 11:00 | Close=1.11381 | Center=1.11564 | Width=7.80 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 11:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=211 Bytes=613614 Characters=613614 Words=5834
+[H1] 2026.11.11 12:00 | Close=1.11396 | Center=1.11539 | Width=9.30 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=212 Bytes=613904 Characters=613904 Words=5839
+[H1] 2026.11.11 13:00 | Close=1.11355 | Center=1.11513 | Width=10.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 13:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=213 Bytes=614195 Characters=614195 Words=5844
+[H1] 2026.11.11 14:00 | Close=1.11318 | Center=1.11483 | Width=12.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 14:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=214 Bytes=614486 Characters=614486 Words=5849
+[H1] 2026.11.11 15:00 | Close=1.11046 | Center=1.11413 | Width=16.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 15:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=215 Bytes=614777 Characters=614777 Words=5854
+[H1] 2026.11.11 16:00 | Close=1.10853 | Center=1.11325 | Width=23.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 16:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=216 Bytes=615068 Characters=615068 Words=5859
+[H1] 2026.11.11 17:00 | Close=1.10963 | Center=1.11268 | Width=24.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 17:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=217 Bytes=615359 Characters=615359 Words=5864
+[H1] 2026.11.11 18:00 | Close=1.10933 | Center=1.11216 | Width=24.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=218 Bytes=615650 Characters=615650 Words=5869
+[H1] 2026.11.11 19:00 | Close=1.10927 | Center=1.11170 | Width=23.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 19:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=219 Bytes=615941 Characters=615941 Words=5874
+[H1] 2026.11.11 20:00 | Close=1.10893 | Center=1.11111 | Width=24.20 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 20:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=220 Bytes=616232 Characters=616232 Words=5879
+[H1] 2026.11.11 21:00 | Close=1.10914 | Center=1.11058 | Width=25.00 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 21:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=221 Bytes=616523 Characters=616523 Words=5884
+[H1] 2026.11.11 22:00 | Close=1.10885 | Center=1.11022 | Width=22.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 22:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=222 Bytes=616813 Characters=616813 Words=5889
+[H1] 2026.11.11 23:00 | Close=1.10879 | Center=1.11000 | Width=17.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.11 23:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=223 Bytes=617103 Characters=617103 Words=5894
+[H1] 2026.11.12 18:00 | Close=1.10560 | Center=1.10934 | Width=17.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.12 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=224 Bytes=617393 Characters=617393 Words=5899
+[H1] 2026.11.12 19:00 | Close=1.10473 | Center=1.10855 | Width=20.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.12 19:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=225 Bytes=617684 Characters=617684 Words=5904
+[H1] 2026.11.12 20:00 | Close=1.10510 | Center=1.10793 | Width=20.10 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.12 20:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=226 Bytes=617975 Characters=617975 Words=5909
+[H1] 2026.11.12 21:00 | Close=1.10557 | Center=1.10748 | Width=17.90 | Bifurcation=DOWN
+[COLLECTOR] Sending H1 candle: 2026.11.12 21:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=227 Bytes=618266 Characters=618266 Words=5914
+[H6] 2026.11.09 12:00 | Close=1.11953 | Center=1.11989 | Width=33.20 | Bifurcation=UNKNOWN
+[COLLECTOR] Sending H6 candle: 2026.11.09 12:00 | Bifurcation=UNKNOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=228 Bytes=618561 Characters=618561 Words=5919
+[H6] 2026.11.09 18:00 | Close=1.12227 | Center=1.11992 | Width=32.90 | Bifurcation=UP
+[COLLECTOR] Sending H6 candle: 2026.11.09 18:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=229 Bytes=618851 Characters=618851 Words=5924
+[H6] 2026.11.10 00:00 | Close=1.12228 | Center=1.11998 | Width=32.00 | Bifurcation=UP
+[COLLECTOR] Sending H6 candle: 2026.11.10 00:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=230 Bytes=619140 Characters=619140 Words=5929
+[H6] 2026.11.10 06:00 | Close=1.12267 | Center=1.12006 | Width=31.00 | Bifurcation=UP
+[COLLECTOR] Sending H6 candle: 2026.11.10 06:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=231 Bytes=619430 Characters=619430 Words=5934
+[H6] 2026.11.10 12:00 | Close=1.11597 | Center=1.11997 | Width=30.00 | Bifurcation=UP
+[COLLECTOR] Sending H6 candle: 2026.11.10 12:00 | Bifurcation=UP
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=232 Bytes=619720 Characters=619720 Words=5939
+[H6] 2026.11.10 18:00 | Close=1.11621 | Center=1.11994 | Width=28.30 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.10 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=233 Bytes=620012 Characters=620012 Words=5944
+[H6] 2026.11.11 00:00 | Close=1.11631 | Center=1.11990 | Width=26.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.11 00:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=234 Bytes=620303 Characters=620303 Words=5949
+[H6] 2026.11.11 06:00 | Close=1.11381 | Center=1.11983 | Width=24.60 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.11 06:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=235 Bytes=620595 Characters=620595 Words=5954
+[H6] 2026.11.11 12:00 | Close=1.10963 | Center=1.11966 | Width=22.50 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.11 12:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=236 Bytes=620887 Characters=620887 Words=5959
+[H6] 2026.11.11 18:00 | Close=1.10879 | Center=1.11934 | Width=23.40 | Bifurcation=DOWN
+[COLLECTOR] Sending H6 candle: 2026.11.11 18:00 | Bifurcation=DOWN
+[SENDER] SendLatestJson result: 200
+[SENDER] Requests=237 Bytes=621178 Characters=621178 Words=5964
+========== BOOTSTRAP COMPLETE ========== H1=60 H6=10
