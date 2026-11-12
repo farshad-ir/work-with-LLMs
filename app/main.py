@@ -662,6 +662,8 @@ class SequentialResponsesMiddleware:
 
 MT5_REQUEST_LOCK = asyncio.Lock()
 
+MT5_CLIENT_ID = "mt5_terminal_01"
+
 app = FastAPI(
     title="MyCode Gateway",
     description="A private model-routing gateway for coding assistants.",
