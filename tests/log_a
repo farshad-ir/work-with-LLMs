@@ -37,8 +37,8 @@ int PollResponses(string clientId, uchar &output[], int outputCapacity);
 //+------------------------------------------------------------------+
 #define HISTORY_CAPACITY 100
 
-#define H1_INITIAL_COUNT 60
-#define H6_INITIAL_COUNT 10
+#define H1_INITIAL_COUNT 100
+#define H6_INITIAL_COUNT 100
 
 
 //+------------------------------------------------------------------+
@@ -170,6 +170,68 @@ void AddH6Record(
 
    if(g_h6HistoryCount < HISTORY_CAPACITY)
       g_h6HistoryCount++;
+}
+
+
+//+------------------------------------------------------------------+
+//| Feed H1 Bifurcation exactly once                                 |
+//+------------------------------------------------------------------+
+void FeedH1Candle(
+   const MqlRates &bar,
+   const int shift
+)
+{
+   if(FindH1Record(bar.time) >= 0)
+      return;
+
+   H1_river.Update(shift);
+
+   int direction = mabif_h1.AddPoint(
+      H1_river.Center()
+   );
+
+   AddH1Record(
+      bar.time,
+      direction
+   );
+
+   Print(
+      "[H1 FEED] ",
+      TimeToString(bar.time, TIME_DATE | TIME_MINUTES),
+      " | ",
+      DirectionText(direction)
+   );
+}
+
+
+//+------------------------------------------------------------------+
+//| Feed H6 Bifurcation exactly once                                 |
+//+------------------------------------------------------------------+
+void FeedH6Candle(
+   const MqlRates &bar,
+   const int shift
+)
+{
+   if(FindH6Record(bar.time) >= 0)
+      return;
+
+   H6_river.Update(shift);
+
+   int direction = mabif_h6.AddPoint(
+      H6_river.Center()
+   );
+
+   AddH6Record(
+      bar.time,
+      direction
+   );
+
+   Print(
+      "[H6 FEED] ",
+      TimeToString(bar.time, TIME_DATE | TIME_MINUTES),
+      " | ",
+      DirectionText(direction)
+   );
 }
 
 
@@ -339,6 +401,7 @@ void SendOneCandle(
 //+------------------------------------------------------------------+
 //| Process one H1 candle                                             |
 //+------------------------------------------------------------------+
+
 void ProcessH1Candle(
    const MqlRates &bar,
    const int shift,
@@ -349,25 +412,16 @@ void ProcessH1Candle(
 
    int recordIndex = FindH1Record(bar.time);
 
-   int direction;
-
-   if(recordIndex >= 0)
+   if(recordIndex < 0)
    {
-      // Already calculated: reuse stored result.
-      direction = g_h1History[recordIndex].direction;
-   }
-   else
-   {
-      // New candle: feed exactly once.
-      direction = mabif_h1.AddPoint(
-         H1_river.Center()
+      Print(
+         "[H1 ERROR] Bifurcation record not found: ",
+         TimeToString(bar.time, TIME_DATE | TIME_MINUTES)
       );
+      return;
+   }
 
-      AddH1Record(
-         bar.time,
-         direction
-      );
-   }
+   int direction = g_h1History[recordIndex].direction;
 
    PrintFormat(
       "[H1] %s | Close=%.5f | Center=%.5f | Width=%.2f | Bifurcation=%s",
@@ -390,7 +444,6 @@ void ProcessH1Candle(
    }
 }
 
-
 //+------------------------------------------------------------------+
 //| Process one H6 candle                                             |
 //+------------------------------------------------------------------+
@@ -404,23 +457,16 @@ void ProcessH6Candle(
 
    int recordIndex = FindH6Record(bar.time);
 
-   int direction;
-
-   if(recordIndex >= 0)
+   if(recordIndex < 0)
    {
-      direction = g_h6History[recordIndex].direction;
-   }
-   else
-   {
-      direction = mabif_h6.AddPoint(
-         H6_river.Center()
+      Print(
+         "[H6 ERROR] Bifurcation record not found: ",
+         TimeToString(bar.time, TIME_DATE | TIME_MINUTES)
       );
+      return;
+   }
 
-      AddH6Record(
-         bar.time,
-         direction
-      );
-   }
+   int direction = g_h6History[recordIndex].direction;
 
    PrintFormat(
       "[H6] %s | Close=%.5f | Center=%.5f | Width=%.2f | Bifurcation=%s",
@@ -493,11 +539,17 @@ bool BootstrapHistory()
    {
       int shift = i + 1;
 
+      FeedH1Candle(
+         h1Rates[i],
+         shift
+      );
+      
       ProcessH1Candle(
          h1Rates[i],
          shift,
          true
       );
+
    }
 
    // H6: oldest to newest.
@@ -505,11 +557,17 @@ bool BootstrapHistory()
    {
       int shift = i + 1;
 
+      FeedH6Candle(
+         h6Rates[i],
+         shift
+      );
+      
       ProcessH6Candle(
          h6Rates[i],
          shift,
          true
       );
+
    }
 
    // Remember current open candle times.
@@ -565,6 +623,11 @@ void CheckNewH1Candle()
 
    g_ma_h1.Update();
 
+   FeedH1Candle(
+      bar[0],
+      1
+   );
+
    ProcessH1Candle(
       bar[0],
       1,
@@ -601,6 +664,11 @@ void CheckNewH6Candle()
 
    g_ma_h6.Update();
 
+   FeedH6Candle(
+      bar[0],
+      1
+   );
+
    ProcessH6Candle(
       bar[0],
       1,
@@ -629,6 +697,12 @@ int OnInit()
    H1_river.Set(g_ma_h1);
    H6_river.Set(g_ma_h6);
 
+   if(!BootstrapHistory())
+   {
+      Print("[INIT] Initial history bootstrap failed.");
+      return INIT_FAILED;
+   }
+
    Print("[INIT] H1/H6 collector initialized.");
 
    return INIT_SUCCEEDED;
@@ -652,16 +726,11 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
-   if(!g_bootstrapped)
-   {
-      BootstrapHistory();
-      return;
-   }
-
    CheckNewH1Candle();
 
    CheckNewH6Candle();
 }
+
 
 //+------------------------------------------------------------------+
 
