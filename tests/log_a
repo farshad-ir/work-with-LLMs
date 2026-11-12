@@ -38,7 +38,7 @@ int PollResponses(string clientId, uchar &output[], int outputCapacity);
 #define HISTORY_CAPACITY 100
 
 #define H1_INITIAL_COUNT 100
-
+#define H6_INITIAL_COUNT 20
 
 
 //+------------------------------------------------------------------+
@@ -500,7 +500,7 @@ bool BootstrapHistory()
 
    ArraySetAsSeries(h1Rates, true);
    ArraySetAsSeries(h6Rates, true);
-   
+
    int h1Copied = CopyRates(
       _Symbol,
       PERIOD_H1,
@@ -508,39 +508,26 @@ bool BootstrapHistory()
       H1_INITIAL_COUNT,
       h1Rates
    );
-   
+
+   int h6Copied = CopyRates(
+      _Symbol,
+      PERIOD_H6,
+      1,
+      H6_INITIAL_COUNT,
+      h6Rates
+   );
+
    if(h1Copied != H1_INITIAL_COUNT)
    {
       Print("[BOOTSTRAP] H1 history not ready: ", h1Copied);
       return false;
    }
-   
-   // Determine the exact time window from the 100 closed H1 candles.
-   datetime h1OldestTime = h1Rates[H1_INITIAL_COUNT - 1].time;
-   datetime h1NewestTime = h1Rates[0].time;
-   
-   // Load only H6 candles inside the H1 time window.
-   int h6Copied = CopyRates(
-      _Symbol,
-      PERIOD_H6,
-      h1OldestTime,
-      h1NewestTime,
-      h6Rates
-   );
-   
-   if(h6Copied <= 0)
+
+   if(h6Copied != H6_INITIAL_COUNT)
    {
       Print("[BOOTSTRAP] H6 history not ready: ", h6Copied);
       return false;
    }
-   
-   Print(
-      "[BOOTSTRAP] History loaded: ",
-      "H1=", h1Copied,
-      " H6=", h6Copied,
-      " | From=", TimeToString(h1OldestTime, TIME_DATE | TIME_MINUTES),
-      " | To=", TimeToString(h1NewestTime, TIME_DATE | TIME_MINUTES)
-   );
 
    Print("========== BOOTSTRAP START ==========");
 
@@ -565,36 +552,22 @@ bool BootstrapHistory()
 
    }
 
-
-   // H6: oldest to newest, within the H1 time window.
-   for(int i = h6Copied - 1; i >= 0; i--)
+   // H6: oldest to newest.
+   for(int i = H6_INITIAL_COUNT - 1; i >= 0; i--)
    {
-      int shift = iBarShift(
-         _Symbol,
-         PERIOD_H6,
-         h6Rates[i].time,
-         true
-      );
-   
-      if(shift < 1)
-      {
-         Print(
-            "[BOOTSTRAP ERROR] Invalid H6 shift: ",
-            h6Rates[i].time
-         );
-         return false;
-      }
-   
+      int shift = i + 1;
+
       FeedH6Candle(
          h6Rates[i],
          shift
       );
-   
+      
       ProcessH6Candle(
          h6Rates[i],
          shift,
          true
       );
+
    }
 
    // Remember current open candle times.
@@ -760,6 +733,7 @@ void OnTick()
 
 
 //+------------------------------------------------------------------+
+
 
 
 //OUTPUT LOG
