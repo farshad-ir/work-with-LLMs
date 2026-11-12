@@ -523,7 +523,7 @@ bool BootstrapHistory()
       return false;
    }
 
-   if(h1Copied != H6_HISTORY_CAPACITY)
+   if(h6Copied != H6_HISTORY_CAPACITY)
    {
       Print("[BOOTSTRAP] H6 history not ready: ", h6Copied);
       return false;
