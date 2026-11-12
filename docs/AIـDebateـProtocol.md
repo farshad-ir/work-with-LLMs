@@ -1,74 +1,140 @@
 # MT5–Python Candle Synchronization and AI Debate Protocol
 
-**Version:** 1.1 – Proposed Operational Specification  
+**Version:** 1.2  
+**Implementation Baseline:** Existing MT5 sender in `tests/log_a`  
 **Scope:** H1 and H6 Candles, Synchronization, AI Debate and Theory Storage
 
-## 1. System Objective
+## 1. Objective
 
-Establish a reliable, bidirectional communication protocol between MetaTrader 5 (MT5) and the Python backend.
+Define the operational communication protocol between MetaTrader 5 (MT5) and the Python backend.
 
-The protocol has four responsibilities:
+The protocol covers:
 
-1. Initial historical candle synchronization.
-2. Detection and recovery of missing or invalid candles.
-3. Continuous delivery and storage of newly closed candles.
-4. On-demand analytical debates between Buy Advocates and Sell Advocates, with permanent storage of their theories and conclusions.
+1. Initial historical candle delivery.
+2. Candle validation and synchronization.
+3. Missing-candle detection and recovery.
+4. Continuous delivery of newly closed candles.
+5. Automatic debate requests following new candle delivery.
+6. Permanent storage of debate theories, messages, and final assessments.
 
-MT5 is the source of market calculations. Python is responsible for synchronization, validation, storage, orchestration, and AI debate execution.
+MT5 is responsible for market calculations. Python is responsible for receiving, validating, synchronizing, storing, and analyzing the supplied data.
 
-## 2. Initial Synchronization (INIT)
+Python must not recalculate market indicators already calculated by MT5.
 
-At initialization, MT5 sends:
+## 2. INIT – Initial Historical Data
 
-| Timeframe | Initial candle count |
+At initialization, MT5 sends exactly one JSON message containing both timeframe datasets:
+
+| Timeframe | Number of candles |
 |---|---:|
 | H1 | 100 |
 | H6 | 20 |
 
-Only closed candles are included.
+The message contains:
 
-Each timeframe is synchronized independently.
+- 100 closed H1 candles, ordered from oldest to newest.
+- 20 closed H6 candles, ordered from oldest to newest.
 
-The initial payload contains candle data calculated by MT5, including River and MA Bifurcation values.
+Both arrays are delivered together in one HTTP request.
 
-Python must not recalculate these market indicators.
+The initial historical data must include the market values calculated by MT5, including River and MA Bifurcation.
 
-## 3. Python Validation
+The current forming candle must not be included.
 
-After receiving INIT, Python must:
+## 3. INIT JSON Contract
 
-1. Parse and validate the incoming payload.
-2. Validate every candle and its required fields.
-3. Check chronological ordering.
-4. Detect duplicate candles.
-5. Detect missing expected candles within the synchronized range.
-6. Store valid data transactionally.
-7. Maintain synchronization status independently for H1 and H6.
+The proposed INIT envelope is:
 
-A successful HTTP response alone does not mean synchronization is complete.
+```json
+{
+  "message_type": "INIT",
+  "message_id": "unique-message-id",
+  "symbol": "EURUSD",
+  "timeframes": {
+    "H1": {
+      "candles": [
+        {
+          "time": "2026-11-12 10:00",
+          "open": 1.10000,
+          "high": 1.10200,
+          "low": 1.09900,
+          "close": 1.10150,
+          "tick_volume": 1234,
+          "spread_points": 12,
+          "river_center": 1.10080,
+          "river_width_pips": 18.5,
+          "ma_bifurcation": {
+            "direction": "UP"
+          }
+        }
+      ]
+    },
+    "H6": {
+      "candles": [
+        {
+          "time": "2026-11-12 06:00",
+          "open": 1.09800,
+          "high": 1.10200,
+          "low": 1.09700,
+          "close": 1.10000,
+          "tick_volume": 5432,
+          "spread_points": 14,
+          "river_center": 1.09950,
+          "river_width_pips": 25.0,
+          "ma_bifurcation": {
+            "direction": "UP"
+          }
+        }
+      ]
+    }
+  }
+}
+```
 
-Python must explicitly determine whether the received historical range is complete.
+The arrays above illustrate the structure. In an actual INIT message, H1 must contain 100 candle objects and H6 must contain 20 candle objects.
 
-## 4. Missing Candle Recovery
+The candle object must preserve the field names and data types produced by the existing MT5 sender. Any changes to those fields must be explicitly agreed upon before implementation.
 
-If Python detects missing candles, it sends a structured request to MT5.
+## 4. INIT Processing in Python
 
-The request identifies:
+When Python receives INIT, it must:
 
+1. Validate the message envelope.
+2. Validate the symbol and both timeframe arrays.
+3. Verify the expected candle counts.
+4. Validate every candle object.
+5. Check chronological ordering.
+6. Detect duplicate timestamps.
+7. Detect missing expected candles within each timeframe.
+8. Store valid candle data transactionally.
+9. Determine synchronization status separately for H1 and H6.
+
+The two timeframe arrays belong to one INIT operation.
+
+Python must not report successful initialization while unresolved synchronization errors remain.
+
+## 5. Missing Candle Detection and Recovery
+
+If Python detects missing candles, it must request the missing data from MT5.
+
+The recovery request must identify:
+
+- Request ID.
 - Symbol.
 - Timeframe.
 - Missing candle timestamps or requested time range.
-- Request identifier.
 
-MT5 responds by sending the requested candle data.
+MT5 responds with the requested candle data.
 
-Python validates and stores the response, then checks synchronization again.
+Python validates and stores the returned candles, then checks the affected timeframe again.
 
-This request/response cycle continues until the required historical range is complete or an explicit synchronization error is reported.
+This cycle continues until the required historical range is complete or an explicit error is reported.
 
-## 5. Synchronization Completion
+Recovery messages must be distinguishable from ordinary new-candle messages.
 
-Python maintains a separate synchronization status for each timeframe.
+## 6. INIT Completion
+
+Python maintains independent synchronization states for H1 and H6.
 
 Possible states:
 
@@ -79,90 +145,115 @@ Possible states:
 - `SYNCHRONIZED`
 - `ERROR`
 
-The system must not report INIT as complete while unresolved missing candles remain.
+INIT is complete only when both timeframe datasets have passed validation and all required missing-candle recovery operations have been resolved.
 
-## 6. Continuous Candle Updates
+Python must return an explicit synchronization result to MT5.
 
-After successful initialization, MT5 sends each newly closed candle.
+## 7. Continuous New Candle Delivery
+
+After successful INIT, MT5 sends each newly closed candle.
+
+Each new candle is sent as a separate update message.
+
+The message identifies:
+
+- Symbol.
+- Timeframe.
+- Candle data.
+- Unique message ID.
+- Analysis request information.
 
 Only closed candles are accepted as completed market data.
 
-The currently forming candle must not be treated as a closed candle.
-
-Python validates and stores every incoming candle using an idempotent operation.
-
-Repeated delivery of the same candle must not create duplicate records.
+Python stores each candle using an idempotent operation. Repeated delivery must not create duplicate records.
 
 H1 and H6 updates are processed independently.
 
-## 7. Candle Data Contract
+## 8. New Candle and Debate Request
 
-The candle object is based on the existing MT5 sender:
+Starting with the first newly closed candle after INIT, MT5 requests an AI debate together with the new-candle update.
 
-```json
-{
-  "time": "2026-11-12 10:00",
-  "open": 1.10000,
-  "high": 1.10200,
-  "low": 1.09900,
-  "close": 1.10150,
-  "tick_volume": 1234,
-  "spread_points": 12,
-  "river_center": 1.10080,
-  "river_width_pips": 18.5,
-  "ma_bifurcation": {
-    "direction": "UP"
-  }
-}
-```
+The new-candle message must explicitly indicate that a debate is requested.
 
-The message envelope must identify:
-
-- Message type.
-- Symbol.
-- Timeframe.
-- Request or synchronization identifier, when applicable.
-- Candle array.
-
-### INIT example
+Proposed message structure:
 
 ```json
 {
-  "message_type": "INIT",
-  "message_id": "init-unique-id",
+  "message_type": "CANDLE_UPDATE",
+  "message_id": "unique-message-id",
   "symbol": "EURUSD",
-  "timeframes": {
-    "H1": {
-      "candles": []
-    },
-    "H6": {
-      "candles": []
+  "timeframe": "H1",
+  "candle": {
+    "time": "2026-11-12 11:00",
+    "open": 1.10150,
+    "high": 1.10300,
+    "low": 1.10050,
+    "close": 1.10250,
+    "tick_volume": 1450,
+    "spread_points": 11,
+    "river_center": 1.10180,
+    "river_width_pips": 19.0,
+    "ma_bifurcation": {
+      "direction": "UP"
     }
+  },
+  "analysis": {
+    "request_debate": true
   }
 }
 ```
 
-The H1 array must contain 100 candles and the H6 array must contain 20 candles.
+The example illustrates an H1 update. H6 updates use the same structure with `"timeframe": "H6"`.
 
-The example shows the envelope only; the actual arrays contain the candle objects defined above.
+Python must process the message in this order:
 
-## 8. Time and Candle Identity
+1. Validate the incoming candle.
+2. Store the candle.
+3. Confirm that the candle has been accepted.
+4. If `request_debate` is true, create a debate using the latest available market data.
+5. Send the same evidence package to the Buy Advocates and Sell Advocates.
+6. Run the standardized debate workflow.
+7. Store all theories and debate messages.
+8. Return the final assessment to MT5.
 
-The timestamp must preserve the time supplied by MT5.
+The debate must not start using an uncommitted or invalid candle.
 
-Python must not silently convert timestamps to another timezone.
+A repeated message must not unintentionally create a second debate for the same analysis request. The message ID and analysis request identity must support idempotency.
 
-The timestamp basis must be documented as broker-server time if confirmed.
+## 9. Candle Data Contract
+
+The candle object follows the existing MT5 sender structure:
+
+| Field | Type | Description |
+|---|---|---|
+| time | TEXT | Candle timestamp |
+| open | NUMBER | Opening price |
+| high | NUMBER | Highest price |
+| low | NUMBER | Lowest price |
+| close | NUMBER | Closing price |
+| tick_volume | INTEGER | Tick volume |
+| spread_points | INTEGER | Spread in points |
+| river_center | NUMBER | River center |
+| river_width_pips | NUMBER | River width in pips |
+| ma_bifurcation.direction | TEXT | UP, DOWN or UNKNOWN |
+
+The current sender's field names and meanings are the implementation baseline.
+
+Python must preserve MT5-calculated River and Bifurcation values. It must not independently recalculate them.
+
+## 10. Time and Candle Identity
+
+Python must preserve the timestamp supplied by MT5 without silently converting it to another timezone.
+
+The timestamp basis must be documented as broker-server time once confirmed.
 
 The unique candle identity is:
 
 `symbol + timeframe + candle_time`
 
-This identity prevents duplicate records and supports recovery requests.
+This identity prevents duplicate records and supports missing-candle recovery.
 
-## 9. Database Design – Candle Storage
-
-Python stores candle data in SQLite.
+## 11. SQLite – Candle Storage
 
 ### Table: `candles`
 
@@ -187,134 +278,117 @@ Unique constraint:
 
 `UNIQUE(symbol, timeframe, candle_time)`
 
-### Storage Rules
+Storage requirements:
 
 - H1 and H6 records remain logically independent.
-- Repeated candles must not create duplicate records.
+- Duplicate candles must not create duplicate records.
 - Historical records must not be deleted during ordinary synchronization.
 - Batch storage must be transactional.
 - Invalid batches must not leave partially stored data.
-- Existing records must not be overwritten without an explicit correction policy.
+- Historical corrections must follow an explicit correction policy.
 
-## 10. Acknowledgements
+## 12. AI Debate Workflow
 
-Every MT5 request must receive a structured response.
+Every debate has a unique `debate_id`.
 
-The response should identify:
+Python prepares a market evidence package using the latest successfully stored candle data and relevant historical context.
 
-- Whether the request was accepted.
-- Whether validation succeeded.
-- How many candles were inserted.
-- How many were already present.
-- Whether missing candles remain.
-- Whether synchronization is complete.
-- Which recovery action, if any, is required.
+The same evidence package is provided to two independent analytical roles.
 
-## 11. AI Debate Workflow
+### BUY_ADVOCATE
 
-Candle ingestion and AI debate execution are separate operations.
+The Buy Advocate must:
 
-A dedicated analysis command starts a debate.
-
-Python prepares the current market information and sends the same evidence package to two independent analytical roles:
-
-### Buy Advocates
-
-The Buy Advocates must:
-
-- Present evidence supporting a bullish position.
-- Identify evidence against the bullish interpretation.
+- Present evidence supporting a bullish scenario.
+- Identify evidence against the bullish scenario.
 - Explain uncertainty and conflicting signals.
 - Formulate a structured bullish theory.
 
-### Sell Advocates
+### SELL_ADVOCATE
 
-The Sell Advocates must:
+The Sell Advocate must:
 
-- Present evidence supporting a bearish position.
-- Identify evidence against the bearish interpretation.
+- Present evidence supporting a bearish scenario.
+- Identify evidence against the bearish scenario.
 - Explain uncertainty and conflicting signals.
 - Formulate a structured bearish theory.
 
-Neither side should ignore evidence that contradicts its position.
+Both sides must evaluate opposing evidence rather than ignore it.
 
-## 12. Debate Message Structure
+## 13. Debate Theory JSON Contract
 
-Each debate must have a unique `debate_id`.
+Each theory is an independent historical record.
 
-The following is the proposed structure for storing and exchanging a theory:
+Proposed structure:
 
 ```json
 {
   "debate_id": "debate-unique-id",
-  "symbol": "EURUSD",
-  "timeframe": "H1",
-  "stage": "INITIAL_THEORIES",
   "theories": [
     {
       "theory_id": "theory-001",
+      "stage": "INITIAL_THEORIES",
       "speaker": "BUY_ADVOCATE",
       "position": "BULLISH",
       "statement": "The current market structure supports a bullish scenario.",
       "supporting_evidence": [
-        "River position supports the bullish interpretation."
+        "Evidence supporting the bullish interpretation."
       ],
       "opposing_evidence": [
-        "The latest price movement introduces uncertainty."
+        "Evidence challenging the bullish interpretation."
       ],
       "assumptions": [
-        "The current market structure remains valid."
+        "Assumption used in the analysis."
       ],
       "invalidation_conditions": [
-        "A confirmed bearish structural change."
+        "Condition that would invalidate the theory."
       ],
       "confidence": null,
-      "created_at": "2026-11-12T10:05:00"
+      "created_at": "2026-11-12T11:05:00"
     },
     {
       "theory_id": "theory-002",
+      "stage": "INITIAL_THEORIES",
       "speaker": "SELL_ADVOCATE",
       "position": "BEARISH",
       "statement": "The current market structure supports a bearish scenario.",
       "supporting_evidence": [
-        "Price behavior provides evidence for a bearish interpretation."
+        "Evidence supporting the bearish interpretation."
       ],
       "opposing_evidence": [
-        "Some market indicators do not confirm the bearish scenario."
+        "Evidence challenging the bearish interpretation."
       ],
       "assumptions": [
-        "The bearish structure remains valid."
+        "Assumption used in the analysis."
       ],
       "invalidation_conditions": [
-        "A confirmed bullish structural change."
+        "Condition that would invalidate the theory."
       ],
       "confidence": null,
-      "created_at": "2026-11-12T10:05:00"
+      "created_at": "2026-11-12T11:05:00"
     }
   ]
 }
 ```
 
-This is a proposed logical contract. Exact field types and validation rules will be finalized during implementation.
+## 14. Debate Stages
 
-## 13. Debate Stages
+The standardized debate consists of:
 
-The standardized debate workflow consists of:
+1. `PREPARE_EVIDENCE`
+2. `INITIAL_THEORIES`
+3. `CROSS_EXAMINATION`
+4. `REBUTTAL`
+5. `FINAL_THEORIES`
+6. `FINAL_ASSESSMENT`
 
-1. `PREPARE_EVIDENCE` – Prepare the current market evidence.
-2. `INITIAL_THEORIES` – Both sides independently formulate their theories.
-3. `CROSS_EXAMINATION` – Each side challenges the opposing theory.
-4. `REBUTTAL` – Each side responds to the challenges.
-5. `FINAL_THEORIES` – Both sides submit their revised theories.
-6. `FINAL_ASSESSMENT` – Python produces the structured final report.
+Every stage is associated with the same `debate_id`.
 
-Each stage must be associated with the same `debate_id`.
+Theories submitted at different stages must be stored as separate records.
 
-Theories submitted at different stages must be preserved as separate historical records. New theories must not overwrite earlier theories.
+A revised theory must never overwrite the original theory.
 
-## 14. Database Design – Debate and Theory Storage
-
-Debate records and individual theories must be stored separately.
+## 15. SQLite – Debate and Theory Storage
 
 ### Table: `debates`
 
@@ -323,7 +397,8 @@ Debate records and individual theories must be stored separately.
 | id | INTEGER | Primary key |
 | debate_id | TEXT | Unique debate identifier |
 | symbol | TEXT | Trading symbol |
-| timeframe | TEXT | Main analytical timeframe |
+| timeframe | TEXT | H1 or H6 |
+| trigger_message_id | TEXT | Candle update that triggered the debate |
 | status | TEXT | Current debate status |
 | started_at | TEXT | Debate start time |
 | completed_at | TEXT | Debate completion time |
@@ -340,10 +415,10 @@ Debate records and individual theories must be stored separately.
 | speaker | TEXT | BUY_ADVOCATE or SELL_ADVOCATE |
 | position | TEXT | BULLISH, BEARISH or NEUTRAL |
 | statement | TEXT | Main theory |
-| supporting_evidence | TEXT | JSON array of supporting evidence |
-| opposing_evidence | TEXT | JSON array of opposing evidence |
-| assumptions | TEXT | JSON array of assumptions |
-| invalidation_conditions | TEXT | JSON array of invalidation conditions |
+| supporting_evidence | TEXT | JSON array |
+| opposing_evidence | TEXT | JSON array |
+| assumptions | TEXT | JSON array |
+| invalidation_conditions | TEXT | JSON array |
 | confidence | REAL | Optional confidence value |
 | created_at | TEXT | Theory creation time |
 
@@ -353,32 +428,30 @@ Debate records and individual theories must be stored separately.
 |---|---|---|
 | id | INTEGER | Primary key |
 | debate_id | TEXT | Associated debate |
-| stage | TEXT | Message stage |
-| sender | TEXT | Role or participant |
+| stage | TEXT | Debate stage |
+| sender | TEXT | Participant or role |
 | recipient | TEXT | Intended recipient |
 | content | TEXT | Full message content |
 | created_at | TEXT | Message creation time |
 
-### Storage Principles
+### Storage Requirements
 
-- Every debate has a unique identifier.
-- Every theory belongs to a specific debate.
-- Each theory is stored as an independent historical record.
-- Revised theories are inserted as new records.
-- Debate messages are preserved.
-- Final assessments do not replace the original theories.
-- The complete debate history must remain available for future review.
+- Every debate must have a unique identifier.
+- Every theory must reference its debate.
+- Every theory revision must be stored separately.
+- All debate messages must be preserved.
+- Final assessments must not replace original theories.
+- Debate history must be retrievable using `debate_id`.
 
-## 15. Final Debate Response to MT5
+## 16. Final Debate Response to MT5
 
-After the debate is complete, Python returns a structured result.
-
-The response should include:
+When the debate is complete, Python returns a structured result:
 
 ```json
 {
   "message_type": "DEBATE_RESULT",
   "debate_id": "debate-unique-id",
+  "trigger_message_id": "unique-message-id",
   "symbol": "EURUSD",
   "timeframe": "H1",
   "status": "COMPLETED",
@@ -397,66 +470,67 @@ The response should include:
 }
 ```
 
-The result must also reference the stored `debate_id` so that MT5 or another application can retrieve the complete debate history.
-
-The AI must distinguish market facts from its own interpretations.
+The response references `debate_id` and `trigger_message_id`.
 
 The final assessment is analytical information, not an automatic trading instruction.
 
-## 16. Separation of Responsibilities
+## 17. Responsibilities
 
 ### MT5
 
-- Calculates market data.
-- Calculates River and MA Bifurcation.
-- Sends 100 H1 and 20 H6 candles during INIT.
-- Responds to missing-candle requests.
-- Sends newly closed candles.
-- Sends analysis commands.
-- Receives debate results.
+- Calculate market data.
+- Calculate River and MA Bifurcation.
+- Send one INIT JSON message containing 100 H1 and 20 H6 candles.
+- Respond to missing-candle recovery requests.
+- Send each newly closed candle.
+- Set `request_debate` to true for new-candle updates after INIT.
+- Receive synchronization acknowledgements and debate results.
 
 ### Python
 
-- Receives and validates candle messages.
-- Detects missing data.
-- Requests recovery from MT5.
-- Stores candles in SQLite.
-- Tracks synchronization status.
-- Prepares analytical evidence.
-- Orchestrates Buy/Sell debates.
-- Stores all debate theories and messages.
-- Preserves debate history.
-- Returns structured results to MT5.
+- Receive and validate INIT.
+- Store both timeframe datasets.
+- Detect missing candles.
+- Request missing data from MT5.
+- Confirm synchronization completion.
+- Receive and store new candles.
+- Start debates when explicitly requested.
+- Orchestrate Buy/Sell analysis.
+- Store all theories and debate messages.
+- Return structured debate results to MT5.
 
-## 17. Implementation Order
+## 18. Implementation Order
 
 Implementation must follow this order:
 
-1. Finalize the candle message envelope.
-2. Implement INIT reception for 100 H1 and 20 H6 candles.
-3. Implement SQLite candle storage.
-4. Implement missing-candle detection.
-5. Implement the Python-to-MT5 recovery request.
-6. Implement the MT5 recovery response.
-7. Implement synchronization completion reporting.
-8. Implement continuous closed-candle delivery.
-9. Implement debate and theory database tables.
-10. Implement the standardized debate workflow.
-11. Implement structured debate results returned to MT5.
+1. Inspect the existing sender in `tests/log_a`.
+2. Finalize the INIT JSON envelope against the existing sender.
+3. Implement one-request INIT reception for 100 H1 and 20 H6 candles.
+4. Implement validation and SQLite candle storage.
+5. Implement missing-candle detection.
+6. Implement Python-to-MT5 recovery requests.
+7. Implement MT5 recovery responses.
+8. Implement synchronization completion acknowledgements.
+9. Implement new-candle update messages.
+10. Implement debate triggering from the first new candle after INIT.
+11. Implement debate and theory storage tables.
+12. Implement the standardized debate workflow.
+13. Implement structured debate results returned to MT5.
 
-## 18. Acceptance Criteria
+## 19. Acceptance Criteria
 
 The implementation is accepted when:
 
-- INIT delivers 100 H1 and 20 H6 candles.
-- Python can detect missing candles.
-- Python can request missing data from MT5.
-- MT5 can return the requested candles.
-- Python can verify that synchronization is complete.
-- Newly closed candles are stored without duplication.
-- H1 and H6 synchronization remain independent.
-- A debate command starts the standardized Buy/Sell workflow.
-- Both sides can submit and revise theories.
-- Every theory and debate message is permanently preserved.
-- MT5 receives a structured final analytical report.
-- The complete debate history can be retrieved using its debate identifier.
+- INIT sends exactly one JSON message.
+- That message contains 100 H1 and 20 H6 candles.
+- Python validates and stores both arrays.
+- Python detects missing candles and requests recovery.
+- MT5 can return the requested missing candles.
+- Python confirms successful synchronization.
+- Newly closed candles are delivered individually.
+- The first new candle after INIT triggers a debate request.
+- Repeated messages do not create duplicate candles or unintended duplicate debates.
+- Both analytical roles submit and revise theories.
+- All theories and messages are permanently stored.
+- MT5 receives the structured final assessment.
+- The complete debate history can be retrieved using `debate_id`.
