@@ -1,86 +1,86 @@
-# معماری اتاق فکر معاملاتی (Thinker Room Architecture)
+# Thinker Room Architecture
 
-**مخزن:** `farshad-ir/work-with-LLMs`  
-**شاخه:** `hotfix/laravel-stream`  
-**نسخه سند:** 1.0 — طرح اولیه برای توافق پیش از پیاده‌سازی
+**Repository:** `farshad-ir/work-with-LLMs`  
+**Branch:** `hotfix/laravel-stream`  
+**Document Version:** 1.0 — Initial Proposal for Agreement Before Implementation
 
-## ۱. هدف و اصول طراحی
+## 1. Purpose and Design Principles
 
-هدف، ایجاد یک جریان داده قابل اعتماد از MetaTrader به اتاق فکر است:
+The goal is to establish a reliable data flow from MetaTrader to the Thinker Room:
 
-- متاتریدر داده‌ها و رویدادهای بازار را تولید می‌کند.
-- Python داده‌ها را دریافت، اعتبارسنجی و هماهنگ می‌کند.
-- SQLite حافظه پایدار اتاق فکر است.
-- هوش مصنوعی تحلیل، مناظره و ارزیابی نظریه‌ها را انجام می‌دهد.
+- MetaTrader generates market data and market events.
+- Python receives, validates, and coordinates the data.
+- SQLite serves as the persistent memory of the Thinker Room.
+- AI performs analysis, debate, and theory evaluation.
 
-اصول اصلی:
+Core principles:
 
-1. واقعیت بازار از تفسیر هوش مصنوعی جداست.
-2. فقط کندل‌های بسته‌شده ارسال می‌شوند. در MT5 شیفت ۱ آخرین کندل بسته‌شده است و شیفت ۰ کندل در حال تشکیل؛ شیفت صفر هرگز ارسال نمی‌شود.
-3. ارسال اولیه کامل است و ارسال‌های بعدی افزایشی خواهند بود.
-4. هر بخش وضعیت همگام‌سازی مستقل دارد.
-5. در صورت نامعتبر بودن یک بخش، فقط همان بخش برای ارسال کامل مجدد درخواست می‌شود.
-6. پردازش پیام تکراری نباید رکورد تکراری ایجاد کند.
-7. رویدادها، نظریه‌ها و ارزیابی‌ها تاریخچه‌دار و تغییرناپذیرند.
-8. محاسبات بازار در MT5 انجام می‌شوند؛ Python نباید داده بازار را دوباره از روی اطلاعات ناقص محاسبه کند.
+1. Market facts must remain separate from AI interpretations.
+2. Only closed candles are transmitted. In MT5, shift 1 represents the most recently closed candle, while shift 0 represents the currently forming candle. Shift 0 must never be transmitted.
+3. The initial transmission is a full synchronization, and subsequent transmissions are incremental.
+4. Each section maintains an independent synchronization state.
+5. If a section is invalid, only that section is requested again through a full synchronization.
+6. Processing a duplicate message must not create duplicate records.
+7. Events, theories, and evaluations must be historical and immutable.
+8. Market calculations are performed in MT5; Python must not recalculate market data from incomplete information.
 
-## ۲. مسئولیت اجزا
+## 2. Component Responsibilities
 
-### ۲.۱ MetaTrader Collector
+### 2.1 MetaTrader Collector
 
-مسئولیت‌ها:
+Responsibilities:
 
-- تولید ۶۰ کندل بسته‌شده H1.
-- تولید ۱۰ کندل بسته‌شده H6.
-- قراردادن OHLC، جهت MA Bifurcation و River Center/Width در هر رکورد کندل.
-- انتشار رویدادهای Box با زمان واقعی شروع و پایان و زمان کشف.
-- تشخیص Box مستقل بر اساس معیار زمانی.
-- اجرای ZigZag فقط هنگام شناسایی Box مستقل جدید.
-- ارسال Full Sync و Delta.
-- حفظ اطلاعات خام ZigZag حتی اگر تحلیل نهایی در دسترس نباشد.
+- Generate 60 closed H1 candles.
+- Generate 10 closed H6 candles.
+- Include OHLC, MA Bifurcation direction, and River Center/Width in each candle record.
+- Publish Box events with their actual start time, end time, and detection time.
+- Identify independent Boxes based on temporal criteria.
+- Execute ZigZag only when a new independent Box is identified.
+- Support Full Sync and Delta transmissions.
+- Preserve raw ZigZag information even when the final analysis is unavailable.
 
-Sender فعلی در `tests/log_a` تا زمانی که نیاز فنی مشخصی برای تغییر آن وجود نداشته باشد دست‌نخورده می‌ماند.
+The current Sender in `tests/log_a` will remain untouched unless a specific technical requirement justifies changing it.
 
-### ۲.۲ Python / FastAPI
+### 2.2 Python / FastAPI
 
-مسئولیت‌ها:
+Responsibilities:
 
-- اعتبارسنجی JSON و نسخه قرارداد.
-- مدیریت شناسه پیام و جلوگیری از پردازش تکراری.
-- ذخیره پایدار داده‌ها در SQLite.
-- مدیریت وضعیت همگام‌سازی هر بخش.
-- پاسخ به MT5 با تأیید دریافت یا درخواست Full Resync.
-- اجرای گردش‌کار اتاق فکر و ثبت نظریه‌ها و ارزیابی‌ها.
+- Validate JSON and the contract version.
+- Manage message identifiers and prevent duplicate processing.
+- Persist data in SQLite.
+- Manage the synchronization state of each section.
+- Respond to MT5 with either an acknowledgment or a Full Resync request.
+- Execute the Thinker Room workflow and record theories and evaluations.
 
-### ۲.۳ SQLite
+### 2.3 SQLite
 
-SQLite حافظه پایدار اتاق فکر و مرجع وضعیت آن است.
+SQLite is the persistent memory and the source of truth for the Thinker Room's state.
 
-جدول فعلی `mt5_stats` برای آمار ترافیک می‌تواند حفظ شود، اما جایگزین ذخیره‌سازی واقعی داده بازار نیست.
+The existing `mt5_stats` table may be retained for traffic statistics, but it is not a substitute for actual market data storage.
 
-### ۲.۴ AI Debate Room
+### 2.4 AI Debate Room
 
-دو تحلیلگر مستقل داریم:
+There are two independent analysts:
 
-- Bullish: نماینده خریداران.
-- Bearish: نماینده فروشندگان.
+- Bullish: represents buyers.
+- Bearish: represents sellers.
 
-هر دو باید نظریه، شواهد، پیش‌بینی، میزان اطمینان و شرایط ابطال خود را ثبت کنند. نظریه قبلی نباید بازنویسی شود.
+Both must record their theories, evidence, predictions, confidence levels, and invalidation conditions. Previous theories must never be overwritten.
 
-## ۳. قرارداد داده بازار
+## 3. Market Data Contract
 
-### ۳.۱ پنجره کندل‌ها
+### 3.1 Candle Windows
 
-| سری | تعداد در Full Sync | توضیح |
+| Series | Full Sync Count | Description |
 |---|---:|---|
-| H1 | ۶۰ | آخرین ۶۰ کندل بسته‌شده |
-| H6 | ۱۰ | آخرین ۱۰ کندل بسته‌شده |
+| H1 | 60 | The most recent 60 closed candles |
+| H6 | 10 | The most recent 10 closed candles |
 
-H1 و H6 دو سری مستقل هستند. کندل H6 نباید با تکثیر مصنوعی در شش رکورد H1 ذخیره شود.
+H1 and H6 are two independent series. An H6 candle must not be artificially duplicated into six H1 records.
 
-### ۳.۲ ساختار رکورد کندل
+### 3.2 Candle Record Structure
 
-نمونه مفهومی:
+Conceptual example:
 
 ```json
 {
@@ -101,25 +101,25 @@ H1 و H6 دو سری مستقل هستند. کندل H6 نباید با تکثی
 }
 ```
 
-مقادیر مجاز جهت MA:
+Allowed MA direction values:
 
 - `up`
 - `down`
 - `unknown`
 
-نکات:
+Notes:
 
-- جهت MA و اطلاعات River همراه همان کندل ذخیره می‌شوند.
-- H1 و H6 هرکدام رکوردهای مستقل دارند.
-- فقط کندل بسته‌شده پذیرفته می‌شود.
-- مقدار محاسبه‌نشده باید `null` باشد، نه صفر ساختگی.
-- واحد اندازه‌گیری River Width باید صریح باشد.
+- MA direction and River information are stored together with the corresponding candle.
+- H1 and H6 each have independent records.
+- Only closed candles are accepted.
+- An uncalculated value must be `null`, not an artificially assigned zero.
+- The measurement unit of River Width must be explicitly specified.
 
-## ۴. Boxها و استقلال زمانی
+## 4. Boxes and Temporal Independence
 
-### ۴.۱ ثبت Box
+### 4.1 Box Recording
 
-هر Box یک موجودیت مستقل است و حداقل این اطلاعات را دارد:
+Each Box is an independent entity and must contain at least the following information:
 
 - `box_id`
 - `symbol`
@@ -129,35 +129,35 @@ H1 و H6 دو سری مستقل هستند. کندل H6 نباید با تکثی
 - `high`
 - `low`
 - `detected_at`
-- شناسه پیام یا sequence مبدأ
+- Source message identifier or sequence
 
-زمان پایان واقعی Box و زمان کشف آن دو مفهوم متفاوت‌اند.
+The actual end time of a Box and the time at which it is detected are two different concepts.
 
-ممکن است Box در کندل دوم بسته شده باشد، اما در کندل سوم کشف و اعلام شود. هر دو زمان باید ثبت شوند.
+A Box may have ended during the second candle but only be detected and announced during the third candle. Both timestamps must be recorded.
 
-### ۴.۲ معیار استقلال
+### 4.2 Independence Criteria
 
-استقلال Box فقط بر اساس زمان تعیین می‌شود، نه هم‌پوشانی قیمت.
+Box independence is determined exclusively by time, not by price overlap.
 
-- Box قبلی: ۱۱ تا ۱۵
-- Box جدید: ۱۵ تا ۱۹ — مستقل نیست.
-- Box جدید: ۱۷ تا ۲۱ — مستقل است، چون حداقل یک کندل کامل H1 آزاد بین آن‌ها وجود دارد.
+- Previous Box: 11 to 15
+- New Box: 15 to 19 — not independent.
+- New Box: 17 to 21 — independent, because there is at least one complete free H1 candle between them.
 
-تمام Boxهای کشف‌شده باید ثبت شوند؛ حتی اگر مستقل نباشند.
+All detected Boxes must be recorded, including those that are not independent.
 
-اما فقط Box مستقل می‌تواند رویداد مستقل جدید ایجاد کند و باعث اجرای ZigZag شود.
+However, only an independent Box can generate a new independent event and trigger ZigZag execution.
 
-سه Box مستقل اخیر باید به‌عنوان نمای فعال FIFO قابل استخراج باشند؛ این موضوع نباید باعث حذف تاریخچه Boxها شود.
+The three most recent independent Boxes must be retrievable as the active FIFO view. This must not result in the deletion of Box history.
 
-**نکته فنی مهم:** تعریف دقیق مرزهای زمانی start و end باید با زمان بازشدن کندل و مرز پایان بازه در Collector تثبیت شود تا شرط یک کندل کامل آزاد، خطای یک‌ساعته پیدا نکند.
+**Important technical note:** The exact definitions of the Box start and end boundaries must be established in the Collector in relation to candle opening times and interval-ending boundaries. This is necessary to prevent a one-hour error when applying the condition requiring one complete free candle.
 
-## ۵. ZigZag Analysis
+## 5. ZigZag Analysis
 
-با کشف Box مستقل جدید، فاصله آزاد بین آن و Box مستقل قبلی به ZigZag داده می‌شود.
+When a new independent Box is detected, the free interval between it and the previous independent Box is passed to ZigZag.
 
-فقط کندل‌های آزاد داخل این فاصله بررسی می‌شوند؛ کندل‌های داخل Boxها وارد این تحلیل نمی‌شوند.
+Only free candles within this interval are examined. Candles belonging to the Boxes themselves are excluded from this analysis.
 
-هر تحلیل ZigZag یک رکورد مستقل دارد:
+Each ZigZag analysis is stored as an independent record:
 
 - `analysis_id`
 - `symbol`
@@ -171,19 +171,19 @@ H1 و H6 دو سری مستقل هستند. کندل H6 نباید با تکثی
 - `analysis_result`
 - `status`
 
-نکته بسیار مهم:
+Very important:
 
-اگر خروجی نظریه یا تحلیل ZigZag در دسترس نباشد، نقاط خام نباید حذف شوند.
+If the ZigZag theory or analysis result is unavailable, the raw points must not be deleted.
 
-بنابراین:
+Therefore:
 
-- `raw_points` مستقل از نتیجه تحلیل نگهداری می‌شوند.
-- نتیجه ناموجود با نبود داده خام اشتباه گرفته نمی‌شود.
-- تحلیل‌های قبلی بازنویسی نمی‌شوند.
+- `raw_points` must be stored independently of the analysis result.
+- An unavailable result must not be confused with missing raw data.
+- Previous analyses must never be overwritten.
 
-## ۶. Full Sync و Incremental Update
+## 6. Full Sync and Incremental Update
 
-### ۶.۱ Envelope پیشنهادی
+### 6.1 Proposed Envelope
 
 ```json
 {
@@ -219,21 +219,21 @@ H1 و H6 دو سری مستقل هستند. کندل H6 نباید با تکثی
 }
 ```
 
-این نمونه طرح قرارداد است، نه ادعای پیاده‌سازی فعلی.
+This is a proposed contract design, not a claim about the current implementation.
 
-در Delta فقط داده‌ها یا رویدادهای جدید ارسال می‌شوند. عملیات هر بخش باید صریح باشد؛ مثلاً `append` یا عملیات مشخص دیگر.
+In Delta mode, only new data or events are transmitted. The operation for each section must be explicit, such as `append` or another clearly defined operation.
 
-### ۶.۲ چرخه همگام‌سازی
+### 6.2 Synchronization Lifecycle
 
-1. MT5 در اولین ارتباط Full Sync می‌فرستد.
-2. Python پیام را اعتبارسنجی می‌کند.
-3. داده‌ها در یک تراکنش SQLite ذخیره می‌شوند.
-4. Python وضعیت هر بخش را مستقل ثبت می‌کند.
-5. اگر تمام بخش‌های لازم معتبر باشند، MT5 ارسال Delta را آغاز می‌کند.
-6. اگر بخشی ناقص یا نامعتبر باشد، فقط همان بخش برای Full Resync درخواست می‌شود.
-7. بخش‌های سالم بدون دلیل دوباره ارسال نمی‌شوند.
+1. MT5 sends a Full Sync during the initial connection.
+2. Python validates the message.
+3. Data is stored in SQLite within a single transaction.
+4. Python independently records the synchronization state of each section.
+5. If all required sections are valid, MT5 begins sending Delta updates.
+6. If a section is incomplete or invalid, only that section is requested again through a Full Resync.
+7. Valid sections are not retransmitted without a specific reason.
 
-### ۶.۳ پاسخ پیشنهادی
+### 6.3 Proposed Response
 
 ```json
 {
@@ -267,156 +267,8 @@ H1 و H6 دو سری مستقل هستند. کندل H6 نباید با تکثی
 }
 ```
 
-### ۶.۴ جلوگیری از پیام تکراری
+### 6.4 Duplicate Message Prevention
 
-- `message_id` برای هر پیام یکتا است.
-- پیام تکراری دوباره پردازش نمی‌شود.
-- پاسخ قبلی برای retry قابل بازگرداندن است.
-- هر بخش sequence افزایشی مستقل دارد.
-- پیام دیررس نباید وضعیت جدیدتر را به عقب برگرداند.
-- ثبت پیام، داده و وضعیت sync باید در یک تراکنش انجام شود.
-
-## ۷. ساختار پیشنهادی SQLite
-
-| جدول | مسئولیت |
-|---|---|
-| `conversations` | مکالمه بازار و مشخصات آن |
-| `ingest_messages` | پیام‌های دریافتی و idempotency |
-| `sync_states` | وضعیت همگام‌سازی هر بخش |
-| `market_candles` | کندل‌های H1 و H6 و اطلاعات همراه |
-| `boxes` | تمام Boxهای کشف‌شده |
-| `independent_boxes` | Boxهای مستقل و ترتیب آن‌ها |
-| `zigzag_analyses` | تحلیل‌های مستقل ZigZag |
-| `theories` | نظریه‌های Bullish و Bearish |
-| `theory_evidence` | شواهد نظریه‌ها |
-| `predictions` | پیش‌بینی‌های قابل سنجش |
-| `evaluations` | ارزیابی پیش‌بینی‌ها |
-| `debate_rounds` | دورهای مناظره و جمع‌بندی |
-
-### نکات مهم
-
-- کندل‌ها در یک جدول با ستون `timeframe` ذخیره می‌شوند.
-- کلید یکتای کندل شامل conversation، symbol، timeframe و candle_time است.
-- داده‌های خام ZigZag می‌توانند به شکل JSON معتبر در SQLite ذخیره شوند.
-- نظریه‌ها و پیش‌بینی‌ها append-only هستند.
-- FIFO پنجره فعال نباید تاریخچه یادگیری را حذف کند.
-- جدول فعلی `mt5_stats` جداگانه باقی می‌ماند.
-
-## ۸. نظریه‌ها و مناظره
-
-هر نظریه حداقل شامل موارد زیر است:
-
-- `theory_id`
-- `conversation_id`
-- `analyst_role`
-- `created_at`
-- شناسه آخرین داده بازار مورد استفاده
-- `market_view`
-- استدلال
-- شواهد
-- دستگیره‌های تحلیلی
-- میزان اطمینان
-- شرایط ابطال
-- شناسه دور مناظره
-
-### پیش‌بینی قابل سنجش
-
-پیش‌بینی باید تا حد امکان مشخص کند:
-
-- جهت مورد انتظار
-- سطح یا رویداد هدف
-- افق زمانی یا تعداد کندل
-- شرط موفقیت
-- شرط شکست
-- شرط ابطال
-- زمان سررسید
-
-برای مثال، «در شش کندل H1 آینده، سقف مشخص‌شده شکسته خواهد شد» از «بازار صعودی می‌شود» قابل ارزیابی‌تر است.
-
-### ارزیابی
-
-ارزیابی باید با داده‌هایی انجام شود که بعد از صدور پیش‌بینی دریافت شده‌اند.
-
-هر ارزیابی شامل زمان، داده مرجع، معیار و نتیجه است.
-
-نظریه اولیه تغییر نمی‌کند؛ ارزیابی‌ها به آن متصل می‌شوند.
-
-## ۹. دستگیره‌های تحلیلی
-
-### اطلاعات تولیدشده در MT5
-
-- جهت MA Bifurcation در H1 و H6
-- River Center و Width در هر کندل
-- محدوده و زمان Boxها
-- استقلال زمانی Boxها
-- نقاط خام ZigZag در فاصله آزاد
-
-### اطلاعات تفسیری تولیدشده توسط AI
-
-- روند سقف‌ها و کف‌های Boxها
-- انبساط یا انقباض River
-- هم‌جهتی یا تضاد H1 و H6
-- ساختار حرکت در فاصله آزاد
-- شواهد موافق و مخالف سناریوها
-- سناریوها و شرایط ابطال
-
-خروجی AI باید به شناسه داده‌ها و رویدادهای مبدأ ارجاع دهد. واقعیت و برداشت نباید با هم مخلوط شوند.
-
-## ۱۰. موارد نیازمند تصمیم نهایی
-
-این موارد را عمداً باز گذاشته‌ام تا بدون توافق، فرضی وارد پیاده‌سازی نشود:
-
-1. **شناسه Box:** ترتیب و پایداری شناسه Boxها در Observer باید از سورس تأیید شود.
-2. **مرز زمانی Box:** باید مشخص شود start و end دقیقاً به زمان بازشدن کندل اشاره می‌کنند یا مرز پایان بازه.
-3. **زمان کشف Box:** تأخیر کشف تا کندل سوم با `detected_at` ثبت می‌شود.
-4. **MA Bifurcation:** شرایط دقیق خروجی up/down/unknown باید از Observer واقعی استخراج شود؛ مقایسه ساده دو میانگین جایگزین آن نیست.
-5. **River:** فرمول مرکز و عرض و واحد عرض باید مشخص و برای هر دو timeframe یکسان‌سازی شود.
-6. **پنجره H1/H6:** هر سری مستقل بر اساس آخرین کندل بسته‌شده خودش ساخته می‌شود.
-7. **نگهداری تاریخچه:** مدت نگهداری Boxها، ZigZagها، نظریه‌ها و ارزیابی‌ها باید مشخص شود.
-8. **ارزیابی پیش‌بینی:** معیار موفقیت، افق‌ها و امتیازدهی باید پیش از ساخت رتبه‌بندی نهایی شود.
-9. **Conversation ID:** باید تعیین شود مکالمه بر اساس نماد، حساب یا استراتژی چگونه ساخته و چه زمانی مکالمه جدید آغاز می‌شود.
-
-## ۱۱. ترتیب پیاده‌سازی
-
-پیاده‌سازی مرحله‌ای و در هر نوبت حداکثر چهار تغییر مشخص انجام می‌شود:
-
-1. بررسی کامل مسیرهای موجود در `app/main.py` و وضعیت SQLite بدون تغییر رفتار.
-2. نهایی‌کردن قرارداد JSON و پاسخ.
-3. افزودن migration و جداول SQLite.
-4. پیاده‌سازی ingest تراکنشی و idempotent.
-5. پیاده‌سازی Full Sync و وضعیت مستقل بخش‌ها.
-6. پیاده‌سازی Delta و درخواست Full Resync.
-7. اصلاح Collector برای کندل‌های بسته‌شده H1/H6 و اطلاعات per-candle.
-8. اصلاح Boxها و استقلال زمانی.
-9. ثبت مستقل ZigZag و حفظ نقاط خام.
-10. ساخت Debate Room و ثبت نظریه‌ها و پیش‌بینی‌ها.
-11. ساخت ارزیابی و تست end-to-end.
-
-## ۱۲. وضعیت فعلی کد
-
-بر اساس نسخه‌ای که از شاخه بررسی شده است:
-
-- `app/main.py` دارای endpoint `/v1/mt5/ingest` است، اما داده بازار را در جداول عملیاتی ذخیره نمی‌کند و فعلاً آمار را ثبت می‌کند.
-- `tests/log_a` Sender فعلی است و در این طرح خارج از دامنه تغییر قرار دارد.
-- `tests/log` Collector فعلی است.
-- در نسخه بررسی‌شده، H1 با ۵۰ کندل و شروع از shift صفر ساخته می‌شود.
-- مسیر ساخت H6 نیز باید برای حذف shift صفر اصلاح شود.
-- جهت ساده MA در `BuildDescription` به‌تنهایی معادل Observer واقعی MA Bifurcation نیست.
-- منطق فعلی `BoxesOverlap` با معیار استقلال زمانی مورد توافق یکسان نیست.
-- چرخه فعلی ZigZag هنوز تاریخچه مستقل تحلیل‌ها را مطابق این طرح نگهداری نمی‌کند.
-
-این سند طرح هدف است؛ نمونه‌های JSON و نام جدول‌ها به معنی وجود فعلی آن‌ها در کد نیستند.
-
-## ۱۳. معیار پذیرش نسخه نخست
-
-- هیچ کندل shift صفر ذخیره یا تحلیل نشود.
-- Full Sync دقیقاً پنجره تعریف‌شده H1 و H6 را ثبت کند.
-- پیام تکراری رکورد تکراری نسازد.
-- Delta فقط اطلاعات جدید را ثبت کند.
-- Resync یک بخش، بخش‌های معتبر دیگر را تغییر ندهد.
-- تمام Boxها حفظ شوند، حتی اگر مستقل نباشند.
-- استقلال Box فقط با وجود حداقل یک کندل کامل آزاد H1 تأیید شود.
-- هر فاصله آزاد بین دو Box مستقل تحلیل ZigZag مستقل داشته باشد.
-- raw points با unavailable بودن نتیجه تحلیل از بین نروند.
-- نظریه‌ها، پیش‌بینی‌ها و ارزیابی‌ها به داده مبدأ و زمان ثبت متصل باشند.
-- بتوان بازسازی کرد که تحلیلگر در لحظه صدور نظریه چه اطلاعاتی در اختیار داشته است.
+- Each message has a unique `message_id`.
+- A duplicate message is not processed again.
+- The
