@@ -500,7 +500,7 @@ bool BootstrapHistory()
 
    ArraySetAsSeries(h1Rates, true);
    ArraySetAsSeries(h6Rates, true);
-
+   
    int h1Copied = CopyRates(
       _Symbol,
       PERIOD_H1,
@@ -508,10 +508,18 @@ bool BootstrapHistory()
       H1_INITIAL_COUNT,
       h1Rates
    );
-
+   
+   if(h1Copied != H1_INITIAL_COUNT)
+   {
+      Print("[BOOTSTRAP] H1 history not ready: ", h1Copied);
+      return false;
+   }
+   
+   // Determine the exact time window from the 100 closed H1 candles.
    datetime h1OldestTime = h1Rates[H1_INITIAL_COUNT - 1].time;
    datetime h1NewestTime = h1Rates[0].time;
    
+   // Load only H6 candles inside the H1 time window.
    int h6Copied = CopyRates(
       _Symbol,
       PERIOD_H6,
@@ -519,24 +527,20 @@ bool BootstrapHistory()
       h1NewestTime,
       h6Rates
    );
-
+   
    if(h6Copied <= 0)
    {
       Print("[BOOTSTRAP] H6 history not ready: ", h6Copied);
       return false;
    }
-
-   if(h1Copied != H1_INITIAL_COUNT)
-   {
-      Print("[BOOTSTRAP] H1 history not ready: ", h1Copied);
-      return false;
-   }
-
-   if(h6Copied != H6_INITIAL_COUNT)
-   {
-      Print("[BOOTSTRAP] H6 history not ready: ", h6Copied);
-      return false;
-   }
+   
+   Print(
+      "[BOOTSTRAP] History loaded: ",
+      "H1=", h1Copied,
+      " H6=", h6Copied,
+      " | From=", TimeToString(h1OldestTime, TIME_DATE | TIME_MINUTES),
+      " | To=", TimeToString(h1NewestTime, TIME_DATE | TIME_MINUTES)
+   );
 
    Print("========== BOOTSTRAP START ==========");
 
