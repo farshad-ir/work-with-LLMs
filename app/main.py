@@ -877,11 +877,16 @@ async def mt5_ingest(request: Request):
 @app.get("/v1/mt5/response/{client_id}")
 async def mt5_response(client_id: str):
 
+    if client_id != MT5_CLIENT_ID:
+        raise HTTPException(
+            status_code=404,
+            detail="MT5 client not found.",
+        )
 
     return {
         "success": True,
         "client_id": MT5_CLIENT_ID,
-        "statistics": 2145,
+        "statistics": _get_mt5_stats(),
     }
     
 @app.get("/", response_class=HTMLResponse)
