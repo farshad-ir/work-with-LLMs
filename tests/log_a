@@ -1,166 +1,192 @@
-#ifndef __MA_BIFURCATION_MQH__
-#define __MA_BIFURCATION_MQH__
+#import "egg.dll"
+int SendLatestJson();
+#import
 
-// ------------------------------------------------------------
-// CMABifurcation
-// Branch-tracking direction detector (MA_Bifurcation algorithm).
-// The input price (one MA, or an average of several MAs) is supplied
-// by the caller through AddPoint(); this class never reads the chart.
-// Direction: +1 up, -1 down, 0 unknown.
-// ------------------------------------------------------------
+#import "egg.dll"
+int PollResponses(string clientId, uchar &output[], int outputCapacity);
+#import
 
-struct MABranch
+#include <JAson.mqh>
+
+#property copyright "forex-decision-skill (MIT)"
+#property strict
+
+CJAVal json;
+
+datetime lastBarTime = 0;
+uchar response[4096];
+
+
+//+------------------------------------------------------------------+
+//| Get timeframe as plain text                                      |
+//+------------------------------------------------------------------+
+string GetTimeframe()
 {
-   int    id;
-   int    pointCount;
-   double previousPrice;
-   double lastPrice;
-   int    direction;      // 0 until the second distinct price arrives
-   int    lastSeenStep;
-};
+   string tf = EnumToString(_Period);
+   StringReplace(tf, "PERIOD_", "");
+   return tf;
+}
 
-class CMABifurcation
+
+//+------------------------------------------------------------------+
+//| Build JSON with five closed candles                              |
+//+------------------------------------------------------------------+
+string BuildCandleJson()
 {
-private:
-   MABranch m_branches[];
-   int      m_minWaiting;
-   int      m_maxWaiting;
-   int      m_step;
-   int      m_nextBranchId;
+   MqlRates rates[];
 
-   int      m_direction;        // result of the latest AddPoint (may be 0)
-   int      m_lastKnown;        // last non-zero result
-   bool     m_reversed;         // did the latest AddPoint flip the known direction?
+   // Copy five closed candles
+   int copied = CopyRates(_Symbol, _Period, 1, 5, rates);
 
-   int PriceDirection(const double a,const double b)
+   if(copied != 5)
    {
-      if(b>a) return 1;
-      if(b<a) return -1;
-      return 0;
+      Print("Could not copy candles. Error: ", GetLastError());
+      return "";
    }
 
-   // N=2 -> 2, N=3 -> 2, N=4 -> 3, N=5 -> 4, N>=6 -> 5 (limits configurable)
-   int WaitingPeriod(const int activeCount)
+   string a_json = "{";
+
+   a_json += "\"cover_letter\":\"From MT5 to AI\",";
+   a_json += "\"symbol\":\"" + _Symbol + "\",";
+   a_json += "\"timeframe\":\"" + GetTimeframe() + "\",";
+   a_json += "\"candles\":[";
+
+   for(int i = 4; i >= 0; i--)
    {
-      int waiting=activeCount-1;
-      if(waiting<m_minWaiting) waiting=m_minWaiting;
-      if(waiting>m_maxWaiting) waiting=m_maxWaiting;
-      return waiting;
+      string timeStr = TimeToString(
+         rates[i].time,
+         TIME_DATE | TIME_MINUTES
+      );
+
+      if(i != 4)
+         a_json += ",";
+
+      a_json += "{";
+      a_json += "\"time\":\"" + timeStr + "\",";
+      a_json += "\"open\":" + DoubleToString(rates[i].open, _Digits) + ",";
+      a_json += "\"high\":" + DoubleToString(rates[i].high, _Digits) + ",";
+      a_json += "\"low\":" + DoubleToString(rates[i].low, _Digits) + ",";
+      a_json += "\"close\":" + DoubleToString(rates[i].close, _Digits);
+      a_json += "}";
    }
 
-   // One-point branch accepts anything; a directional branch must stay monotonic.
-   bool CanAppend(const MABranch &b,const double price)
+   a_json += "]}";
+
+   return a_json;
+}
+
+
+//+------------------------------------------------------------------+
+//| Expert initialization                                            |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   lastBarTime = iTime(_Symbol, _Period, 0);
+
+   Print("MT5 JSON Builder started.");
+   Print("Symbol: ", _Symbol);
+   Print("Timeframe: ", GetTimeframe());
+
+   return INIT_SUCCEEDED;
+}
+
+
+//+------------------------------------------------------------------+
+//| Tick event                                                       |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   datetime currentBarTime = iTime(_Symbol, _Period, 0);
+
+   if(currentBarTime == 0 || currentBarTime == lastBarTime)
+      return;
+
+   lastBarTime = currentBarTime;
+
+   string a_json = BuildCandleJson();
+
+   if(a_json == "")
+      return;
+
+   SaveSendFile(a_json);
+   ReadPoling();
+}
+
+
+//+------------------------------------------------------------------+
+//| Save JSON file and send through DLL                              |
+//+------------------------------------------------------------------+
+void SaveSendFile(string data)
+{
+   int fileH = FileOpen(
+      "LLM-LQ/mt5_feed.json",
+      FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_UNICODE
+   );
+
+   if(fileH != INVALID_HANDLE)
    {
-      if(b.pointCount<2 || b.direction==0) return true;
-      if(b.direction>0) return price>=b.lastPrice;
-      return price<=b.lastPrice;
+      FileWriteString(fileH, data);
+      FileClose(fileH);
+
+      int result = SendLatestJson();
+
+      Print("MT5 SendLatestJson result: ", result);
+   }
+   else
+   {
+      Print("FileOpen failed. Error: ", GetLastError());
+   }
+}
+
+
+//+------------------------------------------------------------------+
+//| Read statistics from Gateway                                    |
+//+------------------------------------------------------------------+
+void ReadPoling()
+{
+   int bytesRead = PollResponses(
+      "mt5_terminal_01",
+      response,
+      ArraySize(response)
+   );
+
+   if(bytesRead <= 0)
+   {
+      Print("MT5 statistics GET failed. Result: ", bytesRead);
+      return;
    }
 
-   void Append(MABranch &b,const double price)
+   string jsonResponse = CharArrayToString(
+      response,
+      0,
+      bytesRead,
+      CP_UTF8
+   );
+
+   if(!json.Deserialize(jsonResponse, CP_UTF8))
    {
-      b.previousPrice=b.lastPrice;
-      b.lastPrice=price;
-      if(b.direction==0) b.direction=PriceDirection(b.previousPrice,b.lastPrice);
-      b.pointCount++;
-      b.lastSeenStep=m_step;
+      Print("Could not parse MT5 statistics JSON.");
+      return;
    }
 
-   int Create(const double price)
+   if(!json["success"].ToBool())
    {
-      int n=ArraySize(m_branches);
-      if(ArrayResize(m_branches,n+1)!=n+1) return -1;
-      m_branches[n].id=m_nextBranchId++;
-      m_branches[n].pointCount=1;
-      m_branches[n].previousPrice=price;
-      m_branches[n].lastPrice=price;
-      m_branches[n].direction=0;
-      m_branches[n].lastSeenStep=m_step;
-      return n;
+      Print("MT5 statistics request was not successful.");
+      return;
    }
 
-   void Remove(const int idx)
-   {
-      int n=ArraySize(m_branches);
-      if(idx<0 || idx>=n) return;
-      for(int i=idx;i<n-1;i++) m_branches[i]=m_branches[i+1];
-      ArrayResize(m_branches,n-1);
-   }
+   CJAVal statistics = json["statistics"];
 
-   // A branch that received no point within its waiting period is dropped.
-   void ExpireInactive()
-   {
-      int i=0;
-      while(i<ArraySize(m_branches))
-      {
-         int waiting=WaitingPeriod(ArraySize(m_branches));
-         if(m_step-m_branches[i].lastSeenStep>=waiting) Remove(i);
-         else i++;
-      }
-   }
+   long requests    = statistics["requests"].ToInt();
+   long bytes       = statistics["bytes"].ToInt();
+   long characters  = statistics["characters"].ToInt();
+   long words       = statistics["words"].ToInt();
 
-public:
-   CMABifurcation()
-   {
-      m_minWaiting=2; m_maxWaiting=5;
-      Reset();
-   }
-
-   void Configure(const int minWaitingPoints=2,const int maxWaitingPoints=5)
-   {
-      m_minWaiting=MathMax(1,minWaitingPoints);
-      m_maxWaiting=MathMax(m_minWaiting,maxWaitingPoints);
-   }
-
-   void Reset()
-   {
-      ArrayResize(m_branches,0);
-      m_step=0; m_nextBranchId=1;
-      m_direction=0; m_lastKnown=0; m_reversed=false;
-   }
-
-   // Feed one new point; returns the overall direction (+1 / -1 / 0).
-   int AddPoint(const double price)
-   {
-      m_step++;
-
-      bool assigned=false;
-      for(int i=0;i<ArraySize(m_branches);i++)
-      {
-         if(!CanAppend(m_branches[i],price)) continue;
-         Append(m_branches[i],price);
-         assigned=true;
-         break;
-      }
-      if(!assigned)
-      {
-         if(Create(price)<0) return m_direction;   // allocation failed; keep old state
-      }
-
-      ExpireInactive();
-
-      int rising=0,falling=0;
-      for(int j=0;j<ArraySize(m_branches);j++)
-      {
-         if(m_branches[j].pointCount<2) continue;
-         if(m_branches[j].direction>0) rising++;
-         else if(m_branches[j].direction<0) falling++;
-      }
-
-      int dir=0;
-      if(rising>falling) dir=1;
-      else if(falling>rising) dir=-1;
-
-      m_reversed=(dir!=0 && m_lastKnown!=0 && dir!=m_lastKnown);
-      m_direction=dir;
-      if(dir!=0) m_lastKnown=dir;
-      return dir;
-   }
-
-   int  Direction()          { return m_direction; }   // latest result, may be 0
-   int  LastKnownDirection() { return m_lastKnown; }   // last non-zero result
-   bool JustReversed()       { return m_reversed; }    // latest point flipped the known direction
-   int  BranchCount()        { return ArraySize(m_branches); }
-   int  Step()               { return m_step; }
-};
-
-#endif // __MA_BIFURCATION_MQH__
+   Print("========== MT5 STATISTICS ==========");
+   Print("Client ID: ", json["client_id"].ToStr());
+   Print("Requests: ", requests);
+   Print("Bytes: ", bytes);
+   Print("Characters: ", characters);
+   Print("Words: ", words);
+   Print("====================================");
+}
