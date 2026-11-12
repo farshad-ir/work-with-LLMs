@@ -38,9 +38,6 @@ int PollResponses(string clientId, uchar &output[], int outputCapacity);
 #define H1_HISTORY_CAPACITY 100
 #define H6_HISTORY_CAPACITY 20
 
-#define H1_INITIAL_COUNT 100
-#define H6_INITIAL_COUNT 20
-
 
 //+------------------------------------------------------------------+
 //| Global objects                                                    |
@@ -508,7 +505,7 @@ bool BootstrapHistory()
       _Symbol,
       PERIOD_H1,
       1,
-      H1_INITIAL_COUNT,
+      H1_HISTORY_CAPACITY,
       h1Rates
    );
 
@@ -516,17 +513,17 @@ bool BootstrapHistory()
       _Symbol,
       PERIOD_H6,
       1,
-      H6_INITIAL_COUNT,
+      H6_HISTORY_CAPACITY,
       h6Rates
    );
 
-   if(h1Copied != H1_INITIAL_COUNT)
+   if(h1Copied != H1_HISTORY_CAPACITY)
    {
       Print("[BOOTSTRAP] H1 history not ready: ", h1Copied);
       return false;
    }
 
-   if(h6Copied != H6_INITIAL_COUNT)
+   if(h1Copied != H6_HISTORY_CAPACITY)
    {
       Print("[BOOTSTRAP] H6 history not ready: ", h6Copied);
       return false;
@@ -538,7 +535,7 @@ bool BootstrapHistory()
    g_ma_h6.Update();
 
    // H1: oldest to newest.
-   for(int i = H1_INITIAL_COUNT - 1; i >= 0; i--)
+   for(int i = H1_HISTORY_CAPACITY - 1; i >= 0; i--)
    {
       int shift = i + 1;
 
@@ -556,7 +553,7 @@ bool BootstrapHistory()
    }
 
    // H6: oldest to newest.
-   for(int i = H6_INITIAL_COUNT - 1; i >= 0; i--)
+   for(int i = H6_HISTORY_CAPACITY - 1; i >= 0; i--)
    {
       int shift = i + 1;
 
