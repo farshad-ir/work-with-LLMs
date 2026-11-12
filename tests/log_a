@@ -627,6 +627,27 @@ bool BootstrapHistory()
          false
       );
 
+
+      int recordIndex = FindH1Record(h1Rates[i].time);
+
+      if(recordIndex < 0)
+      {
+         Print("[BOOTSTRAP ERROR] H1 record missing.");
+         return false;
+      }
+
+      if(StringLen(h1Candles) > 0)
+         h1Candles += ",";
+
+      h1Candles += BuildCandleObject(
+         h1Rates[i],
+         H1_river.Center(),
+         H1_river.Width(),
+         g_h1History[recordIndex].direction
+      );
+
+
+
    }
 
    // H6: oldest to newest.
@@ -645,7 +666,47 @@ bool BootstrapHistory()
          false
       );
 
+
+
+      int recordIndex = FindH6Record(h6Rates[i].time);
+
+      if(recordIndex < 0)
+      {
+         Print("[BOOTSTRAP ERROR] H6 record missing.");
+         return false;
+      }
+
+      if(StringLen(h6Candles) > 0)
+         h6Candles += ",";
+
+      h6Candles += BuildCandleObject(
+         h6Rates[i],
+         H6_river.Center(),
+         H6_river.Width(),
+         g_h6History[recordIndex].direction
+      );
+
+
+
+
    }
+
+   string initData = BuildInitJson(
+      h1Candles,
+      h6Candles
+   );
+
+   Print(
+      "[BOOTSTRAP] INIT prepared. H1=",
+      H1_HISTORY_CAPACITY,
+      " H6=",
+      H6_HISTORY_CAPACITY
+   );
+
+   SaveSendFile(initData);
+   ReadPoling();
+
+
 
    // Remember current open candle times.
    g_lastH1BarTime = iTime(
