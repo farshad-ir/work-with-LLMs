@@ -35,7 +35,8 @@ int PollResponses(string clientId, uchar &output[], int outputCapacity);
 //+------------------------------------------------------------------+
 //| Configuration                                                    |
 //+------------------------------------------------------------------+
-#define HISTORY_CAPACITY 100
+#define H1_HISTORY_CAPACITY 100
+#define H6_HISTORY_CAPACITY 20
 
 #define H1_INITIAL_COUNT 100
 #define H6_INITIAL_COUNT 20
@@ -67,8 +68,8 @@ struct BifurcationRecord
    int      direction;
 };
 
-BifurcationRecord g_h1History[HISTORY_CAPACITY];
-BifurcationRecord g_h6History[HISTORY_CAPACITY];
+BifurcationRecord g_h1History[H1_HISTORY_CAPACITY];
+BifurcationRecord g_h6History[H6_HISTORY_CAPACITY];
 
 int g_h1HistoryCount = 0;
 int g_h6HistoryCount = 0;
@@ -144,10 +145,10 @@ void AddH1Record(
 
    g_h1HistoryNext++;
 
-   if(g_h1HistoryNext >= HISTORY_CAPACITY)
+   if(g_h1HistoryNext >= H1_HISTORY_CAPACITY)
       g_h1HistoryNext = 0;
 
-   if(g_h1HistoryCount < HISTORY_CAPACITY)
+   if(g_h1HistoryCount < H1_HISTORY_CAPACITY)
       g_h1HistoryCount++;
 }
 
@@ -165,11 +166,13 @@ void AddH6Record(
 
    g_h6HistoryNext++;
 
-   if(g_h6HistoryNext >= HISTORY_CAPACITY)
+   
+   if(g_h6HistoryNext >= H6_HISTORY_CAPACITY)
       g_h6HistoryNext = 0;
 
-   if(g_h6HistoryCount < HISTORY_CAPACITY)
+   if(g_h6HistoryCount < H6_HISTORY_CAPACITY)
       g_h6HistoryCount++;
+
 }
 
 
