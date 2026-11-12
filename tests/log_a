@@ -234,6 +234,44 @@ void FeedH6Candle(
    );
 }
 
+//+------------------------------------------------------------------+
+//| Build one candle JSON object                                     |
+//+------------------------------------------------------------------+
+string BuildCandleObject(
+   const MqlRates &bar,
+   const double riverCenter,
+   const double riverWidth,
+   const int direction
+)
+{
+   string timeStr = TimeToString(
+      bar.time,
+      TIME_DATE | TIME_MINUTES
+   );
+
+   string data = "{";
+
+   data += "\"time\":\"" + timeStr + "\",";
+   data += "\"open\":" + DoubleToString(bar.open, _Digits) + ",";
+   data += "\"high\":" + DoubleToString(bar.high, _Digits) + ",";
+   data += "\"low\":" + DoubleToString(bar.low, _Digits) + ",";
+   data += "\"close\":" + DoubleToString(bar.close, _Digits) + ",";
+
+   data += "\"tick_volume\":" + IntegerToString((long)bar.tick_volume) + ",";
+   data += "\"spread_points\":" + IntegerToString(bar.spread) + ",";
+
+   data += "\"river_center\":" + DoubleToString(riverCenter, _Digits) + ",";
+   data += "\"river_width_pips\":" + DoubleToString(riverWidth, 2) + ",";
+
+   data += "\"ma_bifurcation\":{";
+   data += "\"direction\":\"" + DirectionText(direction) + "\"";
+   data += "}";
+
+   data += "}";
+
+   return data;
+}
+
 
 //+------------------------------------------------------------------+
 //| Build one candle JSON                                             |
