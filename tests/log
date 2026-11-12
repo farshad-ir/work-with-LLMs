@@ -1,0 +1,1339 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+class GatewayController extends Controller
+{
+    private const PYTHON_URL = 'tcp://127.0.0.1:8088';
+
+    private const HEARTBEAT_INTERVAL_SECONDS = 5;
+
+    public function codex(Request $request): JsonResponse|StreamedResponse
+    {
+        @set_time_limit(0);
+
+        $requestId = bin2hex(random_bytes(8));
+        $startedAt = microtime(true);
+
+        $token = (string) env(
+            'GATEWAY_RESPONSE_BUFFER_TOKEN',
+            ''
+        );
+
+        /*
+         * Concise monitoring log.
+         * Only important events are recorded.
+         */
+
+        $logPath = storage_path('logs/gateway-watch.log');
+
+        $log = function (
+            string $event,
+            array $context = []
+        ) use ($logPath, $requestId, $startedAt): void {
+
+            $code = null;
+            $info = '';
+
+            switch ($event) {
+                case 'CODEX_REQUEST_STARTED':
+                    $code = 'REQ';
+                    $info = 'stream=' .
+                        (!empty($context['stream']) ? '1' : '0') .
+                        ' bytes=' .
+                        ($context['body_bytes'] ?? 0);
+                    break;
+
+                case 'PREVIOUS_BUFFERED_REQUEST_DETECTED':
+                    $code = '409';
+                    $info = 'previous_busy';
+                    break;
+
+                case 'PREVIOUS_BUFFERED_RESPONSE_RECEIVED':
+                    $code = 'OLD';
+                    $info = 'status=' .
+                        ($context['response_status'] ?? 'unknown');
+                    break;
+
+                case 'CURRENT_REQUEST_RETRY_STARTED':
+                    $code = 'RETRY';
+                    $info = 'after_409';
+                    break;
+
+                case 'CURRENT_FINAL_RESPONSE_RECEIVED':
+                    $code = 'OK';
+                    $info = 'status=' .
+                        ($context['response_status'] ?? 'unknown') .
+                        ' total_ms=' .
+                        (int) round(
+                            (microtime(true) - $startedAt) * 1000
+                        );
+                    break;
+
+                case 'CURRENT_REQUEST_NOT_ACCEPTED':
+                    $code = 'ERR';
+                    $info = 'python_http=' .
+                        ($context['status'] ?? 'unknown');
+                    break;
+
+                case 'POLL_ERROR':
+                    $code = 'ERR';
+                    $info = 'consume_http=' .
+                        ($context['http_status'] ?? 'unknown');
+                    break;
+
+                case 'SSE_DELIVERY_ERROR':
+                case 'JSON_DELIVERY_ERROR':
+                    $message = (string) ($context['message'] ?? '');
+                    $code = $this->watchErrorCode($message);
+                    $info = substr(
+                        preg_replace('/[\r\n\t]+/', ' ', $message),
+                        0,
+                        140
+                    );
+                    break;
+            }
+
+            if ($code === null) {
+                return;
+            }
+
+            $directory = dirname($logPath);
+
+            if (!is_dir($directory)) {
+                @mkdir($directory, 0775, true);
+            }
+
+            $line =
+                date('Y-m-d H:i:s') . "\t" .
+                $requestId . "\t" .
+                $code . "\t" .
+                $info . PHP_EOL;
+
+            @file_put_contents(
+                $logPath,
+                $line,
+                FILE_APPEND | LOCK_EX
+            );
+        };
+
+        if ($token === '') {
+            return response()->json([
+                'error' => [
+                    'message' => 'Gateway response buffer token is missing.',
+                ],
+            ], 500);
+        }
+
+        /*
+         * Validate incoming request.
+         */
+
+        try {
+            $body = $request->getContent();
+
+            $payload = json_decode(
+                $body,
+                false,
+                512,
+                JSON_THROW_ON_ERROR
+            );
+
+            if (!is_object($payload)) {
+                throw new \RuntimeException(
+                    'Request body must be a JSON object.'
+                );
+            }
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => [
+                    'message' => 'Invalid JSON request.',
+                ],
+            ], 400);
+        }
+
+        $streamRequested = ($payload->stream ?? false) === true;
+
+        $log('CODEX_REQUEST_STARTED', [
+            'body_bytes' => strlen($body),
+            'stream' => $streamRequested,
+        ]);
+
+        /*
+         * Streaming response.
+         *
+         * HTTP 200 is opened before contacting Python.
+         * Heartbeats begin immediately.
+         */
+
+        if ($streamRequested) {
+
+            return response()->stream(
+
+                function () use (
+                    $body,
+                    $token,
+                    $requestId,
+                    $log
+                ): void {
+
+                    @set_time_limit(0);
+                    @ini_set('zlib.output_compression', '0');
+
+                    while (ob_get_level() > 0) {
+                        @ob_end_flush();
+                    }
+
+                    /*
+                     * Send one heartbeat immediately,
+                     * then at most one every five seconds.
+                     */
+
+                    $lastHeartbeatAt = 0.0;
+
+                    $heartbeat = function () use (
+                        &$lastHeartbeatAt
+                    ): void {
+
+                        $now = microtime(true);
+
+                        if (
+                            $now - $lastHeartbeatAt <
+                            self::HEARTBEAT_INTERVAL_SECONDS
+                        ) {
+                            return;
+                        }
+
+                        $lastHeartbeatAt = $now;
+
+                        echo ": heartbeat\n\n";
+
+                        $this->flushOutput();
+                    };
+
+                    try {
+
+                        // First bytes are sent immediately after HTTP 200.
+                        $heartbeat();
+
+                        $finalResponse = $this->processBufferedRequest(
+                            $body,
+                            $token,
+                            $requestId,
+                            $log,
+                            $heartbeat
+                        );
+
+                        $events = $this->responsesToSseEvents(
+                            $finalResponse
+                        );
+
+                        foreach ($events as $event) {
+                            echo $event;
+                            $this->flushOutput();
+                        }
+
+                    } catch (\Throwable $e) {
+
+                        $log('SSE_DELIVERY_ERROR', [
+                            'message' => $e->getMessage(),
+                        ]);
+
+                        echo $this->sseEvent('error', [
+                            'error' => [
+                                'message' => $e->getMessage(),
+                                'type' => 'server_error',
+                            ],
+                        ]);
+
+                        $this->flushOutput();
+                    }
+                },
+
+                200,
+
+                [
+                    'Content-Type' => 'text/event-stream; charset=utf-8',
+                    'Cache-Control' => 'no-cache, no-transform',
+                    'Connection' => 'keep-alive',
+                    'X-Accel-Buffering' => 'no',
+                ]
+            );
+        }
+
+        /*
+         * Non-streaming response.
+         */
+
+        try {
+
+            $finalResponse = $this->processBufferedRequest(
+                $body,
+                $token,
+                $requestId,
+                $log,
+                static function (): void {
+                    // Heartbeat is only used for SSE.
+                }
+            );
+
+            $log('CURRENT_FINAL_RESPONSE_RECEIVED', [
+                'response_status' => $finalResponse['status'] ?? null,
+            ]);
+
+            return response()->json(
+                $finalResponse,
+                200,
+                [
+                    'Cache-Control' => 'no-store',
+                ]
+            );
+
+        } catch (\Throwable $e) {
+
+            $status = (int) $e->getCode();
+
+            if ($status < 400 || $status > 599) {
+                $status = 502;
+            }
+
+            $log('JSON_DELIVERY_ERROR', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => [
+                    'message' => $e->getMessage(),
+                    'type' => 'server_error',
+                ],
+            ], $status);
+        }
+    }
+
+
+    /*
+     * Send request to Python.
+     *
+     * If Python reports 409, consume the previous response
+     * and retry the current request until it is accepted.
+     */
+
+    private function processBufferedRequest(
+        string $body,
+        string $token,
+        string $requestId,
+        callable $log,
+        callable $heartbeat
+    ): array {
+
+        while (true) {
+
+            $initial = $this->sendPythonRequest(
+                $body,
+                $requestId,
+                $heartbeat
+            );
+
+            $pythonStatus = $initial['status'];
+            $pythonJson = $initial['json'];
+
+            /*
+             * Another buffered response is still active.
+             */
+
+            if (
+                $pythonStatus === 409 &&
+                is_array($pythonJson) &&
+                ($pythonJson['status'] ?? null) === 'consumer_busy'
+            ) {
+
+                $log('PREVIOUS_BUFFERED_REQUEST_DETECTED');
+
+                /*
+                 * Wait until the previous response is consumed.
+                 * A previous 404 means another request already consumed it.
+                 * A previous 502 means its background task failed,
+                 * and Python has cleared the active state.
+                 */
+
+                $previousResponse = $this->pollConsume(
+                    $token,
+                    'previous',
+                    $log,
+                    $heartbeat
+                );
+
+                $log('PREVIOUS_BUFFERED_RESPONSE_RECEIVED', [
+                    'response_status' =>
+                        $previousResponse['status'] ?? 'already_consumed',
+                ]);
+
+                $log('CURRENT_REQUEST_RETRY_STARTED');
+
+                // Try the current request again.
+                continue;
+            }
+
+            /*
+             * Python must accept the current request with HTTP 202.
+             */
+
+            if ($pythonStatus !== 202) {
+
+                $log('CURRENT_REQUEST_NOT_ACCEPTED', [
+                    'status' => $pythonStatus,
+                ]);
+
+                $errorStatus = (
+                    $pythonStatus >= 400 &&
+                    $pythonStatus <= 599
+                ) ? $pythonStatus : 502;
+
+                throw new \RuntimeException(
+                    'Python rejected the request. HTTP ' .
+                    $pythonStatus . ': ' .
+                    json_encode(
+                        $pythonJson,
+                        JSON_UNESCAPED_UNICODE |
+                        JSON_UNESCAPED_SLASHES
+                    ),
+                    $errorStatus
+                );
+            }
+
+            break;
+        }
+
+        /*
+         * Current request accepted.
+         * Wait for its final response.
+         */
+
+        $finalResponse = $this->pollConsume(
+            $token,
+            'current',
+            $log,
+            $heartbeat
+        );
+
+        $log('CURRENT_FINAL_RESPONSE_RECEIVED', [
+            'response_status' => $finalResponse['status'] ?? null,
+        ]);
+
+        return $finalResponse;
+    }
+
+
+    /*
+     * Send request to Python over raw TCP.
+     */
+
+    private function sendPythonRequest(
+        string $body,
+        string $requestId,
+        callable $heartbeat
+    ): array {
+
+        $socket = $this->openPythonSocket();
+
+        try {
+
+            $headers =
+                "POST /v1/responses HTTP/1.1\r\n" .
+                "Host: 127.0.0.1:8088\r\n" .
+                "X-Gateway-Request-ID: {$requestId}\r\n" .
+                "Content-Type: application/json\r\n" .
+                "Accept: application/json\r\n" .
+                "Accept-Encoding: identity\r\n" .
+                "Content-Length: " . strlen($body) . "\r\n" .
+                "Connection: close\r\n" .
+                "\r\n";
+
+            $this->writeAll(
+                $socket,
+                $headers . $body,
+                $heartbeat
+            );
+
+            /*
+             * Do not sleep before reading the status line.
+             * The HTTP reader waits for Python while sending heartbeats.
+             */
+
+            $response = $this->readHttpResponse(
+                $socket,
+                $heartbeat,
+                'Python'
+            );
+
+            $decoded = json_decode(
+                $response['body'],
+                true
+            );
+
+            return [
+                'status' => $response['status'],
+                'json' => $decoded ?? $response['body'],
+            ];
+
+        } finally {
+
+            if (is_resource($socket)) {
+                fclose($socket);
+            }
+        }
+    }
+
+
+    /*
+     * Poll Python consume endpoint.
+     *
+     * HTTP 202: still processing.
+     * HTTP 200: final response is ready.
+     *
+     * For a previous response, 404 and 502 mean its slot
+     * is no longer occupied, so the current request can retry.
+     */
+
+    private function pollConsume(
+        string $token,
+        string $kind,
+        callable $log,
+        callable $heartbeat
+    ): array {
+
+        $pollCount = 0;
+
+        $pollInterval = max(
+            0,
+            (int) env('GATEWAY_POLL_INTERVAL_SECONDS', 2)
+        );
+
+        while (true) {
+
+            $pollCount++;
+
+            $result = $this->sendConsumeRequest(
+                $token,
+                $heartbeat
+            );
+
+            $pollStatus = $result['status'];
+            $payload = $result['json'];
+
+            /*
+             * Response is not ready.
+             */
+
+            if ($pollStatus === 202) {
+
+                $this->waitWithHeartbeat(
+                    $pollInterval,
+                    $heartbeat
+                );
+
+                continue;
+            }
+
+            /*
+             * Previous response was already consumed by
+             * another concurrent request.
+             */
+
+            if (
+                $kind === 'previous' &&
+                $pollStatus === 404
+            ) {
+                return [
+                    '_gateway_previous_already_consumed' => true,
+                ];
+            }
+
+            /*
+             * Previous background task failed.
+             * Python clears its active state when returning this 502.
+             * The current request can therefore be retried.
+             */
+
+            if (
+                $kind === 'previous' &&
+                $pollStatus === 502
+            ) {
+                return [
+                    '_gateway_previous_failed' => true,
+                ];
+            }
+
+            /*
+             * Final response is ready.
+             */
+
+            if ($pollStatus === 200) {
+
+                if (!is_array($payload)) {
+                    throw new \RuntimeException(
+                        "Invalid {$kind} buffered response JSON."
+                    );
+                }
+
+                return $payload;
+            }
+
+            /*
+             * Other consume errors are infrastructure errors.
+             */
+
+            $log('POLL_ERROR', [
+                'kind' => $kind,
+                'poll_number' => $pollCount,
+                'http_status' => $pollStatus,
+            ]);
+
+            throw new \RuntimeException(
+                "{$kind} consume failed with HTTP {$pollStatus}: " .
+                json_encode(
+                    $payload,
+                    JSON_UNESCAPED_UNICODE |
+                    JSON_UNESCAPED_SLASHES
+                )
+            );
+        }
+    }
+
+
+    /*
+     * Send consume request to Python.
+     */
+
+    private function sendConsumeRequest(
+        string $token,
+        callable $heartbeat
+    ): array {
+
+        $socket = $this->openPythonSocket();
+
+        try {
+
+            $body = '{}';
+
+            $headers =
+                "POST /api/internal/responses/consume HTTP/1.1\r\n" .
+                "Host: 127.0.0.1:8088\r\n" .
+                "X-Gateway-Internal-Token: {$token}\r\n" .
+                "Content-Type: application/json\r\n" .
+                "Accept: application/json\r\n" .
+                "Accept-Encoding: identity\r\n" .
+                "Content-Length: " . strlen($body) . "\r\n" .
+                "Connection: close\r\n" .
+                "\r\n";
+
+            $this->writeAll(
+                $socket,
+                $headers . $body,
+                $heartbeat
+            );
+
+            $response = $this->readHttpResponse(
+                $socket,
+                $heartbeat,
+                'Python consume'
+            );
+
+            $decoded = json_decode(
+                $response['body'],
+                true
+            );
+
+            return [
+                'status' => $response['status'],
+                'json' => $decoded ?? $response['body'],
+            ];
+
+        } finally {
+
+            if (is_resource($socket)) {
+                fclose($socket);
+            }
+        }
+    }
+
+
+    /*
+     * Open local Python TCP connection.
+     */
+
+    private function openPythonSocket()
+    {
+        $errno = 0;
+        $errstr = '';
+
+        $socket = @stream_socket_client(
+            self::PYTHON_URL,
+            $errno,
+            $errstr,
+            5
+        );
+
+        if (!is_resource($socket)) {
+            throw new \RuntimeException(
+                "Python connection failed: {$errstr} ({$errno})"
+            );
+        }
+
+        stream_set_blocking($socket, false);
+
+        return $socket;
+    }
+
+
+    /*
+     * Write all bytes without blocking indefinitely.
+     * Heartbeats are checked while waiting for socket writability.
+     */
+
+    private function writeAll(
+        $socket,
+        string $data,
+        callable $heartbeat
+    ): void {
+
+        $length = strlen($data);
+        $written = 0;
+
+        while ($written < $length) {
+
+            $write = [$socket];
+            $read = null;
+            $except = null;
+
+            $ready = @stream_select(
+                $read,
+                $write,
+                $except,
+                1,
+                0
+            );
+
+            if ($ready === false) {
+                throw new \RuntimeException(
+                    'Socket write wait failed.'
+                );
+            }
+
+            if ($ready === 0) {
+                $heartbeat();
+                continue;
+            }
+
+            $result = @fwrite(
+                $socket,
+                substr($data, $written)
+            );
+
+            if ($result === false) {
+                throw new \RuntimeException(
+                    'Failed to write request to Python.'
+                );
+            }
+
+            if ($result === 0) {
+
+                if (feof($socket)) {
+                    throw new \RuntimeException(
+                        'Python closed the connection during request write.'
+                    );
+                }
+
+                $heartbeat();
+                continue;
+            }
+
+            $written += $result;
+        }
+    }
+
+
+    /*
+     * Read an HTTP response while periodically sending heartbeats.
+     *
+     * Python's JSON endpoints normally provide Content-Length.
+     * Chunked responses are also supported.
+     */
+
+    private function readHttpResponse(
+        $socket,
+        callable $heartbeat,
+        string $source
+    ): array {
+
+        $buffer = '';
+
+        $readMore = function () use (
+            $socket,
+            $heartbeat,
+            $source,
+            &$buffer
+        ): void {
+
+            while (true) {
+
+                $read = [$socket];
+                $write = null;
+                $except = null;
+
+                $ready = @stream_select(
+                    $read,
+                    $write,
+                    $except,
+                    1,
+                    0
+                );
+
+                if ($ready === false) {
+                    throw new \RuntimeException(
+                        "{$source} socket read wait failed."
+                    );
+                }
+
+                if ($ready === 0) {
+                    $heartbeat();
+                    continue;
+                }
+
+                $chunk = @fread($socket, 8192);
+
+                if ($chunk === false) {
+                    throw new \RuntimeException(
+                        "Could not read {$source} response."
+                    );
+                }
+
+                if ($chunk === '') {
+
+                    if (feof($socket)) {
+                        throw new \RuntimeException(
+                            "{$source} closed the connection before the response was complete."
+                        );
+                    }
+
+                    $heartbeat();
+                    continue;
+                }
+
+                $buffer .= $chunk;
+
+                return;
+            }
+        };
+
+        $readLine = function () use (
+            &$buffer,
+            $readMore,
+            $source
+        ): string {
+
+            while (($position = strpos($buffer, "\n")) === false) {
+
+                if (strlen($buffer) > 65536) {
+                    throw new \RuntimeException(
+                        "{$source} HTTP header line is too large."
+                    );
+                }
+
+                $readMore();
+            }
+
+            $line = substr($buffer, 0, $position + 1);
+            $buffer = substr($buffer, $position + 1);
+
+            return $line;
+        };
+
+        $readBytes = function (int $length) use (
+            &$buffer,
+            $readMore
+        ): string {
+
+            while (strlen($buffer) < $length) {
+                $readMore();
+            }
+
+            $result = substr($buffer, 0, $length);
+            $buffer = substr($buffer, $length);
+
+            return $result;
+        };
+
+        /*
+         * Status line.
+         */
+
+        $statusLine = trim($readLine());
+
+        if (!preg_match(
+            '/^HTTP\/\d(?:\.\d)?\s+(\d{3})/',
+            $statusLine,
+            $matches
+        )) {
+            throw new \RuntimeException(
+                "Invalid {$source} HTTP status line: {$statusLine}"
+            );
+        }
+
+        $status = (int) $matches[1];
+
+        /*
+         * Headers.
+         */
+
+        $headers = [];
+
+        while (true) {
+
+            $line = $readLine();
+
+            if ($line === "\r\n" || $line === "\n") {
+                break;
+            }
+
+            $separator = strpos($line, ':');
+
+            if ($separator === false) {
+                continue;
+            }
+
+            $name = strtolower(
+                trim(substr($line, 0, $separator))
+            );
+
+            $value = trim(
+                substr($line, $separator + 1)
+            );
+
+            $headers[$name] = $value;
+        }
+
+        /*
+         * Chunked response.
+         */
+
+        $transferEncoding = strtolower(
+            $headers['transfer-encoding'] ?? ''
+        );
+
+        if (str_contains($transferEncoding, 'chunked')) {
+
+            $body = '';
+
+            while (true) {
+
+                $chunkLine = trim($readLine());
+                $chunkSizeText = explode(';', $chunkLine, 2)[0];
+
+                if (
+                    $chunkSizeText === '' ||
+                    !ctype_xdigit($chunkSizeText)
+                ) {
+                    throw new \RuntimeException(
+                        "Invalid {$source} HTTP chunk size."
+                    );
+                }
+
+                $chunkSize = hexdec($chunkSizeText);
+
+                if ($chunkSize === 0) {
+
+                    // Read optional trailing headers.
+                    while (trim($readLine()) !== '') {
+                        // Ignore trailers.
+                    }
+
+                    break;
+                }
+
+                $body .= $readBytes($chunkSize);
+
+                $chunkEnding = $readBytes(2);
+
+                if ($chunkEnding !== "\r\n") {
+                    throw new \RuntimeException(
+                        "Invalid {$source} HTTP chunk ending."
+                    );
+                }
+            }
+
+        } else {
+
+            /*
+             * Content-Length response.
+             */
+
+            if (
+                !isset($headers['content-length']) ||
+                !ctype_digit($headers['content-length'])
+            ) {
+                throw new \RuntimeException(
+                    "{$source} response has no valid Content-Length."
+                );
+            }
+
+            $bodyLength = (int) $headers['content-length'];
+
+            $body = $readBytes($bodyLength);
+        }
+
+        return [
+            'status' => $status,
+            'headers' => $headers,
+            'body' => $body,
+        ];
+    }
+
+
+    /*
+     * Wait for the configured poll interval.
+     * Check heartbeat during the wait.
+     */
+
+    private function waitWithHeartbeat(
+        int $seconds,
+        callable $heartbeat
+    ): void {
+
+        if ($seconds <= 0) {
+            $heartbeat();
+            return;
+        }
+
+        $endAt = microtime(true) + $seconds;
+
+        while (true) {
+
+            $remaining = $endAt - microtime(true);
+
+            if ($remaining <= 0) {
+                break;
+            }
+
+            $heartbeat();
+
+            usleep(
+                (int) min(
+                    200000,
+                    $remaining * 1000000
+                )
+            );
+        }
+
+        $heartbeat();
+    }
+
+
+    /*
+     * Convert complete Responses API object to SSE events.
+     */
+
+    private function responsesToSseEvents(array $response): array
+    {
+        $responseId = $response['id'] ?? 'resp_gateway';
+        $output = $response['output'] ?? [];
+
+        if (!is_array($output)) {
+            $output = [];
+        }
+
+        $events = [];
+
+        $inProgressResponse = $response;
+        $inProgressResponse['status'] = 'in_progress';
+        $inProgressResponse['output'] = [];
+
+        $events[] = $this->sseEvent('response.created', [
+            'response' => $inProgressResponse,
+        ]);
+
+        $events[] = $this->sseEvent('response.in_progress', [
+            'response' => $inProgressResponse,
+        ]);
+
+        foreach ($output as $outputIndex => $item) {
+
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $itemId = $item['id'] ?? "item_{$outputIndex}";
+
+            $addedItem = $item;
+            $addedItem['status'] = 'in_progress';
+
+            $events[] = $this->sseEvent(
+                'response.output_item.added',
+                [
+                    'response_id' => $responseId,
+                    'output_index' => $outputIndex,
+                    'item' => $addedItem,
+                ]
+            );
+
+            if (($item['type'] ?? null) === 'message') {
+
+                $content = $item['content'] ?? [];
+
+                if (!is_array($content)) {
+                    $content = [];
+                }
+
+                foreach ($content as $contentIndex => $part) {
+
+                    if (!is_array($part)) {
+                        continue;
+                    }
+
+                    $partType = $part['type'] ?? '';
+
+                    if ($partType === 'refusal') {
+
+                        $refusal = $part['refusal'] ?? '';
+
+                        $events[] = $this->sseEvent(
+                            'response.content_part.added',
+                            [
+                                'response_id' => $responseId,
+                                'item_id' => $itemId,
+                                'output_index' => $outputIndex,
+                                'content_index' => $contentIndex,
+                                'part' => [
+                                    'type' => 'refusal',
+                                    'refusal' => '',
+                                ],
+                            ]
+                        );
+
+                        if ($refusal !== '') {
+                            $events[] = $this->sseEvent(
+                                'response.refusal.delta',
+                                [
+                                    'response_id' => $responseId,
+                                    'item_id' => $itemId,
+                                    'output_index' => $outputIndex,
+                                    'content_index' => $contentIndex,
+                                    'delta' => $refusal,
+                                ]
+                            );
+                        }
+
+                        $events[] = $this->sseEvent(
+                            'response.refusal.done',
+                            [
+                                'response_id' => $responseId,
+                                'item_id' => $itemId,
+                                'output_index' => $outputIndex,
+                                'content_index' => $contentIndex,
+                                'refusal' => $refusal,
+                            ]
+                        );
+
+                        $events[] = $this->sseEvent(
+                            'response.content_part.done',
+                            [
+                                'response_id' => $responseId,
+                                'item_id' => $itemId,
+                                'output_index' => $outputIndex,
+                                'content_index' => $contentIndex,
+                                'part' => $part,
+                            ]
+                        );
+
+                        continue;
+                    }
+
+                    $text = $part['text'] ?? '';
+
+                    $emptyPart = $part;
+                    $emptyPart['text'] = '';
+
+                    $events[] = $this->sseEvent(
+                        'response.content_part.added',
+                        [
+                            'response_id' => $responseId,
+                            'item_id' => $itemId,
+                            'output_index' => $outputIndex,
+                            'content_index' => $contentIndex,
+                            'part' => $emptyPart,
+                        ]
+                    );
+
+                    if (is_string($text) && $text !== '') {
+
+                        $events[] = $this->sseEvent(
+                            'response.output_text.delta',
+                            [
+                                'response_id' => $responseId,
+                                'item_id' => $itemId,
+                                'output_index' => $outputIndex,
+                                'content_index' => $contentIndex,
+                                'delta' => $text,
+                            ]
+                        );
+                    }
+
+                    $events[] = $this->sseEvent(
+                        'response.output_text.done',
+                        [
+                            'response_id' => $responseId,
+                            'item_id' => $itemId,
+                            'output_index' => $outputIndex,
+                            'content_index' => $contentIndex,
+                            'text' => is_string($text) ? $text : '',
+                        ]
+                    );
+
+                    $events[] = $this->sseEvent(
+                        'response.content_part.done',
+                        [
+                            'response_id' => $responseId,
+                            'item_id' => $itemId,
+                            'output_index' => $outputIndex,
+                            'content_index' => $contentIndex,
+                            'part' => $part,
+                        ]
+                    );
+                }
+
+            } elseif (($item['type'] ?? null) === 'function_call') {
+
+                $arguments = $item['arguments'] ?? '';
+
+                $events[] = $this->sseEvent(
+                    'response.function_call_arguments.delta',
+                    [
+                        'response_id' => $responseId,
+                        'item_id' => $itemId,
+                        'output_index' => $outputIndex,
+                        'delta' => $arguments,
+                    ]
+                );
+
+                $events[] = $this->sseEvent(
+                    'response.function_call_arguments.done',
+                    [
+                        'response_id' => $responseId,
+                        'item_id' => $itemId,
+                        'output_index' => $outputIndex,
+                        'arguments' => $arguments,
+                    ]
+                );
+            }
+
+            $events[] = $this->sseEvent(
+                'response.output_item.done',
+                [
+                    'response_id' => $responseId,
+                    'output_index' => $outputIndex,
+                    'item' => $item,
+                ]
+            );
+        }
+
+        $responseStatus = $response['status'] ?? 'completed';
+
+        $terminalEvent = match ($responseStatus) {
+            'completed' => 'response.completed',
+            'incomplete' => 'response.incomplete',
+            'failed' => 'response.failed',
+            default => 'response.completed',
+        };
+
+        $events[] = $this->sseEvent(
+            $terminalEvent,
+            [
+                'response' => $response,
+            ]
+        );
+
+        return $events;
+    }
+
+
+    /*
+     * Format one SSE event.
+     */
+
+    private function sseEvent(
+        string $eventType,
+        array $payload
+    ): string {
+
+        $payload['type'] = $eventType;
+
+        return
+            "event: {$eventType}\n" .
+            'data: ' .
+            json_encode(
+                $payload,
+                JSON_UNESCAPED_UNICODE |
+                JSON_UNESCAPED_SLASHES |
+                JSON_THROW_ON_ERROR
+            ) .
+            "\n\n";
+    }
+
+
+    /*
+     * Classify infrastructure errors for the short watch log.
+     */
+
+    private function watchErrorCode(string $message): string
+    {
+        $message = strtolower($message);
+
+        if (
+            str_contains($message, 'timeout') ||
+            str_contains($message, 'timed out')
+        ) {
+            return 'TIME';
+        }
+
+        if (
+            str_contains($message, 'connection') ||
+            str_contains($message, 'socket') ||
+            str_contains($message, 'closed') ||
+            str_contains($message, 'unexpected end') ||
+            str_contains($message, 'could not read') ||
+            str_contains($message, 'failed to write')
+        ) {
+            return 'DISC';
+        }
+
+        return 'ERR';
+    }
+
+
+    /*
+     * Flush output to the client.
+     */
+
+    private function flushOutput(): void
+    {
+        if (ob_get_level() > 0) {
+            @ob_flush();
+        }
+
+        flush();
+    }
+}
+
+
+[yhkcinki@nhs03 rezvan]$ php artisan route:list | grep "gateway"
+  GET|HEAD  api.rezvan.biz/gateway/health ..................................................... routes/api.php:10
+  POST      api.rezvan.biz/gateway/internal/responses/ready ..................... GatewayController@responseReady
+  POST      api.rezvan.biz/gateway/mt5 .................................................... GatewayController@mt5
+  GET|HEAD  api.rezvan.biz/gateway/mt5/responses/{clientId} ..................... GatewayController@pollResponses
+  POST      api.rezvan.biz/gateway/v1/responses ......................................... GatewayController@codex
+[yhkcinki@nhs03 rezvan]$
