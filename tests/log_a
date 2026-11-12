@@ -38,7 +38,7 @@ int PollResponses(string clientId, uchar &output[], int outputCapacity);
 #define HISTORY_CAPACITY 100
 
 #define H1_INITIAL_COUNT 100
-#define H6_INITIAL_COUNT 100
+
 
 
 //+------------------------------------------------------------------+
@@ -509,13 +509,22 @@ bool BootstrapHistory()
       h1Rates
    );
 
+   datetime h1OldestTime = h1Rates[H1_INITIAL_COUNT - 1].time;
+   datetime h1NewestTime = h1Rates[0].time;
+   
    int h6Copied = CopyRates(
       _Symbol,
       PERIOD_H6,
-      1,
-      H6_INITIAL_COUNT,
+      h1OldestTime,
+      h1NewestTime,
       h6Rates
    );
+
+   if(h6Copied <= 0)
+   {
+      Print("[BOOTSTRAP] H6 history not ready: ", h6Copied);
+      return false;
+   }
 
    if(h1Copied != H1_INITIAL_COUNT)
    {
@@ -552,22 +561,36 @@ bool BootstrapHistory()
 
    }
 
-   // H6: oldest to newest.
-   for(int i = H6_INITIAL_COUNT - 1; i >= 0; i--)
-   {
-      int shift = i + 1;
 
+   // H6: oldest to newest, within the H1 time window.
+   for(int i = h6Copied - 1; i >= 0; i--)
+   {
+      int shift = iBarShift(
+         _Symbol,
+         PERIOD_H6,
+         h6Rates[i].time,
+         true
+      );
+   
+      if(shift < 1)
+      {
+         Print(
+            "[BOOTSTRAP ERROR] Invalid H6 shift: ",
+            h6Rates[i].time
+         );
+         return false;
+      }
+   
       FeedH6Candle(
          h6Rates[i],
          shift
       );
-      
+   
       ProcessH6Candle(
          h6Rates[i],
          shift,
          true
       );
-
    }
 
    // Remember current open candle times.
