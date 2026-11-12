@@ -315,6 +315,152 @@ class GatewayController extends Controller
         }
     }
 
+    /*
+     * Receive MT5 payload and forward it to the dedicated Python room.
+     */
+    public function mt5(Request $request): JsonResponse
+    {
+        $requestId = bin2hex(random_bytes(16));
+
+        try {
+            $body = $request->getContent();
+
+            $payload = json_decode(
+                $body,
+                false,
+                512,
+                JSON_THROW_ON_ERROR
+            );
+
+            if (!is_object($payload)) {
+                return response()->json([
+                    'error' => [
+                        'message' => 'Request body must be a JSON object.',
+                    ],
+                ], 400);
+            }
+
+            $clientId = $payload->clientId
+                ?? $payload->client_id
+                ?? null;
+
+            if (!is_string($clientId) || trim($clientId) === '') {
+                return response()->json([
+                    'error' => [
+                        'message' => 'A valid clientId is required.',
+                    ],
+                ], 422);
+            }
+
+            $result = $this->sendMt5PythonRequest(
+                'POST',
+                '/v1/mt5/ingest',
+                $body,
+                $requestId
+            );
+
+            $this->logMt5Event('POST', [
+                'request_id' => $requestId,
+                'client_id' => $clientId,
+                'python_status' => $result['status'],
+            ]);
+
+            $status = $result['status'];
+
+            if ($status < 200 || $status >= 300) {
+                $status = ($status >= 400 && $status < 500)
+                    ? $status
+                    : 502;
+            }
+
+            return response()->json(
+                $result['json'],
+                $status,
+                ['Cache-Control' => 'no-store']
+            );
+
+        } catch (\JsonException $e) {
+            return response()->json([
+                'error' => [
+                    'message' => 'Invalid JSON request.',
+                ],
+            ], 400);
+
+        } catch (\Throwable $e) {
+            $this->logMt5Event('POST_ERROR', [
+                'request_id' => $requestId,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => [
+                    'message' => 'MT5 gateway could not process the request.',
+                ],
+            ], 502);
+        }
+    }
+
+
+
+    /*
+     * Retrieve cumulative MT5 statistics for a client.
+     */
+    public function pollResponses(string $clientId): JsonResponse
+    {
+        if (trim($clientId) === '') {
+            return response()->json([
+                'error' => [
+                    'message' => 'A valid clientId is required.',
+                ],
+            ], 422);
+        }
+
+        try {
+            $result = $this->sendMt5PythonRequest(
+                'GET',
+                '/v1/mt5/response/' . rawurlencode($clientId),
+                '',
+                bin2hex(random_bytes(16))
+            );
+
+            $this->logMt5Event('GET', [
+                'client_id' => $clientId,
+                'python_status' => $result['status'],
+            ]);
+
+            $status = $result['status'];
+
+            if ($status < 200 || $status >= 300) {
+                $status = ($status >= 400 && $status < 500)
+                    ? $status
+                    : 502;
+            }
+
+            return response()->json(
+                $result['json'],
+                $status,
+                ['Cache-Control' => 'no-store']
+            );
+
+        } catch (\Throwable $e) {
+            $this->logMt5Event('GET_ERROR', [
+                'client_id' => $clientId,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => [
+                    'message' => 'Could not retrieve MT5 statistics.',
+                ],
+            ], 502);
+        }
+    }
+
+
+
+
+
+
 
     /*
      * Send request to Python.
@@ -427,6 +573,85 @@ class GatewayController extends Controller
 
         return $finalResponse;
     }
+
+
+    /*
+     * Dedicated HTTP-over-TCP helper for MT5.
+     * Does not modify the existing Codex transport.
+     */
+    private function sendMt5PythonRequest(
+        string $method,
+        string $path,
+        string $body,
+        string $requestId
+    ): array {
+
+        if (!in_array($method, ['GET', 'POST'], true)) {
+            throw new \InvalidArgumentException(
+                'Unsupported MT5 HTTP method.'
+            );
+        }
+
+        if ($path === '' || $path[0] !== '/') {
+            throw new \InvalidArgumentException(
+                'Invalid MT5 Python endpoint path.'
+            );
+        }
+
+        $socket = $this->openPythonSocket();
+
+        try {
+            $headers =
+                "{$method} {$path} HTTP/1.1\r\n" .
+                "Host: 127.0.0.1:8088\r\n" .
+                "X-Gateway-Request-ID: {$requestId}\r\n" .
+                "Content-Type: application/json\r\n" .
+                "Accept: application/json\r\n" .
+                "Accept-Encoding: identity\r\n" .
+                "Content-Length: " . strlen($body) . "\r\n" .
+                "Connection: close\r\n" .
+                "\r\n";
+
+            $heartbeat = static function (): void {
+                // MT5 requests do not use SSE heartbeats.
+            };
+
+            $this->writeAll(
+                $socket,
+                $headers . $body,
+                $heartbeat
+            );
+
+            $response = $this->readHttpResponse(
+                $socket,
+                $heartbeat,
+                'Python MT5'
+            );
+
+            $decoded = json_decode(
+                $response['body'],
+                true
+            );
+
+            return [
+                'status' => $response['status'],
+                'json' => $decoded ?? [
+                    'error' => [
+                        'message' => 'Python returned invalid JSON.',
+                        'raw_response' => $response['body'],
+                    ],
+                ],
+            ];
+
+        } finally {
+            if (is_resource($socket)) {
+                fclose($socket);
+            }
+        }
+    }
+
+
+
 
 
     /*
@@ -661,6 +886,46 @@ class GatewayController extends Controller
             }
         }
     }
+
+
+
+
+
+
+    /*
+     * Write concise MT5 gateway events to a dedicated log.
+     */
+    private function logMt5Event(
+        string $event,
+        array $context = []
+    ): void {
+
+        $logPath = storage_path('logs/mt5-gateway.log');
+        $directory = dirname($logPath);
+
+        if (!is_dir($directory)) {
+            @mkdir($directory, 0775, true);
+        }
+
+        $line = date('Y-m-d H:i:s') . "\t" .
+            $event . "\t" .
+            json_encode(
+                $context,
+                JSON_UNESCAPED_UNICODE |
+                JSON_UNESCAPED_SLASHES
+            ) .
+            PHP_EOL;
+
+        @file_put_contents(
+            $logPath,
+            $line,
+            FILE_APPEND | LOCK_EX
+        );
+    }
+
+
+
+
 
 
     /*
