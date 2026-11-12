@@ -881,7 +881,7 @@ async def mt5_response(client_id: str):
     return {
         "success": True,
         "client_id": MT5_CLIENT_ID,
-        "statistics": _get_mt5_stats(),
+        "statistics": 2145,
     }
     
 @app.get("/", response_class=HTMLResponse)
