@@ -340,18 +340,6 @@ class GatewayController extends Controller
                 ], 400);
             }
 
-            $clientId = $payload->clientId
-                ?? $payload->client_id
-                ?? null;
-
-            if (!is_string($clientId) || trim($clientId) === '') {
-                return response()->json([
-                    'error' => [
-                        'message' => 'A valid clientId is required.',
-                    ],
-                ], 422);
-            }
-
             $result = $this->sendMt5PythonRequest(
                 'POST',
                 '/v1/mt5/ingest',
@@ -361,7 +349,6 @@ class GatewayController extends Controller
 
             $this->logMt5Event('POST', [
                 'request_id' => $requestId,
-                'client_id' => $clientId,
                 'python_status' => $result['status'],
             ]);
 
@@ -407,13 +394,7 @@ class GatewayController extends Controller
      */
     public function pollResponses(string $clientId): JsonResponse
     {
-        if (trim($clientId) === '') {
-            return response()->json([
-                'error' => [
-                    'message' => 'A valid clientId is required.',
-                ],
-            ], 422);
-        }
+        $clientId = 'mt5_terminal_01';
 
         try {
             $result = $this->sendMt5PythonRequest(
