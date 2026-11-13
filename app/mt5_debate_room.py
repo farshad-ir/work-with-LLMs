@@ -78,6 +78,16 @@ def init_mt5_debate_db() -> None:
         """)
 
         conn.execute("""
+            CREATE TABLE IF NOT EXISTS mt5_receive_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                received_at TEXT NOT NULL,
+                message_type TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                payload_json TEXT NOT NULL
+            )
+        """)
+
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS mt5_candles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
 
@@ -580,13 +590,60 @@ def store_mt5_message(payload: dict) -> dict:
             "request_debate": request_debate,
         }
 
+def _record_mt5_receive_event(payload: dict) -> None:
+    """
+    Record every received MT5 payload before validation
+    and duplicate-message detection.
+    """
+
+    raw_payload = (
+        payload
+        if isinstance(payload, dict)
+        else {"_raw_value": payload}
+    )
+
+    payload_json = json.dumps(
+        raw_payload,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+    message_type = str(
+        raw_payload.get("message_type") or "UNKNOWN"
+    )
+
+    symbol = str(
+        raw_payload.get("symbol") or "UNKNOWN"
+    )
+
+    with get_db_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO mt5_receive_events (
+                received_at,
+                message_type,
+                symbol,
+                payload_json
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                _now(),
+                message_type,
+                symbol,
+                payload_json,
+            ),
+        )
+
+
 def process_mt5_message(payload: dict) -> dict:
     """
     Validate and store an incoming MT5 message.
 
     Debate execution is intentionally handled separately.
     """
-
+    
+    _record_mt5_receive_event(payload)
     normalized_payload = validate_mt5_message(payload)
 
     storage_result = store_mt5_message(
@@ -603,169 +660,126 @@ def process_mt5_message(payload: dict) -> dict:
     }
 
 
-def get_mt5_receive_report(limit: int = 10) -> dict:
+def get_mt5_receive_report() -> dict:
     """
-    Build a report of recently received and processed MT5 messages.
-
-    The report includes:
-    - Message type and symbol
-    - Message status and received time
-    - Number of candles submitted
-    - Number of candles actually stored
-    - Duplicate candle count
-    - Observer data availability
+    Return a plain-English report about the latest
+    MT5 payload received by the server.
     """
-
-    limit = max(1, min(int(limit), 50))
 
     with get_db_connection() as conn:
-        messages = conn.execute(
+        event = conn.execute(
             """
             SELECT
-                message_id,
                 message_type,
                 symbol,
-                received_at,
-                status,
-                payload_json
-            FROM mt5_messages
-            WHERE status IN (
-                'stored',
-                'stored_with_duplicates',
-                'duplicate_candles'
-            )
+                payload_json,
+                received_at
+            FROM mt5_receive_events
             ORDER BY id DESC
-            LIMIT ?
-            """,
-            (limit,),
-        ).fetchall()
+            LIMIT 1
+            """
+        ).fetchone()
 
-        reports = []
+    if event is None:
+        return {
+            "report": "The server has not received any MT5 message yet."
+        }
 
-        for message in messages:
-            payload = json.loads(message["payload_json"] or "{}")
+    payload = json.loads(
+        event["payload_json"]
+    )
 
-            message_type = message["message_type"]
-            symbol = message["symbol"]
+    message_type = event["message_type"]
+    symbol = event["symbol"]
 
+    h1_count = 0
+    h6_count = 0
 
+    if message_type == "INIT":
 
-            if message_type == "CANDLE_UPDATE":
-                candle_items = [
-                    (payload.get("timeframe"), candle)
-                    for candle in payload.get("candles", [])
-                ]
+        timeframes = payload.get("timeframes", {})
 
-            
-            elif message_type == "INIT":
-                candle_items = [
-                    (timeframe, candle)
-                    for timeframe, candles in
-                    payload.get("timeframes", {}).items()
-                    for candle in candles
-                ]
-            else:
-                candle_items = []
+        if isinstance(timeframes, dict):
 
-            inserted_rows = conn.execute(
-                """
-                SELECT
-                    timeframe,
-                    COUNT(*) AS candle_count,
-                    SUM(
-                        CASE WHEN river_center IS NOT NULL
-                        THEN 1 ELSE 0 END
-                    ) AS river_center_count,
-                    SUM(
-                        CASE WHEN river_width_pips IS NOT NULL
-                        THEN 1 ELSE 0 END
-                    ) AS river_width_count,
-                    SUM(
-                        CASE WHEN ma_bifurcation_direction IS NOT NULL
-                        THEN 1 ELSE 0 END
-                    ) AS ma_bifurcation_count
-                FROM mt5_candles
-                WHERE source_message_id = ?
-                GROUP BY timeframe
-                """,
-                (message["message_id"],),
-            ).fetchall()
+            h1_data = timeframes.get("H1", {})
+            h6_data = timeframes.get("H6", {})
 
-            stored_by_timeframe = {}
-
-            for row in inserted_rows:
-                stored_by_timeframe[row["timeframe"]] = {
-                    "stored_candles": row["candle_count"],
-                    "river_center": row["river_center_count"] or 0,
-                    "river_width": row["river_width_count"] or 0,
-                    "ma_bifurcation": row["ma_bifurcation_count"] or 0,
-                }
-
-            submitted_by_timeframe = {}
-
-            for timeframe, candle in candle_items:
-                if not timeframe:
-                    continue
-
-                submitted_by_timeframe.setdefault(
-                    timeframe,
-                    {
-                        "submitted_candles": 0,
-                        "river_center": 0,
-                        "river_width": 0,
-                        "ma_bifurcation": 0,
-                    },
-                )
-
-                submitted = submitted_by_timeframe[timeframe]
-                submitted["submitted_candles"] += 1
-
-                if candle.get("river_center") is not None:
-                    submitted["river_center"] += 1
-
-                if candle.get("river_width_pips") is not None:
-                    submitted["river_width"] += 1
-
-                if candle.get("ma_bifurcation") is not None:
-                    submitted["ma_bifurcation"] += 1
-
-            timeframe_reports = {}
-
-            for timeframe, submitted in submitted_by_timeframe.items():
-                stored = stored_by_timeframe.get(timeframe, {})
-
-                stored_count = stored.get("stored_candles", 0)
-
-                timeframe_reports[timeframe] = {
-                    **submitted,
-                    "stored_candles": stored_count,
-                    "duplicate_candles": max(
-                        0,
-                        submitted["submitted_candles"] - stored_count,
-                    ),
-                    "stored_observers": {
-                        "river_center": stored.get("river_center", 0),
-                        "river_width": stored.get("river_width", 0),
-                        "ma_bifurcation": stored.get(
-                            "ma_bifurcation", 0
-                        ),
-                    },
-                }
-
-            reports.append(
-                {
-                    "message_id": message["message_id"],
-                    "message_type": message_type,
-                    "symbol": symbol,
-                    "received_at": message["received_at"],
-                    "status": message["status"],
-                    "timeframes": timeframe_reports,
-                }
+            h1_candles = (
+                h1_data.get("candles", [])
+                if isinstance(h1_data, dict)
+                else []
             )
+
+            h6_candles = (
+                h6_data.get("candles", [])
+                if isinstance(h6_data, dict)
+                else []
+            )
+
+            h1_count = (
+                len(h1_candles)
+                if isinstance(h1_candles, list)
+                else 0
+            )
+
+            h6_count = (
+                len(h6_candles)
+                if isinstance(h6_candles, list)
+                else 0
+            )
+
+    elif message_type == "CANDLE_UPDATE":
+
+        timeframe = payload.get("timeframe")
+        candles = payload.get("candles", [])
+
+        candle_count = (
+            len(candles)
+            if isinstance(candles, list)
+            else 0
+        )
+
+        if timeframe == "H1":
+            h1_count = candle_count
+
+        elif timeframe == "H6":
+            h6_count = candle_count
+
+    total_count = h1_count + h6_count
+
+    init_status = (
+        "yes"
+        if message_type == "INIT"
+        else "no"
+    )
+
+    h1_label = (
+        "candle"
+        if h1_count == 1
+        else "candles"
+    )
+
+    h6_label = (
+        "candle"
+        if h6_count == 1
+        else "candles"
+    )
+
+    total_label = (
+        "candle"
+        if total_count == 1
+        else "candles"
+    )
+
+    report_text = (
+        f"The server received a {message_type} JSON message "
+        f"for {symbol}. "
+        f"INIT message: {init_status}. "
+        f"The message contained {h1_count} H1 {h1_label} "
+        f"and {h6_count} H6 {h6_label}. "
+        f"Total candles received: {total_count}."
+    )
 
     return {
-        "success": True,
-        "report_generated_at": datetime.now(timezone.utc).isoformat(),
-        "message_count": len(reports),
-        "messages": reports,
+        "report": report_text
     }
