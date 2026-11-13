@@ -852,40 +852,40 @@ async def health():
 @app.post("/v1/mt5/ingest")
 async def mt5_ingest(request: Request):
     
-        try:
-            raw_body = await request.body()
-            payload = json.loads(raw_body)
+    try:
+        raw_body = await request.body()
+        payload = json.loads(raw_body)
 
-        except Exception:
-            raise HTTPException(
-                status_code=400,
-                detail="Request body must be valid JSON.",
-            ) from None
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Request body must be valid JSON.",
+        ) from None
 
-        if not isinstance(payload, dict):
-            raise HTTPException(
-                status_code=400,
-                detail="Request body must be a JSON object.",
-            )
+    if not isinstance(payload, dict):
+        raise HTTPException(
+            status_code=400,
+            detail="Request body must be a JSON object.",
+        )
 
-        _record_mt5_stats(raw_body)
+    _record_mt5_stats(raw_body)
 
-        try:
-            processing_result = process_mt5_message(payload)
+    try:
+        processing_result = process_mt5_message(payload)
 
-        except ValueError as exc:
-            raise HTTPException(
-                status_code=400,
-                detail=str(exc),
-            ) from None
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from None
 
-        return {
-            "success": True,
-            "consumer": "mt5",
-            "client_id": MT5_CLIENT_ID,
-            "received": True,
-            "processing": processing_result,
-        }
+    return {
+        "success": True,
+        "consumer": "mt5",
+        "client_id": MT5_CLIENT_ID,
+        "received": True,
+        "processing": processing_result,
+    }
 
 
 @app.get("/v1/mt5/response/{client_id}")
