@@ -327,9 +327,9 @@ string BuildCandleJson(
 
    string messageId =
       "CANDLE-" +
+      _Symbol + "-" +
       timeframe + "-" +
-      IntegerToString((long)bar.time) + "-" +
-      IntegerToString(GetTickCount());
+      IntegerToString((long)bar.time);
 
    string data = "{";
 
