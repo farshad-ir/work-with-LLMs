@@ -325,8 +325,17 @@ string BuildCandleJson(
       TIME_DATE | TIME_MINUTES
    );
 
+   string messageId =
+      "CANDLE-" +
+      timeframe + "-" +
+      IntegerToString((long)bar.time) + "-" +
+      IntegerToString(GetTickCount());
+
    string data = "{";
 
+   data += "\"message_type\":\"CANDLE_UPDATE\",";
+   data += "\"message_id\":\"" + messageId + "\",";
+   data += "\"request_debate\":true,";
    data += "\"cover_letter\":\"From MT5 to AI\",";
    data += "\"symbol\":\"" + _Symbol + "\",";
    data += "\"timeframe\":\"" + timeframe + "\",";
