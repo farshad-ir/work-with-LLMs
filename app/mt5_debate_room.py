@@ -556,3 +556,24 @@ def store_mt5_message(payload: dict) -> dict:
             "request_debate": request_debate,
         }
 
+def process_mt5_message(payload: dict) -> dict:
+    """
+    Validate and store an incoming MT5 message.
+
+    Debate execution is intentionally handled separately.
+    """
+
+    normalized_payload = validate_mt5_message(payload)
+
+    storage_result = store_mt5_message(
+        normalized_payload
+    )
+
+    return {
+        "success": True,
+        "message_type": normalized_payload["message_type"],
+        "message_id": normalized_payload["message_id"],
+        "symbol": normalized_payload["symbol"],
+        "storage": storage_result,
+        "debate_requested": storage_result["request_debate"],
+    }
