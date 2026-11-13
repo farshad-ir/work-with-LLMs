@@ -666,7 +666,7 @@ class SequentialResponsesMiddleware:
         finally:
             self.LOCK.release()
 
-MT5_REQUEST_LOCK = asyncio.Lock()
+
 
 MT5_CLIENT_ID = "mt5_terminal_01"
 
