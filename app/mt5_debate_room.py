@@ -601,3 +601,169 @@ def process_mt5_message(payload: dict) -> dict:
         "storage": storage_result,
         "debate_requested": storage_result["request_debate"],
     }
+
+
+def get_mt5_receive_report(limit: int = 10) -> dict:
+    """
+    Build a report of recently received and processed MT5 messages.
+
+    The report includes:
+    - Message type and symbol
+    - Message status and received time
+    - Number of candles submitted
+    - Number of candles actually stored
+    - Duplicate candle count
+    - Observer data availability
+    """
+
+    limit = max(1, min(int(limit), 50))
+
+    with get_db_connection() as conn:
+        messages = conn.execute(
+            """
+            SELECT
+                message_id,
+                message_type,
+                symbol,
+                received_at,
+                status,
+                payload_json
+            FROM mt5_messages
+            WHERE status IN (
+                'stored',
+                'stored_with_duplicates',
+                'duplicate_candles'
+            )
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+
+        reports = []
+
+        for message in messages:
+            payload = json.loads(message["payload_json"] or "{}")
+
+            message_type = message["message_type"]
+            symbol = message["symbol"]
+
+            if message_type == "CANDLE_UPDATE":
+                candle_items = [
+                    (
+                        payload.get("timeframe"),
+                        payload.get("candle", {}),
+                    )
+                ]
+            elif message_type == "INIT":
+                candle_items = [
+                    (timeframe, candle)
+                    for timeframe, candles in
+                    payload.get("timeframes", {}).items()
+                    for candle in candles
+                ]
+            else:
+                candle_items = []
+
+            inserted_rows = conn.execute(
+                """
+                SELECT
+                    timeframe,
+                    COUNT(*) AS candle_count,
+                    SUM(
+                        CASE WHEN river_center IS NOT NULL
+                        THEN 1 ELSE 0 END
+                    ) AS river_center_count,
+                    SUM(
+                        CASE WHEN river_width_pips IS NOT NULL
+                        THEN 1 ELSE 0 END
+                    ) AS river_width_count,
+                    SUM(
+                        CASE WHEN ma_bifurcation_direction IS NOT NULL
+                        THEN 1 ELSE 0 END
+                    ) AS ma_bifurcation_count
+                FROM mt5_candles
+                WHERE source_message_id = ?
+                GROUP BY timeframe
+                """,
+                (message["message_id"],),
+            ).fetchall()
+
+            stored_by_timeframe = {}
+
+            for row in inserted_rows:
+                stored_by_timeframe[row["timeframe"]] = {
+                    "stored_candles": row["candle_count"],
+                    "river_center": row["river_center_count"] or 0,
+                    "river_width": row["river_width_count"] or 0,
+                    "ma_bifurcation": row["ma_bifurcation_count"] or 0,
+                }
+
+            submitted_by_timeframe = {}
+
+            for timeframe, candle in candle_items:
+                if not timeframe:
+                    continue
+
+                submitted_by_timeframe.setdefault(
+                    timeframe,
+                    {
+                        "submitted_candles": 0,
+                        "river_center": 0,
+                        "river_width": 0,
+                        "ma_bifurcation": 0,
+                    },
+                )
+
+                submitted = submitted_by_timeframe[timeframe]
+                submitted["submitted_candles"] += 1
+
+                if candle.get("river_center") is not None:
+                    submitted["river_center"] += 1
+
+                if candle.get("river_width_pips") is not None:
+                    submitted["river_width"] += 1
+
+                if candle.get("ma_bifurcation") is not None:
+                    submitted["ma_bifurcation"] += 1
+
+            timeframe_reports = {}
+
+            for timeframe, submitted in submitted_by_timeframe.items():
+                stored = stored_by_timeframe.get(timeframe, {})
+
+                stored_count = stored.get("stored_candles", 0)
+
+                timeframe_reports[timeframe] = {
+                    **submitted,
+                    "stored_candles": stored_count,
+                    "duplicate_candles": max(
+                        0,
+                        submitted["submitted_candles"] - stored_count,
+                    ),
+                    "stored_observers": {
+                        "river_center": stored.get("river_center", 0),
+                        "river_width": stored.get("river_width", 0),
+                        "ma_bifurcation": stored.get(
+                            "ma_bifurcation", 0
+                        ),
+                    },
+                }
+
+            reports.append(
+                {
+                    "message_id": message["message_id"],
+                    "message_type": message_type,
+                    "symbol": symbol,
+                    "received_at": message["received_at"],
+                    "status": message["status"],
+                    "timeframes": timeframe_reports,
+                }
+            )
+
+    return {
+        "success": True,
+        "report_generated_at": datetime.now(timezone.utc).isoformat(),
+        "message_count": len(reports),
+        "messages": reports,
+    }
