@@ -1,1 +1,628 @@
-{"message_type":"INIT","message_id":"INIT-1794533802-1774395500","symbol":"EURUSD","timeframes":{"H1":{"candles":[{"time":"2026.11.06 21:00","open":1.11447,"high":1.11455,"low":1.11361,"close":1.11397,"tick_volume":2079,"spread_points":1,"river_center":1.11536,"river_width_pips":15.00,"ma_bifurcation":{"direction":"UNKNOWN"}},{"time":"2026.11.06 22:00","open":1.11397,"high":1.11424,"low":1.11366,"close":1.11421,"tick_volume":2063,"spread_points":1,"river_center":1.11521,"river_width_pips":12.90,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.06 23:00","open":1.11421,"high":1.11435,"low":1.11366,"close":1.11366,"tick_volume":1129,"spread_points":1,"river_center":1.11497,"river_width_pips":11.90,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.09 00:00","open":1.11375,"high":1.11498,"low":1.11366,"close":1.11464,"tick_volume":1909,"spread_points":1,"river_center":1.11492,"river_width_pips":10.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.09 01:00","open":1.11463,"high":1.11499,"low":1.11418,"close":1.11471,"tick_volume":2014,"spread_points":1,"river_center":1.11483,"river_width_pips":10.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.09 02:00","open":1.11471,"high":1.11517,"low":1.11466,"close":1.11473,"tick_volume":3103,"spread_points":1,"river_center":1.11480,"river_width_pips":9.20,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.09 03:00","open":1.11473,"high":1.11580,"low":1.11471,"close":1.11556,"tick_volume":2349,"spread_points":1,"river_center":1.11490,"river_width_pips":8.10,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.09 04:00","open":1.11556,"high":1.11567,"low":1.11521,"close":1.11548,"tick_volume":1793,"spread_points":1,"river_center":1.11499,"river_width_pips":6.70,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 05:00","open":1.11547,"high":1.11554,"low":1.11523,"close":1.11526,"tick_volume":1346,"spread_points":1,"river_center":1.11502,"river_width_pips":6.00,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 06:00","open":1.11526,"high":1.11593,"low":1.11511,"close":1.11583,"tick_volume":1168,"spread_points":1,"river_center":1.11508,"river_width_pips":6.10,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 07:00","open":1.11583,"high":1.11607,"low":1.11576,"close":1.11595,"tick_volume":1275,"spread_points":1,"river_center":1.11517,"river_width_pips":5.80,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 08:00","open":1.11595,"high":1.11663,"low":1.11588,"close":1.11652,"tick_volume":1613,"spread_points":1,"river_center":1.11533,"river_width_pips":7.40,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 09:00","open":1.11652,"high":1.11738,"low":1.11639,"close":1.11714,"tick_volume":2535,"spread_points":1,"river_center":1.11561,"river_width_pips":9.10,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 10:00","open":1.11714,"high":1.11903,"low":1.11708,"close":1.11871,"tick_volume":3583,"spread_points":1,"river_center":1.11609,"river_width_pips":12.70,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 11:00","open":1.11871,"high":1.11933,"low":1.11842,"close":1.11926,"tick_volume":2993,"spread_points":1,"river_center":1.11660,"river_width_pips":15.30,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 12:00","open":1.11926,"high":1.11957,"low":1.11902,"close":1.11919,"tick_volume":2062,"spread_points":1,"river_center":1.11700,"river_width_pips":16.30,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 13:00","open":1.11919,"high":1.11984,"low":1.11888,"close":1.11891,"tick_volume":2697,"spread_points":1,"river_center":1.11733,"river_width_pips":15.30,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 14:00","open":1.11891,"high":1.11936,"low":1.11857,"close":1.11923,"tick_volume":2764,"spread_points":1,"river_center":1.11766,"river_width_pips":15.30,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 15:00","open":1.11923,"high":1.12026,"low":1.11899,"close":1.12004,"tick_volume":4297,"spread_points":1,"river_center":1.11810,"river_width_pips":16.50,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 16:00","open":1.12004,"high":1.12021,"low":1.11901,"close":1.11967,"tick_volume":4526,"spread_points":1,"river_center":1.11846,"river_width_pips":16.60,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 17:00","open":1.11967,"high":1.11999,"low":1.11899,"close":1.11953,"tick_volume":4902,"spread_points":1,"river_center":1.11866,"river_width_pips":15.00,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 18:00","open":1.11953,"high":1.12049,"low":1.11925,"close":1.12036,"tick_volume":3512,"spread_points":1,"river_center":1.11891,"river_width_pips":13.00,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 19:00","open":1.12036,"high":1.12088,"low":1.12016,"close":1.12031,"tick_volume":1859,"spread_points":1,"river_center":1.11917,"river_width_pips":11.00,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 20:00","open":1.12031,"high":1.12073,"low":1.12016,"close":1.12051,"tick_volume":1057,"spread_points":1,"river_center":1.11945,"river_width_pips":10.00,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 21:00","open":1.12051,"high":1.12241,"low":1.12044,"close":1.12235,"tick_volume":4083,"spread_points":1,"river_center":1.11995,"river_width_pips":10.80,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 22:00","open":1.12235,"high":1.12250,"low":1.12196,"close":1.12218,"tick_volume":2417,"spread_points":1,"river_center":1.12036,"river_width_pips":11.00,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.09 23:00","open":1.12218,"high":1.12249,"low":1.12192,"close":1.12227,"tick_volume":1570,"spread_points":1,"river_center":1.12070,"river_width_pips":11.10,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 00:00","open":1.12227,"high":1.12227,"low":1.12142,"close":1.12187,"tick_volume":575,"spread_points":5,"river_center":1.12089,"river_width_pips":10.30,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 01:00","open":1.12187,"high":1.12239,"low":1.12187,"close":1.12221,"tick_volume":743,"spread_points":1,"river_center":1.12114,"river_width_pips":10.60,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 02:00","open":1.12221,"high":1.12225,"low":1.12160,"close":1.12206,"tick_volume":1273,"spread_points":1,"river_center":1.12137,"river_width_pips":11.10,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 03:00","open":1.12206,"high":1.12266,"low":1.12198,"close":1.12226,"tick_volume":1879,"spread_points":1,"river_center":1.12159,"river_width_pips":11.70,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 04:00","open":1.12226,"high":1.12243,"low":1.12167,"close":1.12198,"tick_volume":1660,"spread_points":1,"river_center":1.12163,"river_width_pips":9.80,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 05:00","open":1.12198,"high":1.12236,"low":1.12181,"close":1.12228,"tick_volume":1266,"spread_points":1,"river_center":1.12171,"river_width_pips":8.50,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 06:00","open":1.12228,"high":1.12282,"low":1.12208,"close":1.12281,"tick_volume":1009,"spread_points":1,"river_center":1.12185,"river_width_pips":7.20,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 07:00","open":1.12281,"high":1.12303,"low":1.12224,"close":1.12244,"tick_volume":1374,"spread_points":1,"river_center":1.12195,"river_width_pips":6.70,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 08:00","open":1.12243,"high":1.12322,"low":1.12243,"close":1.12281,"tick_volume":2005,"spread_points":1,"river_center":1.12208,"river_width_pips":6.20,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 09:00","open":1.12281,"high":1.12416,"low":1.12277,"close":1.12415,"tick_volume":3073,"spread_points":1,"river_center":1.12246,"river_width_pips":7.40,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 10:00","open":1.12415,"high":1.12513,"low":1.12362,"close":1.12502,"tick_volume":4470,"spread_points":1,"river_center":1.12293,"river_width_pips":9.00,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 11:00","open":1.12502,"high":1.12502,"low":1.12232,"close":1.12267,"tick_volume":9238,"spread_points":1,"river_center":1.12285,"river_width_pips":6.90,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 12:00","open":1.12267,"high":1.12287,"low":1.12180,"close":1.12239,"tick_volume":3014,"spread_points":1,"river_center":1.12284,"river_width_pips":6.90,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.10 13:00","open":1.12239,"high":1.12258,"low":1.12141,"close":1.12172,"tick_volume":2127,"spread_points":1,"river_center":1.12271,"river_width_pips":6.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.10 14:00","open":1.12172,"high":1.12201,"low":1.12129,"close":1.12143,"tick_volume":3060,"spread_points":1,"river_center":1.12257,"river_width_pips":6.20,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.10 15:00","open":1.12143,"high":1.12155,"low":1.11789,"close":1.11864,"tick_volume":12210,"spread_points":1,"river_center":1.12188,"river_width_pips":9.00,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.10 16:00","open":1.11864,"high":1.11946,"low":1.11780,"close":1.11783,"tick_volume":8330,"spread_points":1,"river_center":1.12128,"river_width_pips":15.00,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.10 17:00","open":1.11783,"high":1.11834,"low":1.11550,"close":1.11597,"tick_volume":7488,"spread_points":1,"river_center":1.12049,"river_width_pips":21.90,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.10 18:00","open":1.11597,"high":1.11605,"low":1.11458,"close":1.11523,"tick_volume":4915,"spread_points":1,"river_center":1.11973,"river_width_pips":27.50,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.10 19:00","open":1.11523,"high":1.11566,"low":1.11489,"close":1.11564,"tick_volume":2412,"spread_points":1,"river_center":1.11915,"river_width_pips":29.50,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.10 20:00","open":1.11564,"high":1.11643,"low":1.11536,"close":1.11631,"tick_volume":1640,"spread_points":1,"river_center":1.11873,"river_width_pips":28.70,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.10 21:00","open":1.11631,"high":1.11673,"low":1.11626,"close":1.11656,"tick_volume":1512,"spread_points":1,"river_center":1.11817,"river_width_pips":31.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.10 22:00","open":1.11656,"high":1.11656,"low":1.11617,"close":1.11634,"tick_volume":1414,"spread_points":1,"river_center":1.11777,"river_width_pips":30.10,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.10 23:00","open":1.11634,"high":1.11658,"low":1.11620,"close":1.11621,"tick_volume":1097,"spread_points":1,"river_center":1.11737,"river_width_pips":26.70,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 00:00","open":1.11621,"high":1.11680,"low":1.11546,"close":1.11651,"tick_volume":381,"spread_points":3,"river_center":1.11711,"river_width_pips":19.90,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 01:00","open":1.11651,"high":1.11697,"low":1.11648,"close":1.11685,"tick_volume":592,"spread_points":1,"river_center":1.11702,"river_width_pips":13.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 02:00","open":1.11685,"high":1.11686,"low":1.11639,"close":1.11656,"tick_volume":1167,"spread_points":1,"river_center":1.11700,"river_width_pips":10.50,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 03:00","open":1.11656,"high":1.11696,"low":1.11586,"close":1.11689,"tick_volume":2085,"spread_points":1,"river_center":1.11700,"river_width_pips":8.80,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 04:00","open":1.11689,"high":1.11697,"low":1.11631,"close":1.11655,"tick_volume":1239,"spread_points":1,"river_center":1.11694,"river_width_pips":7.60,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 05:00","open":1.11656,"high":1.11698,"low":1.11607,"close":1.11631,"tick_volume":1217,"spread_points":1,"river_center":1.11680,"river_width_pips":7.80,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 06:00","open":1.11631,"high":1.11657,"low":1.11619,"close":1.11653,"tick_volume":933,"spread_points":1,"river_center":1.11671,"river_width_pips":7.80,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 07:00","open":1.11653,"high":1.11671,"low":1.11590,"close":1.11603,"tick_volume":1243,"spread_points":1,"river_center":1.11664,"river_width_pips":6.30,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 08:00","open":1.11603,"high":1.11604,"low":1.11509,"close":1.11555,"tick_volume":1512,"spread_points":1,"river_center":1.11649,"river_width_pips":5.50,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 09:00","open":1.11555,"high":1.11599,"low":1.11506,"close":1.11549,"tick_volume":2256,"spread_points":1,"river_center":1.11632,"river_width_pips":5.60,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 10:00","open":1.11549,"high":1.11573,"low":1.11392,"close":1.11480,"tick_volume":3991,"spread_points":1,"river_center":1.11604,"river_width_pips":6.30,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 11:00","open":1.11480,"high":1.11493,"low":1.11316,"close":1.11381,"tick_volume":3520,"spread_points":1,"river_center":1.11564,"river_width_pips":7.80,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 12:00","open":1.11381,"high":1.11427,"low":1.11351,"close":1.11396,"tick_volume":2657,"spread_points":1,"river_center":1.11539,"river_width_pips":9.30,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 13:00","open":1.11396,"high":1.11397,"low":1.11307,"close":1.11355,"tick_volume":2441,"spread_points":1,"river_center":1.11513,"river_width_pips":10.90,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 14:00","open":1.11355,"high":1.11390,"low":1.11309,"close":1.11318,"tick_volume":2259,"spread_points":1,"river_center":1.11483,"river_width_pips":12.00,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 15:00","open":1.11318,"high":1.11320,"low":1.11045,"close":1.11046,"tick_volume":4256,"spread_points":1,"river_center":1.11413,"river_width_pips":16.90,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 16:00","open":1.11046,"high":1.11046,"low":1.10825,"close":1.10853,"tick_volume":6737,"spread_points":1,"river_center":1.11325,"river_width_pips":23.00,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 17:00","open":1.10853,"high":1.10980,"low":1.10827,"close":1.10963,"tick_volume":4746,"spread_points":1,"river_center":1.11268,"river_width_pips":24.00,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 18:00","open":1.10963,"high":1.10989,"low":1.10920,"close":1.10933,"tick_volume":2731,"spread_points":1,"river_center":1.11216,"river_width_pips":24.20,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 19:00","open":1.10933,"high":1.10936,"low":1.10857,"close":1.10927,"tick_volume":1617,"spread_points":1,"river_center":1.11170,"river_width_pips":23.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 20:00","open":1.10927,"high":1.10938,"low":1.10878,"close":1.10893,"tick_volume":1104,"spread_points":1,"river_center":1.11111,"river_width_pips":24.20,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 21:00","open":1.10893,"high":1.10947,"low":1.10884,"close":1.10914,"tick_volume":1455,"spread_points":1,"river_center":1.11058,"river_width_pips":25.00,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 22:00","open":1.10914,"high":1.10938,"low":1.10880,"close":1.10885,"tick_volume":885,"spread_points":1,"river_center":1.11022,"river_width_pips":22.50,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 23:00","open":1.10885,"high":1.10907,"low":1.10863,"close":1.10879,"tick_volume":710,"spread_points":1,"river_center":1.11000,"river_width_pips":17.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 00:00","open":1.10871,"high":1.10904,"low":1.10838,"close":1.10863,"tick_volume":846,"spread_points":5,"river_center":1.10974,"river_width_pips":15.00,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 01:00","open":1.10863,"high":1.11006,"low":1.10859,"close":1.10941,"tick_volume":1901,"spread_points":1,"river_center":1.10967,"river_width_pips":13.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 02:00","open":1.10941,"high":1.10989,"low":1.10911,"close":1.10974,"tick_volume":2236,"spread_points":1,"river_center":1.10967,"river_width_pips":11.90,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 03:00","open":1.10974,"high":1.10980,"low":1.10911,"close":1.10963,"tick_volume":2719,"spread_points":1,"river_center":1.10967,"river_width_pips":10.10,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 04:00","open":1.10963,"high":1.10982,"low":1.10668,"close":1.10723,"tick_volume":4306,"spread_points":1,"river_center":1.10934,"river_width_pips":8.90,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 05:00","open":1.10723,"high":1.10770,"low":1.10663,"close":1.10745,"tick_volume":2963,"spread_points":1,"river_center":1.10900,"river_width_pips":9.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 06:00","open":1.10745,"high":1.10822,"low":1.10731,"close":1.10778,"tick_volume":1434,"spread_points":1,"river_center":1.10880,"river_width_pips":9.10,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 07:00","open":1.10779,"high":1.10833,"low":1.10761,"close":1.10820,"tick_volume":1904,"spread_points":1,"river_center":1.10871,"river_width_pips":8.00,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 08:00","open":1.10820,"high":1.10820,"low":1.10708,"close":1.10730,"tick_volume":2249,"spread_points":1,"river_center":1.10846,"river_width_pips":8.10,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 09:00","open":1.10733,"high":1.10872,"low":1.10710,"close":1.10855,"tick_volume":3736,"spread_points":1,"river_center":1.10842,"river_width_pips":8.10,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 10:00","open":1.10855,"high":1.10937,"low":1.10848,"close":1.10927,"tick_volume":4055,"spread_points":1,"river_center":1.10843,"river_width_pips":9.20,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 11:00","open":1.10926,"high":1.10957,"low":1.10905,"close":1.10944,"tick_volume":3220,"spread_points":1,"river_center":1.10862,"river_width_pips":6.70,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.12 12:00","open":1.10944,"high":1.11028,"low":1.10916,"close":1.10977,"tick_volume":2552,"spread_points":1,"river_center":1.10884,"river_width_pips":4.50,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.12 13:00","open":1.10970,"high":1.10977,"low":1.10858,"close":1.10924,"tick_volume":2741,"spread_points":1,"river_center":1.10889,"river_width_pips":4.00,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.12 14:00","open":1.10924,"high":1.10955,"low":1.10799,"close":1.10869,"tick_volume":3417,"spread_points":1,"river_center":1.10886,"river_width_pips":3.40,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.12 15:00","open":1.10885,"high":1.10933,"low":1.10755,"close":1.10890,"tick_volume":9572,"spread_points":1,"river_center":1.10889,"river_width_pips":4.70,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.12 16:00","open":1.10890,"high":1.10985,"low":1.10740,"close":1.10746,"tick_volume":7149,"spread_points":1,"river_center":1.10873,"river_width_pips":4.70,"ma_bifurcation":{"direction":"UNKNOWN"}},{"time":"2026.11.12 17:00","open":1.10744,"high":1.10755,"low":1.10535,"close":1.10667,"tick_volume":6985,"spread_points":1,"river_center":1.10834,"river_width_pips":5.00,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 18:00","open":1.10667,"high":1.10680,"low":1.10537,"close":1.10560,"tick_volume":6294,"spread_points":1,"river_center":1.10782,"river_width_pips":7.00,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 19:00","open":1.10561,"high":1.10591,"low":1.10456,"close":1.10473,"tick_volume":3324,"spread_points":1,"river_center":1.10738,"river_width_pips":11.90,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 20:00","open":1.10473,"high":1.10551,"low":1.10466,"close":1.10510,"tick_volume":2615,"spread_points":1,"river_center":1.10707,"river_width_pips":14.20,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 21:00","open":1.10510,"high":1.10572,"low":1.10467,"close":1.10557,"tick_volume":2202,"spread_points":1,"river_center":1.10688,"river_width_pips":14.30,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 22:00","open":1.10557,"high":1.10574,"low":1.10541,"close":1.10567,"tick_volume":1426,"spread_points":1,"river_center":1.10665,"river_width_pips":16.50,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 23:00","open":1.10567,"high":1.10569,"low":1.10525,"close":1.10545,"tick_volume":770,"spread_points":1,"river_center":1.10640,"river_width_pips":17.10,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.13 00:00","open":1.10543,"high":1.10575,"low":1.10463,"close":1.10546,"tick_volume":631,"spread_points":1,"river_center":1.10618,"river_width_pips":16.10,"ma_bifurcation":{"direction":"DOWN"}}]},"H6":{"candles":[{"time":"2026.11.06 00:00","open":1.12184,"high":1.12347,"low":1.11972,"close":1.11987,"tick_volume":17981,"spread_points":1,"river_center":1.12057,"river_width_pips":34.80,"ma_bifurcation":{"direction":"UNKNOWN"}},{"time":"2026.11.06 06:00","open":1.11988,"high":1.12004,"low":1.11674,"close":1.11712,"tick_volume":23406,"spread_points":1,"river_center":1.12045,"river_width_pips":34.60,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.06 12:00","open":1.11713,"high":1.11799,"low":1.11310,"close":1.11446,"tick_volume":41279,"spread_points":1,"river_center":1.12028,"river_width_pips":34.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.06 18:00","open":1.11446,"high":1.11577,"low":1.11361,"close":1.11366,"tick_volume":17437,"spread_points":1,"river_center":1.12012,"river_width_pips":33.70,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.09 00:00","open":1.11375,"high":1.11580,"low":1.11366,"close":1.11526,"tick_volume":12514,"spread_points":1,"river_center":1.11998,"river_width_pips":33.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.09 06:00","open":1.11526,"high":1.11933,"low":1.11511,"close":1.11926,"tick_volume":13167,"spread_points":1,"river_center":1.11995,"river_width_pips":33.00,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.09 12:00","open":1.11926,"high":1.12026,"low":1.11857,"close":1.11953,"tick_volume":21248,"spread_points":1,"river_center":1.11989,"river_width_pips":33.20,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.09 18:00","open":1.11953,"high":1.12250,"low":1.11925,"close":1.12227,"tick_volume":14498,"spread_points":1,"river_center":1.11992,"river_width_pips":32.90,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.10 00:00","open":1.12227,"high":1.12266,"low":1.12142,"close":1.12228,"tick_volume":7396,"spread_points":1,"river_center":1.11998,"river_width_pips":32.00,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 06:00","open":1.12228,"high":1.12513,"low":1.12208,"close":1.12267,"tick_volume":21169,"spread_points":1,"river_center":1.12006,"river_width_pips":31.00,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 12:00","open":1.12267,"high":1.12287,"low":1.11550,"close":1.11597,"tick_volume":36229,"spread_points":1,"river_center":1.11997,"river_width_pips":30.00,"ma_bifurcation":{"direction":"UP"}},{"time":"2026.11.10 18:00","open":1.11597,"high":1.11673,"low":1.11458,"close":1.11621,"tick_volume":12990,"spread_points":1,"river_center":1.11994,"river_width_pips":28.30,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 00:00","open":1.11621,"high":1.11698,"low":1.11546,"close":1.11631,"tick_volume":6681,"spread_points":1,"river_center":1.11990,"river_width_pips":26.60,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 06:00","open":1.11631,"high":1.11671,"low":1.11316,"close":1.11381,"tick_volume":13455,"spread_points":1,"river_center":1.11983,"river_width_pips":24.60,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 12:00","open":1.11381,"high":1.11427,"low":1.10825,"close":1.10963,"tick_volume":23096,"spread_points":1,"river_center":1.11966,"river_width_pips":22.50,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.11 18:00","open":1.10963,"high":1.10989,"low":1.10857,"close":1.10879,"tick_volume":8502,"spread_points":1,"river_center":1.11934,"river_width_pips":23.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 00:00","open":1.10871,"high":1.11006,"low":1.10663,"close":1.10745,"tick_volume":14971,"spread_points":1,"river_center":1.11893,"river_width_pips":25.30,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 06:00","open":1.10745,"high":1.10957,"low":1.10708,"close":1.10944,"tick_volume":16598,"spread_points":1,"river_center":1.11862,"river_width_pips":26.60,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 12:00","open":1.10944,"high":1.11028,"low":1.10535,"close":1.10667,"tick_volume":32416,"spread_points":1,"river_center":1.11821,"river_width_pips":28.40,"ma_bifurcation":{"direction":"DOWN"}},{"time":"2026.11.12 18:00","open":1.10667,"high":1.10680,"low":1.10456,"close":1.10545,"tick_volume":16631,"spread_points":1,"river_center":1.11778,"river_width_pips":30.30,"ma_bifurcation":{"direction":"DOWN"}}]}}}
+#include <windows.h>
+#include <winhttp.h>
+#include <bcrypt.h>
+
+#include <string>
+#include <vector>
+#include <fstream>
+#include <thread>
+#include <chrono>
+
+#pragma comment(lib, "winhttp.lib")
+#pragma comment(lib, "bcrypt.lib")
+
+
+
+DWORD lastWinHttpError = ERROR_SUCCESS;
+
+// --------------------------------------------------
+// Configuration
+// --------------------------------------------------
+
+static const wchar_t* FILE_PATH =
+    L"C:\\Users\\Rezvan\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\LLM-LQ\\mt5_feed.json";
+
+static const wchar_t* SERVER =
+    L"api.rezvan.biz";
+
+static const wchar_t* ENDPOINT =
+    L"/gateway/mt5";
+
+static const INTERNET_PORT PORT = 443;
+
+// آخرین هش موفق ارسال‌شده
+static std::string lastSentHash;
+
+// --------------------------------------------------
+// Read file as binary
+// --------------------------------------------------
+
+bool ReadFileBytes(const wchar_t* path, std::vector<unsigned char>& data)
+{
+    std::ifstream file(path, std::ios::binary);
+
+    if (!file)
+        return false;
+
+    data.assign(
+        std::istreambuf_iterator<char>(file),
+        std::istreambuf_iterator<char>()
+    );
+
+    return !data.empty();
+}
+
+// --------------------------------------------------
+// Convert UTF-16 / UTF-8 to UTF-8
+// --------------------------------------------------
+
+bool ConvertToUTF8(
+    const std::vector<unsigned char>& data,
+    std::string& output)
+{
+    if (data.empty())
+        return false;
+
+    // UTF-16 Little Endian BOM
+    if (data.size() >= 2 &&
+        data[0] == 0xFF &&
+        data[1] == 0xFE)
+    {
+        const wchar_t* wide =
+            reinterpret_cast<const wchar_t*>(data.data() + 2);
+
+        int wcharCount = (int)((data.size() - 2) / 2);
+
+        int utf8Size = WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            wide,
+            wcharCount,
+            NULL,
+            0,
+            NULL,
+            NULL
+        );
+
+        if (utf8Size <= 0)
+            return false;
+
+        output.resize(utf8Size);
+
+        WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            wide,
+            wcharCount,
+            &output[0],
+            utf8Size,
+            NULL,
+            NULL
+        );
+
+        return true;
+    }
+
+    // UTF-16 Big Endian BOM
+    if (data.size() >= 2 &&
+        data[0] == 0xFE &&
+        data[1] == 0xFF)
+    {
+        std::vector<unsigned char> swapped;
+
+        for (size_t i = 2; i + 1 < data.size(); i += 2)
+        {
+            swapped.push_back(data[i + 1]);
+            swapped.push_back(data[i]);
+        }
+
+        const wchar_t* wide =
+            reinterpret_cast<const wchar_t*>(swapped.data());
+
+        int wcharCount = (int)(swapped.size() / 2);
+
+        int utf8Size = WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            wide,
+            wcharCount,
+            NULL,
+            0,
+            NULL,
+            NULL
+        );
+
+        if (utf8Size <= 0)
+            return false;
+
+        output.resize(utf8Size);
+
+        WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            wide,
+            wcharCount,
+            &output[0],
+            utf8Size,
+            NULL,
+            NULL
+        );
+
+        return true;
+    }
+
+    // UTF-8 BOM
+    if (data.size() >= 3 &&
+        data[0] == 0xEF &&
+        data[1] == 0xBB &&
+        data[2] == 0xBF)
+    {
+        output.assign(data.begin() + 3, data.end());
+        return true;
+    }
+
+    // تشخیص احتمالی UTF-16 بدون BOM
+    size_t evenZeros = 0;
+    size_t oddZeros = 0;
+
+    for (size_t i = 0; i < data.size(); ++i)
+    {
+        if (data[i] == 0)
+        {
+            if (i % 2 == 0)
+                evenZeros++;
+            else
+                oddZeros++;
+        }
+    }
+
+    bool probableUTF16 =
+        (oddZeros > data.size() / 4) ||  (evenZeros > data.size() / 4);
+
+    if (probableUTF16)
+    {
+        std::vector<unsigned char> adjusted = data;
+
+        // اگر الگوی Little Endian محتمل باشد
+        if (oddZeros > evenZeros)
+        {
+            const wchar_t* wide =
+                reinterpret_cast<const wchar_t*>(adjusted.data());
+
+            int wcharCount = (int)(adjusted.size() / 2);
+
+            int utf8Size = WideCharToMultiByte(
+                CP_UTF8, 0, wide, wcharCount,
+                NULL, 0, NULL, NULL
+            );
+
+            if (utf8Size <= 0)
+                return false;
+
+            output.resize(utf8Size);
+
+            WideCharToMultiByte(
+                CP_UTF8, 0, wide, wcharCount,
+                &output[0], utf8Size, NULL, NULL
+            );
+
+            return true;
+        }
+
+        // الگوی Big Endian
+        for (size_t i = 0; i + 1 < adjusted.size(); i += 2)
+        {
+            unsigned char temp = adjusted[i];
+            adjusted[i] = adjusted[i + 1];
+            adjusted[i + 1] = temp;
+        }
+
+        const wchar_t* wide =
+            reinterpret_cast<const wchar_t*>(adjusted.data());
+
+        int wcharCount = (int)(adjusted.size() / 2);
+
+        int utf8Size = WideCharToMultiByte(
+            CP_UTF8, 0, wide, wcharCount,
+            NULL, 0, NULL, NULL
+        );
+
+        if (utf8Size <= 0)
+            return false;
+
+        output.resize(utf8Size);
+
+        WideCharToMultiByte(
+            CP_UTF8, 0, wide, wcharCount,
+            &output[0], utf8Size, NULL, NULL
+        );
+
+        return true;
+    }
+
+    // فرض UTF-8
+    output.assign(data.begin(), data.end());
+
+    return true;
+}
+
+// --------------------------------------------------
+// SHA-256
+// --------------------------------------------------
+
+std::string CalculateSHA256(const std::string& data)
+{
+    BCRYPT_ALG_HANDLE hAlg = NULL;
+    BCRYPT_HASH_HANDLE hHash = NULL;
+
+    DWORD hashLength = 0;
+    DWORD resultLength = 0;
+
+    if (BCryptOpenAlgorithmProvider(
+        &hAlg,
+        BCRYPT_SHA256_ALGORITHM,
+        NULL,
+        0) != 0)
+    {
+        return "";
+    }
+
+    BCryptGetProperty(
+        hAlg,
+        BCRYPT_HASH_LENGTH,
+        (PUCHAR)&hashLength,
+        sizeof(hashLength),
+        &resultLength,
+        0
+    );
+
+    std::vector<unsigned char> hash(hashLength);
+
+    BCryptCreateHash(
+        hAlg,
+        &hHash,
+        NULL,
+        0,
+        NULL,
+        0,
+        0
+    );
+
+    BCryptHashData(
+        hHash,
+        (PUCHAR)data.data(),
+        (ULONG)data.size(),
+        0
+    );
+
+    BCryptFinishHash(
+        hHash,
+        hash.data(),
+        hashLength,
+        0
+    );
+
+    BCryptDestroyHash(hHash);
+    BCryptCloseAlgorithmProvider(hAlg, 0);
+
+    const char* hex = "0123456789abcdef";
+
+    std::string result;
+
+    for (unsigned char b : hash)
+    {
+        result += hex[b >> 4];
+        result += hex[b & 0x0F];
+    }
+
+    return result;
+}
+
+// --------------------------------------------------
+// HTTP POST
+// --------------------------------------------------
+
+int SendHTTP(const std::string& json)
+{
+    HINTERNET session = WinHttpOpen(
+        L"MT5-Communication-DLL/1.0",
+        WINHTTP_ACCESS_TYPE_NO_PROXY,
+        WINHTTP_NO_PROXY_NAME,
+        WINHTTP_NO_PROXY_BYPASS,
+        0
+    );
+
+    if (!session)
+        return -1;
+
+    HINTERNET connection = WinHttpConnect(
+        session,
+        SERVER,
+        PORT,
+        0
+    );
+
+    if (!connection)
+    {
+        WinHttpCloseHandle(session);
+        return -2;
+    }
+
+    HINTERNET request = WinHttpOpenRequest(
+        connection,
+        L"POST",
+        ENDPOINT,
+        NULL,
+        WINHTTP_NO_REFERER,
+        WINHTTP_DEFAULT_ACCEPT_TYPES,
+        WINHTTP_FLAG_SECURE
+    );
+
+    if (!request)
+    {
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return -3;
+    }
+
+    const wchar_t* headers =
+        L"Content-Type: application/json; charset=utf-8\r\n";
+
+    BOOL sent = WinHttpSendRequest(
+        request,
+        headers,
+        -1L,
+        (LPVOID)json.data(),
+        (DWORD)json.size(),
+        (DWORD)json.size(),
+        0
+    );
+
+    if (!sent)
+    {
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return -4;
+    }
+
+    BOOL received = WinHttpReceiveResponse(request, NULL);
+
+
+
+    if (!received)
+    {
+        lastWinHttpError = GetLastError();
+
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return -5;
+    }
+
+    lastWinHttpError = ERROR_SUCCESS;
+
+
+
+
+    DWORD statusCode = 0;
+    DWORD statusSize = sizeof(statusCode);
+
+    WinHttpQueryHeaders(
+        request,
+        WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+        WINHTTP_HEADER_NAME_BY_INDEX,
+        &statusCode,
+        &statusSize,
+        WINHTTP_NO_HEADER_INDEX
+    );
+
+    WinHttpCloseHandle(request);
+    WinHttpCloseHandle(connection);
+    WinHttpCloseHandle(session);
+
+    return (int)statusCode;
+}
+
+// --------------------------------------------------
+// HTTP GET - Poll responses from Gateway
+// --------------------------------------------------
+
+extern "C" __declspec(dllexport)
+int __stdcall PollResponses(
+    const wchar_t* clientId,
+    unsigned char* output,
+    int outputCapacity)
+{
+    if (clientId == NULL || output == NULL || outputCapacity <= 0)
+        return -100;
+
+    std::wstring endpoint =
+        L"/gateway/mt5/responses/";
+
+    endpoint += clientId;
+
+    HINTERNET session = WinHttpOpen(
+        L"MT5-Communication-DLL/1.0",
+        WINHTTP_ACCESS_TYPE_NO_PROXY,
+        WINHTTP_NO_PROXY_NAME,
+        WINHTTP_NO_PROXY_BYPASS,
+        0
+    );
+
+    if (!session)
+        return -101;
+
+    HINTERNET connection = WinHttpConnect(
+        session,
+        SERVER,
+        PORT,
+        0
+    );
+
+    if (!connection)
+    {
+        WinHttpCloseHandle(session);
+        return -102;
+    }
+
+    HINTERNET request = WinHttpOpenRequest(
+        connection,
+        L"GET",
+        endpoint.c_str(),
+        NULL,
+        WINHTTP_NO_REFERER,
+        WINHTTP_DEFAULT_ACCEPT_TYPES,
+        WINHTTP_FLAG_SECURE
+    );
+
+    if (!request)
+    {
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return -103;
+    }
+
+    BOOL sent = WinHttpSendRequest(
+        request,
+        WINHTTP_NO_ADDITIONAL_HEADERS,
+        0,
+        WINHTTP_NO_REQUEST_DATA,
+        0,
+        0,
+        0
+    );
+
+    if (!sent)
+    {
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return -104;
+    }
+
+    if (!WinHttpReceiveResponse(request, NULL))
+    {
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return -105;
+    }
+
+    DWORD statusCode = 0;
+    DWORD statusSize = sizeof(statusCode);
+
+    WinHttpQueryHeaders(
+        request,
+        WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+        WINHTTP_HEADER_NAME_BY_INDEX,
+        &statusCode,
+        &statusSize,
+        WINHTTP_NO_HEADER_INDEX
+    );
+
+    if (statusCode < 200 || statusCode >= 300)
+    {
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return (int)statusCode;
+    }
+
+    int totalBytes = 0;
+
+    while (true)
+    {
+        DWORD available = 0;
+
+        if (!WinHttpQueryDataAvailable(request, &available))
+        {
+            totalBytes = -106;
+            break;
+        }
+
+        if (available == 0)
+            break;
+
+        if (totalBytes + (int)available > outputCapacity)
+        {
+            totalBytes = -107;
+            break;
+        }
+
+        DWORD bytesRead = 0;
+
+        if (!WinHttpReadData(
+            request,
+            output + totalBytes,
+            available,
+            &bytesRead))
+        {
+            totalBytes = -108;
+            break;
+        }
+
+        totalBytes += (int)bytesRead;
+    }
+
+    WinHttpCloseHandle(request);
+    WinHttpCloseHandle(connection);
+    WinHttpCloseHandle(session);
+
+    return totalBytes;
+}
+
+// --------------------------------------------------
+// Exported function
+// --------------------------------------------------
+
+extern "C" __declspec(dllexport)
+int __stdcall SendLatestJson()
+{
+    for (int attempt = 0; attempt < 3; ++attempt)
+    {
+        std::vector<unsigned char> fileData;
+        std::string json;
+
+        if (ReadFileBytes(FILE_PATH, fileData) &&
+            ConvertToUTF8(fileData, json))
+        {
+            std::string hash = CalculateSHA256(json);
+
+            if (hash.empty())
+                return -10;
+
+            // اگر JSON قبلاً ارسال شده، ارسال نکن
+            if (hash == lastSentHash)
+                return 204;
+
+            int status = SendHTTP(json);
+
+            // فقط ارسال موفق را ذخیره کن
+            if (status >= 200 && status < 300)
+            {
+                lastSentHash = hash;
+                return status;
+            }
+
+            // خطای HTTP
+            return status;
+        }
+
+        // فرصت برای کامل شدن فایل
+        if (attempt < 2)
+            std::this_thread::sleep_for(
+                std::chrono::seconds(5)
+            );
+    }
+
+    return -20;
+}
+
+
+
+extern "C" __declspec(dllexport)
+int __stdcall GetLastWinHttpError()
+{
+    return (int)lastWinHttpError;
+}
