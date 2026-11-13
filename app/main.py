@@ -38,7 +38,10 @@ from app.model_rotation import (
     get_rotation_status,
     _provider_key,
 )
-from app.mt5_debate_room import init_mt5_debate_db
+from app.mt5_debate_room import (
+    init_mt5_debate_db,
+    process_mt5_message,
+)
 
 GATEWAY_LOG_ENABLED = os.getenv(
     "GATEWAY_LOG_ENABLED", "false"
@@ -866,13 +869,22 @@ async def mt5_ingest(request: Request):
 
         _record_mt5_stats(raw_body)
 
+        try:
+            processing_result = process_mt5_message(payload)
+
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=str(exc),
+            ) from None
+
         return {
             "success": True,
             "consumer": "mt5",
             "client_id": MT5_CLIENT_ID,
             "received": True,
+            "processing": processing_result,
         }
-
 
 
 @app.get("/v1/mt5/response/{client_id}")
