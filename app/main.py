@@ -870,23 +870,41 @@ async def mt5_ingest(request: Request):
 
     _record_mt5_stats(raw_body)
 
-    try:
-        processing_result = process_mt5_message(payload)
+    message_type = str(payload.get("message_type", "")).upper()
 
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=400,
-            detail=str(exc),
-        ) from None
+    is_init = message_type == "INIT"
+    h1_candles = 0
+    h6_candles = 0
+
+    if is_init:
+        timeframes = payload.get("timeframes", {})
+
+        if isinstance(timeframes, dict):
+            h1 = timeframes.get("H1", {})
+            h6 = timeframes.get("H6", {})
+
+            if isinstance(h1, dict) and isinstance(h1.get("candles"), list):
+                h1_candles = len(h1["candles"])
+
+            if isinstance(h6, dict) and isinstance(h6.get("candles"), list):
+                h6_candles = len(h6["candles"])
+
+    elif message_type == "CANDLE_UPDATE":
+        candles = payload.get("candles", [])
+        count = len(candles) if isinstance(candles, list) else 0
+
+        timeframe = str(payload.get("timeframe", "")).upper()
+
+        if timeframe == "H1":
+            h1_candles = count
+        elif timeframe == "H6":
+            h6_candles = count
 
     return {
-        "success": True,
-        "consumer": "mt5",
-        "client_id": MT5_CLIENT_ID,
-        "received": True,
-        "processing": processing_result,
+        "is_init": is_init,
+        "h1_candles": h1_candles,
+        "h6_candles": h6_candles,
     }
-
 
 @app.get("/v1/mt5/response/{client_id}")
 async def mt5_response(client_id: str):
