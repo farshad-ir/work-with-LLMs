@@ -854,7 +854,12 @@ async def health():
 async def mt5_ingest(request: Request):
     return JSONResponse(
         status_code=200,
-        content={},
+        content={
+            "source": "python",
+            "service": "Rezvan Gateway",
+            "status": "ok",
+            "probe": "mt5-ingest-test"
+        },
     )
 
 
