@@ -868,7 +868,7 @@ async def mt5_ingest(request: Request):
             detail="Request body must be a JSON object.",
         )
 
-    _record_mt5_stats(raw_body)
+    
 
     message_type = str(payload.get("message_type", "")).upper()
 
