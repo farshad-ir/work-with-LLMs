@@ -41,6 +41,7 @@ from app.model_rotation import (
 from app.mt5_debate_room import (
     init_mt5_debate_db,
     process_mt5_message,
+    get_mt5_receive_report,
 )
 
 GATEWAY_LOG_ENABLED = os.getenv(
@@ -900,6 +901,7 @@ async def mt5_response(client_id: str):
         "success": True,
         "client_id": MT5_CLIENT_ID,
         "statistics": _get_mt5_stats(),
+        "report": get_mt5_receive_report(),
     }
     
 @app.get("/", response_class=HTMLResponse)
