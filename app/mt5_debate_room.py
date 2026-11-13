@@ -648,13 +648,15 @@ def get_mt5_receive_report(limit: int = 10) -> dict:
             message_type = message["message_type"]
             symbol = message["symbol"]
 
+
+
             if message_type == "CANDLE_UPDATE":
                 candle_items = [
-                    (
-                        payload.get("timeframe"),
-                        payload.get("candles", {}),
-                    )
+                    (payload.get("timeframe"), candle)
+                    for candle in payload.get("candles", [])
                 ]
+
+            
             elif message_type == "INIT":
                 candle_items = [
                     (timeframe, candle)
