@@ -38,6 +38,7 @@ from app.model_rotation import (
     get_rotation_status,
     _provider_key,
 )
+from app.mt5_debate_room import init_mt5_debate_db
 
 GATEWAY_LOG_ENABLED = os.getenv(
     "GATEWAY_LOG_ENABLED", "false"
@@ -632,9 +633,9 @@ async def _discover_provider_models(spec: dict) -> dict:
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    init_mt5_debate_db()
     yield
 
 
