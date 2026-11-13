@@ -150,9 +150,6 @@ def validate_mt5_candle(candle: dict) -> dict:
         "close",
         "tick_volume",
         "spread_points",
-        "river_center",
-        "river_width_pips",
-        "ma_bifurcation",
     )
 
     for field in required_fields:
@@ -181,8 +178,6 @@ def validate_mt5_candle(candle: dict) -> dict:
         "high",
         "low",
         "close",
-        "river_center",
-        "river_width_pips",
     )
 
     normalized = {}
@@ -224,8 +219,34 @@ def validate_mt5_candle(candle: dict) -> dict:
     ):
         raise ValueError("Candle low is invalid.")
 
-    if normalized["river_width_pips"] < 0:
-        raise ValueError("River width cannot be negative.")
+    # Optional observer-derived numeric fields.
+    for field in ("river_center", "river_width_pips"):
+        if field not in candle or candle[field] is None:
+            continue
+
+        value = candle[field]
+
+        if isinstance(value, bool):
+            raise ValueError(
+                f"Invalid numeric value: {field}"
+            )
+
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"Invalid numeric value: {field}"
+            ) from None
+
+        if not math.isfinite(value):
+            raise ValueError(
+                f"Non-finite numeric value: {field}"
+            )
+
+        if field == "river_width_pips" and value < 0:
+            raise ValueError("River width cannot be negative.")
+
+        normalized[field] = value
 
     for field in ("tick_volume", "spread_points"):
         value = candle[field]
