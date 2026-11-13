@@ -404,7 +404,7 @@ def store_mt5_message(payload: dict) -> dict:
 
         existing = conn.execute(
             """
-            SELECT message_id
+            SELECT message_id, payload_json
             FROM mt5_messages
             WHERE message_id = ?
             """,
@@ -412,6 +412,15 @@ def store_mt5_message(payload: dict) -> dict:
         ).fetchone()
 
         if existing:
+            existing_payload = json.loads(
+                existing["payload_json"]
+            )
+
+            if existing_payload != payload:
+                raise ValueError(
+                    "message_id already exists with different content."
+                )
+
             return {
                 "success": True,
                 "duplicate_message": True,
