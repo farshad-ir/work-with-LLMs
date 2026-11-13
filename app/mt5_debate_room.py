@@ -381,3 +381,169 @@ def validate_mt5_message(payload: dict) -> dict:
         "timeframes": normalized_timeframes,
     }
 
+def store_mt5_message(payload: dict) -> dict:
+    """
+    Store a validated MT5 message and its candles atomically.
+    Duplicate messages and candles are handled idempotently.
+    """
+
+    message_id = payload["message_id"]
+    message_type = payload["message_type"]
+    symbol = payload["symbol"]
+
+    payload_json = json.dumps(
+        payload,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+    received_at = _now()
+
+    with get_db_connection() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+
+        existing = conn.execute(
+            """
+            SELECT message_id
+            FROM mt5_messages
+            WHERE message_id = ?
+            """,
+            (message_id,),
+        ).fetchone()
+
+        if existing:
+            return {
+                "success": True,
+                "duplicate_message": True,
+                "message_id": message_id,
+                "inserted_candles": 0,
+                "duplicate_candles": 0,
+                "request_debate": False,
+            }
+
+        conn.execute(
+            """
+            INSERT INTO mt5_messages (
+                message_id,
+                message_type,
+                symbol,
+                received_at,
+                status,
+                payload_json
+            )
+            VALUES (?, ?, ?, ?, 'received', ?)
+            """,
+            (
+                message_id,
+                message_type,
+                symbol,
+                received_at,
+                payload_json,
+            ),
+        )
+
+        candle_items = []
+
+        if message_type == "CANDLE_UPDATE":
+            candle_items = [
+                (payload["timeframe"], candle)
+                for candle in payload["candles"]
+            ]
+
+        elif message_type == "INIT":
+            for timeframe, candles in payload["timeframes"].items():
+                candle_items.extend(
+                    (timeframe, candle)
+                    for candle in candles
+                )
+
+        inserted_candles = 0
+        duplicate_candles = 0
+
+        for timeframe, candle in candle_items:
+            cursor = conn.execute(
+                """
+                INSERT INTO mt5_candles (
+                    symbol,
+                    timeframe,
+                    candle_time,
+                    open,
+                    high,
+                    low,
+                    close,
+                    tick_volume,
+                    spread_points,
+                    river_center,
+                    river_width_pips,
+                    ma_bifurcation_direction,
+                    source_message_id,
+                    raw_json,
+                    received_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (
+                    symbol,
+                    timeframe,
+                    candle_time
+                ) DO NOTHING
+                """,
+                (
+                    symbol,
+                    timeframe,
+                    candle["time"],
+                    candle["open"],
+                    candle["high"],
+                    candle["low"],
+                    candle["close"],
+                    candle["tick_volume"],
+                    candle["spread_points"],
+                    candle["river_center"],
+                    candle["river_width_pips"],
+                    candle["ma_bifurcation"]["direction"],
+                    message_id,
+                    json.dumps(
+                        candle,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    ),
+                    received_at,
+                ),
+            )
+
+            if cursor.rowcount == 1:
+                inserted_candles += 1
+            else:
+                duplicate_candles += 1
+
+        if inserted_candles == 0:
+            status = "duplicate_candles"
+        elif duplicate_candles > 0:
+            status = "stored_with_duplicates"
+        else:
+            status = "stored"
+
+        conn.execute(
+            """
+            UPDATE mt5_messages
+            SET status = ?
+            WHERE message_id = ?
+            """,
+            (status, message_id),
+        )
+
+        request_debate = (
+            message_type == "CANDLE_UPDATE"
+            and payload.get("request_debate", False)
+            and inserted_candles == 1
+        )
+
+        return {
+            "success": True,
+            "duplicate_message": False,
+            "message_id": message_id,
+            "status": status,
+            "inserted_candles": inserted_candles,
+            "duplicate_candles": duplicate_candles,
+            "request_debate": request_debate,
+        }
+
