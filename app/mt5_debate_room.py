@@ -304,12 +304,18 @@ def validate_mt5_message(payload: dict) -> dict:
                 "CANDLE_UPDATE must contain exactly one candle."
             )
 
+        request_debate = payload.get("request_debate", False)
+
+        if not isinstance(request_debate, bool):
+            raise ValueError("request_debate must be a boolean.")
+
+        
         return {
             "message_type": message_type,
             "message_id": message_id,
             "symbol": symbol,
             "timeframe": timeframe,
-            "request_debate": payload.get("request_debate", False),
+            "request_debate": request_debate,
             "candles": [
                 validate_mt5_candle(candles[0])
             ],
@@ -351,6 +357,23 @@ def validate_mt5_message(payload: dict) -> dict:
             for candle in candles
         ]
 
+
+    for timeframe, candles in normalized_timeframes.items():
+        candle_times = [
+            datetime.strptime(
+                candle["time"],
+                "%Y.%m.%d %H:%M",
+            )
+            for candle in candles
+        ]
+
+        for index in range(1, len(candle_times)):
+            if candle_times[index] <= candle_times[index - 1]:
+                raise ValueError(
+                    f"INIT {timeframe} candles must be "
+                    "strictly ordered oldest-to-newest."
+                )
+    
     return {
         "message_type": message_type,
         "message_id": message_id,
