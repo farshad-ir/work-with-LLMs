@@ -35,8 +35,8 @@ int PollResponses(string clientId, uchar &output[], int outputCapacity);
 //+------------------------------------------------------------------+
 //| Configuration                                                    |
 //+------------------------------------------------------------------+
-#define H1_HISTORY_CAPACITY 100
-#define H6_HISTORY_CAPACITY 20
+#define H1_HISTORY_CAPACITY 5
+#define H6_HISTORY_CAPACITY 1
 
 
 //+------------------------------------------------------------------+
@@ -53,7 +53,7 @@ CMABifurcation mabif_h6;
 
 CJAVal json;
 
-uchar response[4096];
+uchar response[16384];
 
 
 //+------------------------------------------------------------------+
@@ -419,7 +419,8 @@ void ReadPoling()
       bytesRead,
       CP_UTF8
    );
-
+   //Print("[MT5 Get Response] ", jsonResponse);
+   
    if(!json.Deserialize(jsonResponse, CP_UTF8))
    {
       Print("[SENDER] Could not parse response.");
@@ -432,6 +433,8 @@ void ReadPoling()
       return;
    }
 
+   CJAVal report     = json["report"];
+   /*
    CJAVal statistics = json["statistics"];
 
    Print(
@@ -444,6 +447,8 @@ void ReadPoling()
       " Words=",
       statistics["words"].ToInt()
    );
+   */
+   Print(report["report"].ToStr());
 }
 
 
@@ -506,7 +511,7 @@ void ProcessH1Candle(
 
    int direction = g_h1History[recordIndex].direction;
 
-   PrintFormat(
+   if(0)PrintFormat(
       "[H1] %s | Close=%.5f | Center=%.5f | Width=%.2f | Bifurcation=%s",
       TimeToString(bar.time, TIME_DATE | TIME_MINUTES),
       bar.close,
@@ -551,6 +556,7 @@ void ProcessH6Candle(
 
    int direction = g_h6History[recordIndex].direction;
 
+   if(0)
    PrintFormat(
       "[H6] %s | Close=%.5f | Center=%.5f | Width=%.2f | Bifurcation=%s",
       TimeToString(bar.time, TIME_DATE | TIME_MINUTES),
