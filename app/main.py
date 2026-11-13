@@ -849,8 +849,16 @@ async def consume_buffered_response(request: Request):
 async def health():
     return {"status": "ok", "app": "MyCode Gateway", "version": "0.1.0"}
 
+
 @app.post("/v1/mt5/ingest")
 async def mt5_ingest(request: Request):
+    return JSONResponse(
+        status_code=200,
+        content={},
+    )
+
+
+def a_mt5_ingest(request: Request):
     
     try:
         raw_body = await request.body()
