@@ -270,24 +270,27 @@ def validate_mt5_candle(candle: dict) -> dict:
 
         normalized[field] = integer_value
 
-    bifurcation = candle["ma_bifurcation"]
+    # Optional MA bifurcation observer output.
+    if "ma_bifurcation" in candle and candle["ma_bifurcation"] is not None:
+        bifurcation = candle["ma_bifurcation"]
 
-    if not isinstance(bifurcation, dict):
-        raise ValueError(
-            "ma_bifurcation must be an object."
-        )
+        if not isinstance(bifurcation, dict):
+            raise ValueError(
+                "ma_bifurcation must be an object."
+            )
 
-    direction = bifurcation.get("direction")
+        direction = bifurcation.get("direction")
 
-    if not isinstance(direction, str) or not direction.strip():
-        raise ValueError(
-            "Invalid MA bifurcation direction."
-        )
+        if not isinstance(direction, str) or not direction.strip():
+            raise ValueError(
+                "Invalid MA bifurcation direction."
+            )
+
+        normalized["ma_bifurcation"] = {
+            "direction": direction
+        }
 
     normalized["time"] = candle_time
-    normalized["ma_bifurcation"] = {
-        "direction": direction
-    }
 
     return normalized
 
@@ -527,9 +530,9 @@ def store_mt5_message(payload: dict) -> dict:
                     candle["close"],
                     candle["tick_volume"],
                     candle["spread_points"],
-                    candle["river_center"],
-                    candle["river_width_pips"],
-                    candle["ma_bifurcation"]["direction"],
+                    candle.get("river_center"),
+                    candle.get("river_width_pips"),
+                    (candle.get("ma_bifurcation") or {}).get("direction"),
                     message_id,
                     json.dumps(
                         candle,
