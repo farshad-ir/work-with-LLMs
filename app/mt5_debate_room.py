@@ -772,7 +772,7 @@ def get_mt5_receive_report() -> dict:
     )
 
     report_text = (
-        f"The server received a {message_type} JSON message "
+        f"The server received a '{message_type}' JSON message "
         f"for {symbol}. "
         f"INIT message: {init_status}. "
         f"The message contained {h1_count} H1 {h1_label} "
