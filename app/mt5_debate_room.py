@@ -22,9 +22,11 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def get_db_connection() -> sqlite3.Connection:
+@contextmanager
+def get_db_connection():
     """
-    Create a SQLite connection for the MT5 Debate Room.
+    Provide a SQLite connection with automatic commit,
+    rollback, and close.
     """
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -36,8 +38,16 @@ def get_db_connection() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
 
-    return conn
+    try:
+        yield conn
+        conn.commit()
 
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
 
 def init_mt5_debate_db() -> None:
     """
