@@ -858,7 +858,7 @@ async def mt5_ingest(request: Request):
     )
 
 
-def a_mt5_ingest(request: Request):
+async def a_mt5_ingest(request: Request):
     
     try:
         raw_body = await request.body()
