@@ -270,4 +270,91 @@ def validate_mt5_candle(candle: dict) -> dict:
 
     return normalized
 
+def validate_mt5_message(payload: dict) -> dict:
+    """
+    Validate the envelope of an incoming MT5 message.
+    """
+
+    if not isinstance(payload, dict):
+        raise ValueError("Message must be a JSON object.")
+
+    message_type = payload.get("message_type")
+    message_id = payload.get("message_id")
+    symbol = payload.get("symbol")
+
+    if message_type not in ("INIT", "CANDLE_UPDATE"):
+        raise ValueError("Unsupported MT5 message_type.")
+
+    if not isinstance(message_id, str) or not message_id.strip():
+        raise ValueError("Invalid message_id.")
+
+    if not isinstance(symbol, str) or not symbol.strip():
+        raise ValueError("Invalid symbol.")
+
+    if message_type == "CANDLE_UPDATE":
+        timeframe = payload.get("timeframe")
+
+        if timeframe not in ("H1", "H6"):
+            raise ValueError("Invalid candle timeframe.")
+
+        candles = payload.get("candles")
+
+        if not isinstance(candles, list) or len(candles) != 1:
+            raise ValueError(
+                "CANDLE_UPDATE must contain exactly one candle."
+            )
+
+        return {
+            "message_type": message_type,
+            "message_id": message_id,
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "request_debate": payload.get("request_debate", False),
+            "candles": [
+                validate_mt5_candle(candles[0])
+            ],
+        }
+
+    timeframes = payload.get("timeframes")
+
+    if not isinstance(timeframes, dict):
+        raise ValueError("INIT timeframes must be an object.")
+
+    normalized_timeframes = {}
+
+    for timeframe, expected_count in (
+        ("H1", 100),
+        ("H6", 20),
+    ):
+        timeframe_data = timeframes.get(timeframe)
+
+        if not isinstance(timeframe_data, dict):
+            raise ValueError(
+                f"INIT is missing {timeframe} data."
+            )
+
+        candles = timeframe_data.get("candles")
+
+        if not isinstance(candles, list):
+            raise ValueError(
+                f"INIT {timeframe} candles must be a list."
+            )
+
+        if len(candles) != expected_count:
+            raise ValueError(
+                f"INIT {timeframe} must contain exactly "
+                f"{expected_count} candles."
+            )
+
+        normalized_timeframes[timeframe] = [
+            validate_mt5_candle(candle)
+            for candle in candles
+        ]
+
+    return {
+        "message_type": message_type,
+        "message_id": message_id,
+        "symbol": symbol,
+        "timeframes": normalized_timeframes,
+    }
 
