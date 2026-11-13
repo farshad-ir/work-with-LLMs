@@ -851,7 +851,7 @@ async def health():
 
 @app.post("/v1/mt5/ingest")
 async def mt5_ingest(request: Request):
-    async with MT5_REQUEST_LOCK:
+    
         try:
             raw_body = await request.body()
             payload = json.loads(raw_body)
