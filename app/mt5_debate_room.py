@@ -652,7 +652,7 @@ def get_mt5_receive_report(limit: int = 10) -> dict:
                 candle_items = [
                     (
                         payload.get("timeframe"),
-                        payload.get("candle", {}),
+                        payload.get("candles", {}),
                     )
                 ]
             elif message_type == "INIT":
