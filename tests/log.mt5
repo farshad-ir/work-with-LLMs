@@ -14,6 +14,7 @@ int SendLatestJson();
 int PollResponses(string clientId, uchar &output[], int outputCapacity);
 #import
 
+
 #include <JAson.mqh>
 
 #include "Common.mqh"
@@ -36,7 +37,7 @@ int PollResponses(string clientId, uchar &output[], int outputCapacity);
 //| Configuration                                                    |
 //+------------------------------------------------------------------+
 #define H1_HISTORY_CAPACITY 5
-#define H6_HISTORY_CAPACITY 1
+#define H6_HISTORY_CAPACITY 4
 
 
 //+------------------------------------------------------------------+
@@ -391,11 +392,12 @@ void SaveSendFile(const string data)
    FileClose(fileH);
 
    int result = SendLatestJson();
-
+   
    Print(
       "[SENDER] SendLatestJson result: ",
       result
    );
+   
 }
 
 
@@ -419,7 +421,7 @@ void ReadPoling()
       bytesRead,
       CP_UTF8
    );
-   //Print("[MT5 Get Response] ", jsonResponse);
+   Print("[MT5 Get Response] ", jsonResponse);
    
    if(!json.Deserialize(jsonResponse, CP_UTF8))
    {
@@ -448,7 +450,7 @@ void ReadPoling()
       statistics["words"].ToInt()
    );
    */
-   Print(report["report"].ToStr());
+   //Print(report["report"].ToStr());
 }
 
 
@@ -480,9 +482,9 @@ void SendOneCandle(
       DirectionText(direction)
    );
 
-   SaveSendFile(data);
+   //SaveSendFile(data);
 
-   ReadPoling();
+   //ReadPoling();
 }
 
 
