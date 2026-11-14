@@ -44,6 +44,19 @@ The persistent counter must be updated before the request is transmitted.
 
 A request retry must reuse its original ID.
 
+## 2.1 Request Lifecycle
+
+Each request must follow an explicit lifecycle:
+
+`CREATED → SENDING → SENT → REGISTERED → PROCESSING → COMPLETED / FAILED → RESPONSE_RECEIVED → ACK_SENT → ACKNOWLEDGED`
+
+- Every status transition must be recorded with its timestamp.
+- `SENT` does not mean `REGISTERED`.
+- `COMPLETED` does not mean `ACKNOWLEDGED`.
+- Retries must preserve the original `request_id`.
+- MT5 may delete a local request only after receiving confirmation of `ACKNOWLEDGED`.
+- Communication failures must not be confused with processing failures.
+
 ### 3. Request Identity and Payload Hash
 
 Request ID and payload hash serve different purposes.
