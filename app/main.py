@@ -43,7 +43,11 @@ from app.mt5_debate_room import (
     process_mt5_message,
     get_mt5_receive_report,
 )
-from app.mt5_sqlite import execute_command
+from app.mt5_delivery import (
+    init_mt5_delivery_db,
+    register_mt5_request,
+    RequestConflictError,
+)
 
 GATEWAY_LOG_ENABLED = os.getenv(
     "GATEWAY_LOG_ENABLED", "false"
@@ -641,6 +645,7 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_mt5_debate_db()
+    init_mt5_delivery_db()
     yield
 
 
@@ -877,14 +882,40 @@ async def mt5_sqlite_command(request: Request):
 
 @app.post("/v1/mt5/ingest")
 async def mt5_ingest(request: Request):
+
+    try:
+        envelope = await request.json()
+
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Invalid JSON request."
+            },
+        )
+
+    try:
+        result = register_mt5_request(envelope)
+
+    except RequestConflictError as exc:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "error": str(exc)
+            },
+        )
+
+    except (ValueError, TypeError) as exc:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": str(exc)
+            },
+        )
+
     return JSONResponse(
         status_code=200,
-        content={
-            "source": "python",
-            "service": "Rezvan Gateway",
-            "status": "ok",
-            "probe": "mt5-ingest-test"
-        },
+        content=result,
     )
 
 
