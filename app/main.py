@@ -43,6 +43,7 @@ from app.mt5_debate_room import (
     process_mt5_message,
     get_mt5_receive_report,
 )
+from app.mt5_sqlite import execute_command
 
 GATEWAY_LOG_ENABLED = os.getenv(
     "GATEWAY_LOG_ENABLED", "false"
@@ -849,6 +850,30 @@ async def consume_buffered_response(request: Request):
 async def health():
     return {"status": "ok", "app": "MyCode Gateway", "version": "0.1.0"}
 
+
+@app.post("/v1/mt5/sqlite/command")
+async def mt5_sqlite_command(request: Request):
+
+    try:
+        payload = await request.json()
+
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "success": False,
+                "error": "Invalid JSON request body.",
+            },
+        )
+
+    result = execute_command(payload)
+
+    status_code = 200 if result.get("success") else 400
+
+    return JSONResponse(
+        status_code=status_code,
+        content=result,
+    )
 
 @app.post("/v1/mt5/ingest")
 async def mt5_ingest(request: Request):
