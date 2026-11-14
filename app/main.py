@@ -48,6 +48,7 @@ from app.mt5_delivery import (
     register_mt5_request,
     RequestConflictError,
 )
+from app.mt5_sqlite import execute_command
 
 GATEWAY_LOG_ENABLED = os.getenv(
     "GATEWAY_LOG_ENABLED", "false"
