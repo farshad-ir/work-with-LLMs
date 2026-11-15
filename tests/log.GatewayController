@@ -389,23 +389,49 @@ class GatewayController extends Controller
 
 
 
+
     /*
-     * Retrieve cumulative MT5 statistics for a client.
+     * Retrieve a persistent MT5 response from Python.
      */
-    public function pollResponses(string $clientId): JsonResponse
+    public function pollResponses(Request $request): JsonResponse
     {
-        $clientId = 'mt5_terminal_01';
+        $clientId = $request->query('client_id');
+        $mt5RequestId = $request->query('request_id');
+
+        if (
+            !is_string($clientId) ||
+            $clientId === '' ||
+            !is_string($mt5RequestId) ||
+            $mt5RequestId === ''
+        ) {
+            return response()->json([
+                'error' => [
+                    'message' => 'client_id and request_id are required.',
+                ],
+            ], 400);
+        }
 
         try {
+            $query = http_build_query(
+                [
+                    'client_id' => $clientId,
+                    'request_id' => $mt5RequestId,
+                ],
+                '',
+                '&',
+                PHP_QUERY_RFC3986
+            );
+
             $result = $this->sendMt5PythonRequest(
                 'GET',
-                '/v1/mt5/response/' . rawurlencode($clientId),
+                '/v1/mt5/poll?' . $query,
                 '',
                 bin2hex(random_bytes(16))
             );
 
-            $this->logMt5Event('GET', [
+            $this->logMt5Event('POLL', [
                 'client_id' => $clientId,
+                'mt5_request_id' => $mt5RequestId,
                 'python_status' => $result['status'],
             ]);
 
@@ -424,18 +450,20 @@ class GatewayController extends Controller
             );
 
         } catch (\Throwable $e) {
-            $this->logMt5Event('GET_ERROR', [
+            $this->logMt5Event('POLL_ERROR', [
                 'client_id' => $clientId,
+                'mt5_request_id' => $mt5RequestId,
                 'message' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'error' => [
-                    'message' => 'Could not retrieve MT5 statistics.',
+                    'message' => 'Could not retrieve MT5 response.',
                 ],
             ], 502);
         }
     }
+
 
 
 
