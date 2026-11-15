@@ -426,17 +426,14 @@ int SendHTTP(const std::string& json)
 
 extern "C" __declspec(dllexport)
 int __stdcall PollResponses(
-    const wchar_t* clientId,
+    const wchar_t* pathParameter,
     unsigned char* output,
     int outputCapacity)
 {
-    if (clientId == NULL || output == NULL || outputCapacity <= 0)
+    if (pathParameter == NULL || output == NULL || outputCapacity <= 0)
         return -100;
 
-    std::wstring endpoint =
-        L"/gateway/mt5/responses/";
-
-    endpoint += clientId;
+    std::wstring endpoint = pathParameter;
 
     HINTERNET session = WinHttpOpen(
         L"MT5-Communication-DLL/1.0",
