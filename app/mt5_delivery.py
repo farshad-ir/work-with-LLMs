@@ -440,3 +440,121 @@ def recover_mt5_requests():
             })
 
     return results
+
+def get_mt5_response(client_id, request_id):
+    if not isinstance(client_id, str) or not client_id.strip():
+        raise ValueError("Invalid client_id.")
+
+    if not isinstance(request_id, str) or not request_id.strip():
+        raise ValueError("Invalid request_id.")
+
+    conn = _connect()
+
+    try:
+        row = conn.execute(
+            """
+            SELECT status, response_id, response_json
+            FROM mt5_delivery_requests
+            WHERE client_id = ?
+              AND request_id = ?
+            """,
+            (client_id, request_id),
+        ).fetchone()
+
+    finally:
+        conn.close()
+
+    if row is None:
+        raise ValueError("Request not found.")
+
+    if row["response_json"]:
+        return json.loads(row["response_json"])
+
+    return {
+        "protocol": "mt5-gateway",
+        "version": 1,
+        "message_type": "POLL_RESULT",
+        "client_id": client_id,
+        "request_id": request_id,
+        "status": "PROCESSING",
+        "response_id": None,
+        "payload": None,
+    }
+
+def acknowledge_mt5_response(envelope):
+    if not isinstance(envelope, dict):
+        raise ValueError("ACK must be a JSON object.")
+
+    if envelope.get("protocol") != "mt5-gateway":
+        raise ValueError("Invalid protocol.")
+
+    if envelope.get("version") != 1:
+        raise ValueError("Unsupported protocol version.")
+
+    if envelope.get("message_type") != "ACK":
+        raise ValueError("Expected ACK message.")
+
+    client_id = envelope.get("client_id")
+    request_id = envelope.get("request_id")
+    response_id = envelope.get("response_id")
+
+    if not all(
+        isinstance(value, str) and value.strip()
+        for value in (client_id, request_id, response_id)
+    ):
+        raise ValueError("Invalid ACK identifiers.")
+
+    conn = _connect()
+
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+
+        row = conn.execute(
+            """
+            SELECT status, response_id, response_json, acknowledged_at
+            FROM mt5_delivery_requests
+            WHERE client_id = ?
+              AND request_id = ?
+            """,
+            (client_id, request_id),
+        ).fetchone()
+
+        if row is None:
+            raise ValueError("Request not found.")
+
+        if not row["response_json"]:
+            raise ValueError("Response is not ready.")
+
+        if row["response_id"] != response_id:
+            raise RequestConflictError("response_id mismatch.")
+
+        if row["acknowledged_at"] is None:
+            conn.execute(
+                """
+                UPDATE mt5_delivery_requests
+                SET acknowledged_at = ?
+                WHERE client_id = ?
+                  AND request_id = ?
+                  AND acknowledged_at IS NULL
+                """,
+                (_now(), client_id, request_id),
+            )
+
+        conn.commit()
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+    return {
+        "protocol": "mt5-gateway",
+        "version": 1,
+        "message_type": "ACK_RESULT",
+        "client_id": client_id,
+        "request_id": request_id,
+        "response_id": response_id,
+        "status": "ACKNOWLEDGED",
+    }
