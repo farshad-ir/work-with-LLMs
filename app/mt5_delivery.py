@@ -309,7 +309,12 @@ def process_mt5_request(client_id, request_id):
         for index, operation in enumerate(
             payload["operations"]
         ):
-            result = execute_command(operation)
+            execution_id = f"{client_id}:{request_id}:{index}"
+
+            result = execute_command(
+                operation,
+                execution_id=execution_id,
+            )
 
             operation_results.append({
                 "index": index,
