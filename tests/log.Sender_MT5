@@ -489,12 +489,18 @@ bool GatewayParsePollResponse(
 
    if(!pollJson.Deserialize(responseText))
    {
-      Print("[GATEWAY] Invalid Poll JSON.");
+      Print("[GATEWAY] Invalid Poll JSON: ", responseText);
       return false;
    }
 
    status = pollJson["status"].ToStr();
    responseId = pollJson["response_id"].ToStr();
+
+   if(status == "")
+   {
+      Print("[GATEWAY] Poll response has no status. Response: ", responseText);
+      return false;
+   }
 
    if(status != "PROCESSING" &&
       status != "COMPLETED" &&
@@ -511,12 +517,8 @@ bool GatewayParsePollResponse(
       return false;
    }
 
-
-   if(status == "")
-   {
-      Print("[GATEWAY] Poll response has no status.");
-      return false;
-   }
+   Print("[GATEWAY] Poll status=", status,
+         " response_id=", responseId);
 
    return true;
 }
