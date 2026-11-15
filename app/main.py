@@ -48,6 +48,8 @@ from app.mt5_delivery import (
     register_mt5_request,
     process_mt5_request,
     recover_mt5_requests,
+    get_mt5_response,
+    acknowledge_mt5_response,
     RequestConflictError,
 )
 from app.mt5_sqlite import execute_command
@@ -1002,7 +1004,58 @@ async def mt5_response(client_id: str):
         "statistics": _get_mt5_stats(),
         "report": get_mt5_receive_report(),
     }
-    
+@app.get("/v1/mt5/poll")
+async def mt5_poll(client_id: str, request_id: str):
+
+    try:
+        result = get_mt5_response(
+            client_id,
+            request_id,
+        )
+
+    except ValueError as exc:
+        return JSONResponse(
+            status_code=404,
+            content={"error": str(exc)},
+        )
+
+    return JSONResponse(
+        status_code=200,
+        content=result,
+    )
+
+
+@app.post("/v1/mt5/ack")
+async def mt5_ack(request: Request):
+
+    try:
+        envelope = await request.json()
+
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid JSON request."},
+        )
+
+    try:
+        result = acknowledge_mt5_response(envelope)
+
+    except RequestConflictError as exc:
+        return JSONResponse(
+            status_code=409,
+            content={"error": str(exc)},
+        )
+
+    except ValueError as exc:
+        return JSONResponse(
+            status_code=400,
+            content={"error": str(exc)},
+        )
+
+    return JSONResponse(
+        status_code=200,
+        content=result,
+    )    
 @app.get("/", response_class=HTMLResponse)
 async def dashboard():
     page = TEMPLATES_DIR / "index.html"
