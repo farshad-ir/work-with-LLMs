@@ -298,6 +298,7 @@ def _list_tables():
     }
 
 
+
 def execute_command(payload, execution_id=None):
     if not isinstance(payload, dict):
         return {
@@ -311,7 +312,7 @@ def execute_command(payload, execution_id=None):
         "MAKE": _make,
         "INSR": _insert,
         "SELA": _select_all,
-        "LIST-TABL": lambda _: _list_tables(),
+        "LIST-TABL": lambda _, conn=None: _list_tables(),
     }
 
     handler = handlers.get(command)
@@ -323,14 +324,75 @@ def execute_command(payload, execution_id=None):
             "error": f"Unsupported command: {command}",
         }
 
-    try:
-        result = handler(payload)
+    if execution_id is None:
+        try:
+            result = handler(payload)
 
+            return {
+                "success": True,
+                "command": command,
+                "result": result,
+            }
+
+        except (ValueError, sqlite3.Error) as exc:
+            return {
+                "success": False,
+                "command": command,
+                "error": str(exc),
+            }
+
+    if not isinstance(execution_id, str) or not execution_id.strip():
         return {
-            "success": True,
+            "success": False,
             "command": command,
-            "result": result,
+            "error": "execution_id must be a non-empty string.",
         }
+
+    try:
+        with _connect() as conn:
+            _ensure_operation_table(conn)
+
+            existing = conn.execute(
+                """
+                SELECT command, result_json
+                FROM mt5_operation_results
+                WHERE execution_id = ?
+                """,
+                (execution_id,),
+            ).fetchone()
+
+            if existing is not None:
+                if existing["command"] != command:
+                    raise ValueError(
+                        "execution_id already exists for another command."
+                    )
+
+                return json.loads(existing["result_json"])
+
+            try:
+                result = handler(payload, conn=conn)
+
+                response = {
+                    "success": True,
+                    "command": command,
+                    "result": result,
+                }
+
+            except (ValueError, sqlite3.Error) as exc:
+                response = {
+                    "success": False,
+                    "command": command,
+                    "error": str(exc),
+                }
+
+            _record_operation(
+                conn,
+                execution_id,
+                command,
+                response,
+            )
+
+            return response
 
     except (ValueError, sqlite3.Error) as exc:
         return {
