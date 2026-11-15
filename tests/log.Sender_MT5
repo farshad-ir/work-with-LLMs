@@ -159,18 +159,33 @@ if(FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON))
       return INIT_FAILED;
    }
 
-   if(!FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+{
+   if(!GatewayValidateSavedResponse(
+      g_gatewayClientId,
+      g_gatewayRequestId
+   ))
    {
-      // Retry همان Envelope ذخیره‌شده
-      result = GatewaySubmit(data);
+      Print("[GATEWAY] Saved response does not match pending request.");
+      return INIT_FAILED;
    }
-   else
-   {
-      Print("[GATEWAY] Final response already persisted.");
-   }
+
+   Print("[GATEWAY] Valid final response already persisted.");
 }
 else
 {
+   // Retry همان Envelope ذخیره‌شده
+   result = GatewaySubmit(data);
+}
+
+else
+{
+
+   if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+   {
+      Print("[GATEWAY] Orphan response file exists. Manual reconciliation required.");
+      return INIT_FAILED;
+   }
    result = GatewaySubmit(data);
 
    if(!GatewayLoadPendingRequest(
@@ -770,3 +785,58 @@ bool GatewayLoadPendingRequest(
 
    return true;
 }
+
+//+------------------------------------------------------------------+
+//| Validate persisted final response against active request        |
+//+------------------------------------------------------------------+
+bool GatewayValidateSavedResponse(
+   const string expectedClientId,
+   const string expectedRequestId
+)
+{
+   if(!FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+      return false;
+
+   int h = FileOpen(
+      GATEWAY_RESPONSE_FILE,
+      FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
+   );
+
+   if(h == INVALID_HANDLE)
+   {
+      Print("[GATEWAY] Cannot open saved response. error=", GetLastError());
+      return false;
+   }
+
+   string responseText = FileReadString(h);
+   FileClose(h);
+
+   if(responseText == "")
+      return false;
+
+   string status;
+   string responseId;
+
+   if(!GatewayParsePollResponse(
+      responseText,
+      expectedClientId,
+      expectedRequestId,
+      status,
+      responseId
+   ))
+      return false;
+
+   if(status != "COMPLETED" && status != "FAILED")
+   {
+      Print("[GATEWAY] Saved response is not final. status=", status);
+      return false;
+   }
+
+   Print("[GATEWAY] Saved final response validated. request_id=",
+         expectedRequestId,
+         " response_id=", responseId);
+
+   return true;
+}
+
+
