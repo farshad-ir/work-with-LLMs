@@ -35,7 +35,17 @@ def _connect():
 
     return conn
 
+def _ensure_operation_table(conn):
 
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS mt5_operation_results (
+            execution_id TEXT PRIMARY KEY,
+            command TEXT NOT NULL,
+            result_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    """)
+    
 def _validate_identifier(value):
     if not isinstance(value, str):
         raise ValueError("Identifier must be a string.")
@@ -62,7 +72,7 @@ def _get_table_columns(conn, table):
     }
 
 
-def _make(payload):
+def _make(payload, conn=None):
     table = _validate_identifier(payload.get("table"))
 
     columns = payload.get("columns")
@@ -137,7 +147,11 @@ def _make(payload):
         + ")"
     )
 
-    with _connect() as conn:
+    if conn is None:
+        with _connect() as conn:
+            conn.execute(f'DROP TABLE IF EXISTS "{table}"')
+            conn.execute(sql)
+    else:
         conn.execute(f'DROP TABLE IF EXISTS "{table}"')
         conn.execute(sql)
 
@@ -148,7 +162,8 @@ def _make(payload):
     }
 
 
-def _insert(payload):
+
+def _insert(payload, conn=None):
     table = _validate_identifier(payload.get("table"))
     values = payload.get("values")
 
@@ -157,8 +172,8 @@ def _insert(payload):
             "INSR requires a non-empty values object."
         )
 
-    with _connect() as conn:
-        columns = _get_table_columns(conn, table)
+    def _run(connection):
+        columns = _get_table_columns(connection, table)
 
         for name in values:
             _validate_identifier(name)
@@ -186,17 +201,24 @@ def _insert(payload):
             f"VALUES ({placeholders})"
         )
 
-        cursor = conn.execute(
+        cursor = connection.execute(
             sql,
             [values[name] for name in names],
         )
 
-        inserted_id = cursor.lastrowid
+        return cursor.lastrowid
+
+    if conn is None:
+        with _connect() as connection:
+            inserted_id = _run(connection)
+    else:
+        inserted_id = _run(conn)
 
     return {
         "table": table,
         "inserted_id": inserted_id,
     }
+
 
 
 def _select_all(payload):
