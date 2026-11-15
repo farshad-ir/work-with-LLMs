@@ -265,9 +265,9 @@ def process_mt5_request(client_id, request_id):
             conn.commit()
             return response
 
-        if row["status"] != "REGISTERED":
+        if row["status"] not in ("REGISTERED", "PROCESSING"):
             conn.commit()
-
+        
             return {
                 "client_id": client_id,
                 "request_id": request_id,
