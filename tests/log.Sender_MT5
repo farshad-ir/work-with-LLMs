@@ -145,62 +145,64 @@ int OnInit()
         
    
 
-
-int result = 0;
-
-if(FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON))
-{
-   if(!GatewayLoadPendingRequest(
-      g_gatewayClientId,
-      g_gatewayRequestId
-   ))
+   int result = 0;
+   
+   if(FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON))
    {
-      Print("[GATEWAY] Cannot recover pending request.");
-      return INIT_FAILED;
+      if(!GatewayLoadPendingRequest(
+         g_gatewayClientId,
+         g_gatewayRequestId
+      ))
+      {
+         Print("[GATEWAY] Cannot recover pending request.");
+         return INIT_FAILED;
+      }
+   
+      if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+      {
+         if(!GatewayValidateSavedResponse(
+            g_gatewayClientId,
+            g_gatewayRequestId
+         ))
+         {
+            Print("[GATEWAY] Saved response does not match pending request.");
+            return INIT_FAILED;
+         }
+   
+         Print("[GATEWAY] Valid final response already persisted.");
+      }
+      else
+      {
+         // Retry همان Envelope ذخیره‌شده
+         result = GatewaySubmit(data);
+      }
+   }
+   else
+   {
+      if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+      {
+         Print("[GATEWAY] Orphan response file exists. Manual reconciliation required.");
+         return INIT_FAILED;
+      }
+   
+      result = GatewaySubmit(data);
+   
+      if(!GatewayLoadPendingRequest(
+         g_gatewayClientId,
+         g_gatewayRequestId
+      ))
+      {
+         Print("[GATEWAY] Cannot load newly created request.");
+         return INIT_FAILED;
+      }
    }
 
-if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
-{
-   if(!GatewayValidateSavedResponse(
-      g_gatewayClientId,
-      g_gatewayRequestId
-   ))
-   {
-      Print("[GATEWAY] Saved response does not match pending request.");
-      return INIT_FAILED;
-   }
 
-   Print("[GATEWAY] Valid final response already persisted.");
-}
-else
-{
-   // Retry همان Envelope ذخیره‌شده
-   result = GatewaySubmit(data);
-}
 
-else
-{
 
-   if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
-   {
-      Print("[GATEWAY] Orphan response file exists. Manual reconciliation required.");
-      return INIT_FAILED;
-   }
-   result = GatewaySubmit(data);
-
-   if(!GatewayLoadPendingRequest(
-      g_gatewayClientId,
-      g_gatewayRequestId
-   ))
-   {
-      Print("[GATEWAY] Cannot load newly created request.");
-      return INIT_FAILED;
-   }
-}
-
-Print("[GATEWAY] Submit result: ", result);
-
-EventSetTimer(3);
+   Print("[GATEWAY] Submit result: ", result);
+   
+   EventSetTimer(3);
    
    return(INIT_SUCCEEDED);
 }
