@@ -47,6 +47,7 @@ from app.mt5_delivery import (
     init_mt5_delivery_db,
     register_mt5_request,
     process_mt5_request,
+    recover_mt5_requests,
     RequestConflictError,
 )
 from app.mt5_sqlite import execute_command
@@ -648,6 +649,10 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 async def lifespan(app: FastAPI):
     init_mt5_debate_db()
     init_mt5_delivery_db()
+
+    recovery_results = recover_mt5_requests()
+    _gateway_log("[MT5 RECOVERY]", recovery_results)
+
     yield
 
 
