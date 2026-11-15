@@ -442,6 +442,8 @@ class GatewayController extends Controller
                 'client_id' => $clientId,
                 'request_id' => $mt5RequestId,
                 'action' => $action,
+                'protocol' => 'mt5-gateway',
+                'version' => 1,
             ];
 
             if ($action === 'ACK') {
