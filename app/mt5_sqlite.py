@@ -254,7 +254,7 @@ def _insert(payload, conn=None):
 
 
 
-def _select_all(payload):
+def _select_all(payload, conn=None):
     table = _validate_identifier(payload.get("table"))
 
     limit = payload.get("limit", 100)
@@ -265,24 +265,32 @@ def _select_all(payload):
     if limit < 1 or limit > 1000:
         raise ValueError("limit must be between 1 and 1000.")
 
-    with _connect() as conn:
-        _get_table_columns(conn, table)
+    def _run(connection):
+        _get_table_columns(connection, table)
 
-        rows = conn.execute(
+        rows = connection.execute(
             f'SELECT * FROM "{table}" ORDER BY "id" ASC LIMIT ?',
             (limit,),
         ).fetchall()
 
-    return {
-        "table": table,
-        "count": len(rows),
-        "records": [dict(row) for row in rows],
-    }
+        return {
+            "table": table,
+            "count": len(rows),
+            "records": [dict(row) for row in rows],
+        }
+
+    if conn is None:
+        with _connect() as connection:
+            return _run(connection)
+
+    return _run(conn)
 
 
-def _list_tables():
-    with _connect() as conn:
-        rows = conn.execute(
+
+def _list_tables(conn=None):
+
+    def _run(connection):
+        rows = connection.execute(
             """
             SELECT name
             FROM sqlite_master
@@ -292,10 +300,16 @@ def _list_tables():
             """
         ).fetchall()
 
-    return {
-        "tables": [row["name"] for row in rows],
-        "count": len(rows),
-    }
+        return {
+            "tables": [row["name"] for row in rows],
+            "count": len(rows),
+        }
+
+    if conn is None:
+        with _connect() as connection:
+            return _run(connection)
+
+    return _run(conn)
 
 
 
@@ -312,7 +326,7 @@ def execute_command(payload, execution_id=None):
         "MAKE": _make,
         "INSR": _insert,
         "SELA": _select_all,
-        "LIST-TABL": lambda _, conn=None: _list_tables(),
+        "LIST-TABL": lambda _, conn=None: _list_tables(conn=conn),
     }
 
     handler = handlers.get(command)
