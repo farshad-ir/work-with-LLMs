@@ -12,11 +12,11 @@ int PollResponses(string pathParameter, uchar &output[], int outputCapacity);
 
 input string InpGatewayClientId = "mt5_terminal_01";
 
-#define GATEWAY_FEED_FILE    "LLM-LQ/mt5_feed.json"
-#define GATEWAY_REQUEST_FILE "LLM-LQ/Gateway/temp/current_request.json"
+#define GATEWAY_FEED_FILE     "LLM-LQ/mt5_feed.json"
+#define GATEWAY_REQUEST_FILE  "LLM-LQ/Gateway/temp/current_request.json"
 #define GATEWAY_SEQUENCE_FILE "LLM-LQ/Gateway/temp/request_sequence.txt"
-#define GATEWAY_STATE_FILE   "LLM-LQ/Gateway/temp/current_state.txt"
-
+#define GATEWAY_STATE_FILE    "LLM-LQ/Gateway/temp/current_state.txt"
+#define GATEWAY_RESPONSE_FILE "LLM-LQ/Gateway/temp/current_response.json"
 
 
 #include <JAson.mqh>
@@ -478,6 +478,8 @@ bool GatewayPoll(
 
 bool GatewayParsePollResponse(
    const string responseText,
+   const string expectedClientId,
+   const string expectedRequestId,
    string &status,
    string &responseId
 )
@@ -489,18 +491,33 @@ bool GatewayParsePollResponse(
 
    if(!pollJson.Deserialize(responseText))
    {
-      Print("[GATEWAY] Invalid Poll JSON: ", responseText);
+      Print("[GATEWAY] Invalid Poll JSON.");
+      return false;
+   }
+
+   string protocol = pollJson["protocol"].ToStr();
+   int version = (int)pollJson["version"].ToInt();
+   string messageType = pollJson["message_type"].ToStr();
+   string clientId = pollJson["client_id"].ToStr();
+   string requestId = pollJson["request_id"].ToStr();
+
+   if(protocol != "mt5-gateway" ||
+      version != 1 ||
+      messageType != "POLL_RESULT")
+   {
+      Print("[GATEWAY] Invalid Poll protocol envelope.");
+      return false;
+   }
+
+   if(clientId != expectedClientId ||
+      requestId != expectedRequestId)
+   {
+      Print("[GATEWAY] Poll response identity mismatch.");
       return false;
    }
 
    status = pollJson["status"].ToStr();
    responseId = pollJson["response_id"].ToStr();
-
-   if(status == "")
-   {
-      Print("[GATEWAY] Poll response has no status. Response: ", responseText);
-      return false;
-   }
 
    if(status != "PROCESSING" &&
       status != "COMPLETED" &&
@@ -517,9 +534,66 @@ bool GatewayParsePollResponse(
       return false;
    }
 
-   Print("[GATEWAY] Poll status=", status,
+   Print("[GATEWAY] Poll validated. status=", status,
          " response_id=", responseId);
 
    return true;
 }
+bool GatewaySaveResponse(const string responseText)
+{
+   int h = FileOpen(
+      GATEWAY_RESPONSE_FILE,
+      FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_UNICODE
+   );
 
+   if(h == INVALID_HANDLE)
+   {
+      Print("[GATEWAY] Cannot open response file. error=", GetLastError());
+      return false;
+   }
+
+   uint written = FileWriteString(h, responseText);
+   FileClose(h);
+
+   if(written == 0)
+   {
+      Print("[GATEWAY] Failed to write response file.");
+      return false;
+   }
+
+   Print("[GATEWAY] Response persisted.");
+   return true;
+}
+
+bool GatewayPollAndPersist(
+   const string clientId,
+   const string requestId
+)
+{
+   string responseText;
+   string status;
+   string responseId;
+
+   if(!GatewayPoll(clientId, requestId, responseText))
+      return false;
+
+   if(!GatewayParsePollResponse(
+      responseText,
+      clientId,
+      requestId,
+      status,
+      responseId
+   ))
+      return false;
+
+   if(status == "PROCESSING")
+      return true;
+
+   if(!GatewaySaveResponse(responseText))
+      return false;
+
+   if(!GatewaySaveState("RESPONSE_RECEIVED"))
+      return false;
+
+   return true;
+}
