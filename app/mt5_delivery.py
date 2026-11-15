@@ -240,7 +240,7 @@ def register_mt5_request(envelope):
     }
 
 
-def process_mt5_request(client_id, request_id):
+def process_mt5_request(client_id, request_id, allow_processing=False):
 
     conn = _connect()
 
@@ -265,6 +265,17 @@ def process_mt5_request(client_id, request_id):
             conn.commit()
             return response
 
+        if row["status"] == "PROCESSING" and not allow_processing:
+            conn.commit()
+            return {
+                "client_id": client_id,
+                "request_id": request_id,
+                "status": "PROCESSING",
+                "response_id": None,
+                "payload": None,
+            }
+
+        
         if row["status"] not in ("REGISTERED", "PROCESSING"):
             conn.commit()
         
@@ -424,6 +435,7 @@ def recover_mt5_requests():
             response = process_mt5_request(
                 client_id,
                 request_id,
+                allow_processing=True,
             )
 
             results.append({
