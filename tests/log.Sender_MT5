@@ -143,9 +143,46 @@ int OnInit()
    
 
 
-   int result = GatewaySubmit(data);
-   
-   Print("Result: ", result);
+int result = 0;
+
+if(FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON))
+{
+   if(!GatewayLoadPendingRequest(
+      g_gatewayClientId,
+      g_gatewayRequestId
+   ))
+   {
+      Print("[GATEWAY] Cannot recover pending request.");
+      return INIT_FAILED;
+   }
+
+   if(!FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+   {
+      // Retry همان Envelope ذخیره‌شده
+      result = GatewaySubmit(data);
+   }
+   else
+   {
+      Print("[GATEWAY] Final response already persisted.");
+   }
+}
+else
+{
+   result = GatewaySubmit(data);
+
+   if(!GatewayLoadPendingRequest(
+      g_gatewayClientId,
+      g_gatewayRequestId
+   ))
+   {
+      Print("[GATEWAY] Cannot load newly created request.");
+      return INIT_FAILED;
+   }
+}
+
+Print("[GATEWAY] Submit result: ", result);
+
+EventSetTimer(3);
    
    return(INIT_SUCCEEDED);
 }
@@ -160,7 +197,40 @@ void OnTick()
 }
 //+------------------------------------------------------------------+
 
+void OnTimer()
+{
+   if(g_gatewayClientId == "" ||
+      g_gatewayRequestId == "")
+      return;
 
+   // پاسخ نهایی قبلاً ذخیره شده؛ Poll متوقف شود.
+   if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+      return;
+
+   string state;
+
+   if(!GatewayLoadState(state))
+      return;
+
+   // تا وقتی ارسال موفق نشده، Poll نکن.
+   if(state != "SENT" &&
+      state != "REGISTERED" &&
+      state != "PROCESSING")
+      return;
+
+   if(!GatewayPollAndPersist(
+      g_gatewayClientId,
+      g_gatewayRequestId
+   ))
+   {
+      Print("[GATEWAY] Poll attempt failed; will retry.");
+   }
+}
+
+void OnDeinit(const int reason)
+{
+   EventKillTimer();
+}
 
 
 
@@ -265,6 +335,28 @@ bool GatewaySaveState(const string state)
 
    return true;
 }
+
+bool GatewayLoadState(string &state)
+{
+   state = "";
+
+   if(!FileIsExist(GATEWAY_STATE_FILE, FILE_COMMON))
+      return false;
+
+   int h = FileOpen(
+      GATEWAY_STATE_FILE,
+      FILE_READ | FILE_TXT | FILE_COMMON | FILE_ANSI
+   );
+
+   if(h == INVALID_HANDLE)
+      return false;
+
+   state = FileReadString(h);
+   FileClose(h);
+
+   return (state != "");
+}
+
 
 string GatewayNextRequestId()
 {
