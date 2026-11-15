@@ -532,7 +532,8 @@ def acknowledge_mt5_response(envelope):
             conn.execute(
                 """
                 UPDATE mt5_delivery_requests
-                SET acknowledged_at = ?
+                SET status = 'ACKNOWLEDGED',
+                    acknowledged_at = ?
                 WHERE client_id = ?
                   AND request_id = ?
                   AND acknowledged_at IS NULL
