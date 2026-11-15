@@ -1,7 +1,9 @@
 import os
 import re
 import sqlite3
+import json
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -45,6 +47,37 @@ def _ensure_operation_table(conn):
             created_at TEXT NOT NULL
         )
     """)
+
+def _record_operation(conn, execution_id, command, response):
+    _ensure_operation_table(conn)
+
+    result_json = json.dumps(
+        response,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
+
+    created_at = datetime.now(timezone.utc).isoformat()
+
+    conn.execute(
+        """
+        INSERT INTO mt5_operation_results (
+            execution_id,
+            command,
+            result_json,
+            created_at
+        )
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            execution_id,
+            command,
+            result_json,
+            created_at,
+        ),
+    )
     
 def _validate_identifier(value):
     if not isinstance(value, str):
