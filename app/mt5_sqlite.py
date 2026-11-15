@@ -298,7 +298,7 @@ def _list_tables():
     }
 
 
-def execute_command(payload):
+def execute_command(payload, execution_id=None):
     if not isinstance(payload, dict):
         return {
             "success": False,
