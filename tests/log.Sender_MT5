@@ -7,7 +7,7 @@
 //--- Existing DLL sender (unchanged)
 #import "egg.dll"
 int SendLatestJson();
-int PollResponses(string clientId, uchar &output[], int outputCapacity);
+int PollResponses(string pathParameter, uchar &output[], int outputCapacity);
 #import
 
 input string InpGatewayClientId = "mt5_terminal_01";
@@ -419,4 +419,59 @@ int GatewaySubmit(const string body)
    return result;
 }
 
+//+------------------------------------------------------------------+
+//| Execute HTTP GET through DLL and return UTF-8 response           |
+//+------------------------------------------------------------------+
+bool GatewayHttpGet(
+   const string pathParameter,
+   string &responseText
+)
+{
+   responseText = "";
 
+   ArrayInitialize(response, 0);
+
+   int result = PollResponses(
+      pathParameter,
+      response,
+      ArraySize(response)
+   );
+
+   if(result <= 0)
+   {
+      Print("[GATEWAY] GET failed. result=", result);
+      return false;
+   }
+
+   responseText = CharArrayToString(
+      response,
+      0,
+      WHOLE_ARRAY,
+      CP_UTF8
+   );
+
+   if(StringLen(responseText) == 0)
+   {
+      Print("[GATEWAY] GET returned empty response. result=", result);
+      return false;
+   }
+
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Poll one MT5 request                                             |
+//+------------------------------------------------------------------+
+bool GatewayPoll(
+   const string clientId,
+   const string requestId,
+   string &responseText
+)
+{
+   string path =
+      "/gateway/mt5/responses"
+      "?client_id=" + clientId +
+      "&request_id=" + requestId;
+
+   return GatewayHttpGet(path, responseText);
+}
