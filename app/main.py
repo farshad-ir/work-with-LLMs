@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 from app.responses_adapter import (
     chat_to_responses_text,
@@ -890,7 +890,7 @@ async def mt5_sqlite_command(request: Request):
     )
 
 @app.post("/v1/mt5/ingest")
-async def mt5_ingest(request: Request):
+async def mt5_ingest(request: Request, background_tasks: BackgroundTasks,):
 
     try:
         envelope = await request.json()
@@ -906,10 +906,12 @@ async def mt5_ingest(request: Request):
     try:
         result = register_mt5_request(envelope)
         
-        result = process_mt5_request(
-            result["client_id"],
-            result["request_id"],
-        )
+        if result["status"] == "REGISTERED":
+            background_tasks.add_task(
+                process_mt5_request,
+                result["client_id"],
+                result["request_id"],
+            )
 
     except RequestConflictError as exc:
         return JSONResponse(
@@ -983,11 +985,16 @@ async def a_mt5_ingest(request: Request):
         elif timeframe == "H6":
             h6_candles = count
 
-    return {
-        "is_init": is_init,
-        "h1_candles": h1_candles,
-        "h6_candles": h6_candles,
-    }
+    status_code = (
+        202
+        if result["status"] in ("REGISTERED", "PROCESSING")
+        else 200
+    )
+
+    return JSONResponse(
+        status_code=status_code,
+        content=result,
+    )
 
 @app.get("/v1/mt5/response/{client_id}")
 async def mt5_response(client_id: str):
