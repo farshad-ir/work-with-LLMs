@@ -957,8 +957,76 @@ async def mt5_response(client_id: str):
         "statistics": _get_mt5_stats(),
         "report": get_mt5_receive_report(),
     }
+
+
 @app.get("/v1/mt5/poll")
-async def mt5_poll(client_id: str, request_id: str):
+async def mt5_poll(
+    client_id: str,
+    request_id: str,
+    action: str = "POLL",
+    protocol: str = "mt5-gateway",
+    version: int = 1,
+    response_id: str | None = None,
+):
+
+    if protocol != "mt5-gateway" or version != 1:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid protocol or version."},
+            headers={"Cache-Control": "no-store"},
+        )
+
+    action = action.strip().upper()
+
+    # عملیات ACK از همین GET
+    if action == "ACK":
+
+        if not response_id or not response_id.strip():
+            return JSONResponse(
+                status_code=400,
+                content={"error": "response_id is required for ACK."},
+                headers={"Cache-Control": "no-store"},
+            )
+
+        envelope = {
+            "protocol": protocol,
+            "version": version,
+            "message_type": "ACK",
+            "client_id": client_id,
+            "request_id": request_id,
+            "response_id": response_id.strip(),
+        }
+
+        try:
+            result = acknowledge_mt5_response(envelope)
+
+        except RequestConflictError as exc:
+            return JSONResponse(
+                status_code=409,
+                content={"error": str(exc)},
+                headers={"Cache-Control": "no-store"},
+            )
+
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"error": str(exc)},
+                headers={"Cache-Control": "no-store"},
+            )
+
+        return JSONResponse(
+            status_code=200,
+            content=result,
+            headers={"Cache-Control": "no-store"},
+        )
+
+    # عملیات Poll
+    if action != "POLL":
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Unsupported action."},
+            headers={"Cache-Control": "no-store"},
+        )
 
     try:
         result = get_mt5_response(
@@ -970,11 +1038,13 @@ async def mt5_poll(client_id: str, request_id: str):
         return JSONResponse(
             status_code=404,
             content={"error": str(exc)},
+            headers={"Cache-Control": "no-store"},
         )
 
     return JSONResponse(
         status_code=200,
         content=result,
+        headers={"Cache-Control": "no-store"},
     )
 
 
