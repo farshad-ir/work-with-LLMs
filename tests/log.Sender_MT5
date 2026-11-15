@@ -62,6 +62,9 @@ uchar response[16384];
 
 string h1Candles = "";
 string h6Candles = "";
+
+string g_gatewayClientId = "";
+string g_gatewayRequestId = "";
    
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
