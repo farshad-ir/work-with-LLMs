@@ -929,8 +929,14 @@ async def mt5_ingest(request: Request, background_tasks: BackgroundTasks,):
             },
         )
 
+    status_code = (
+        202
+        if result["status"] in ("REGISTERED", "PROCESSING")
+        else 200
+    )
+
     return JSONResponse(
-        status_code=200,
+        status_code=status_code,
         content=result,
     )
 
@@ -985,16 +991,7 @@ async def a_mt5_ingest(request: Request):
         elif timeframe == "H6":
             h6_candles = count
 
-    status_code = (
-        202
-        if result["status"] in ("REGISTERED", "PROCESSING")
-        else 200
-    )
 
-    return JSONResponse(
-        status_code=status_code,
-        content=result,
-    )
 
 @app.get("/v1/mt5/response/{client_id}")
 async def mt5_response(client_id: str):
