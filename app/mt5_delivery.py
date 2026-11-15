@@ -1,7 +1,9 @@
 import hashlib
 import json
 import sqlite3
+import secrets
 
+from app.mt5_sqlite import execute_command
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -116,7 +118,25 @@ def _validate_envelope(envelope):
 
     if command not in ("INIT", "CANDLE_UPDATE"):
         raise ValueError("Unsupported payload command.")
+    if command == "INIT":
+        operations = payload.get("operations")
 
+        if not isinstance(operations, list) or not operations:
+            raise ValueError(
+                "INIT requires a non-empty operations array."
+            )
+
+        for operation in operations:
+            if not isinstance(operation, dict):
+                raise ValueError(
+                    "Each INIT operation must be an object."
+                )
+
+            if not isinstance(operation.get("command"), str):
+                raise ValueError(
+                    "Each INIT operation requires a command."
+                )
+                
     return client_id, request_id, created_at
 
 
@@ -218,3 +238,155 @@ def register_mt5_request(envelope):
         "created_at": created_at,
         "payload": None,
     }
+
+
+def process_mt5_request(client_id, request_id):
+
+    conn = _connect()
+
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+
+        row = conn.execute(
+            """
+            SELECT request_json, status, response_json
+            FROM mt5_delivery_requests
+            WHERE client_id = ?
+              AND request_id = ?
+            """,
+            (client_id, request_id),
+        ).fetchone()
+
+        if row is None:
+            raise ValueError("Request not found.")
+
+        if row["response_json"]:
+            response = json.loads(row["response_json"])
+            conn.commit()
+            return response
+
+        if row["status"] != "REGISTERED":
+            conn.commit()
+
+            return {
+                "client_id": client_id,
+                "request_id": request_id,
+                "status": row["status"],
+                "response_id": None,
+                "payload": None,
+            }
+
+        conn.execute(
+            """
+            UPDATE mt5_delivery_requests
+            SET status = 'PROCESSING'
+            WHERE client_id = ?
+              AND request_id = ?
+            """,
+            (client_id, request_id),
+        )
+
+        request_json = row["request_json"]
+        conn.commit()
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+    envelope = json.loads(request_json)
+    payload = envelope["payload"]
+
+    command = payload["command"]
+    operation_results = []
+
+    success = True
+
+    if command == "INIT":
+
+        for index, operation in enumerate(
+            payload["operations"]
+        ):
+            result = execute_command(operation)
+
+            operation_results.append({
+                "index": index,
+                **result,
+            })
+
+            if not result.get("success"):
+                success = False
+                break
+
+        response_payload = {
+            "operations": operation_results,
+        }
+
+        if not success:
+            response_payload["error"] = "INIT operation failed."
+
+    else:
+        success = False
+
+        response_payload = {
+            "error": f"Command not implemented: {command}"
+        }
+
+    status = "COMPLETED" if success else "FAILED"
+
+    response = {
+        "protocol": "mt5-gateway",
+        "version": 1,
+        "message_type": "POLL_RESULT",
+        "client_id": client_id,
+        "request_id": request_id,
+        "status": status,
+        "response_id": secrets.token_hex(16),
+        "created_at": _now(),
+        "payload": response_payload,
+    }
+
+    response_json = json.dumps(
+        response,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
+
+    conn = _connect()
+
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+
+        conn.execute(
+            """
+            UPDATE mt5_delivery_requests
+            SET status = ?,
+                response_id = ?,
+                response_json = ?
+            WHERE client_id = ?
+              AND request_id = ?
+              AND status = 'PROCESSING'
+            """,
+            (
+                status,
+                response["response_id"],
+                response_json,
+                client_id,
+                request_id,
+            ),
+        )
+
+        conn.commit()
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+    return response
