@@ -941,57 +941,6 @@ async def mt5_ingest(request: Request, background_tasks: BackgroundTasks,):
     )
 
 
-async def a_mt5_ingest(request: Request):
-    
-    try:
-        raw_body = await request.body()
-        payload = json.loads(raw_body)
-
-    except Exception:
-        raise HTTPException(
-            status_code=400,
-            detail="Request body must be valid JSON.",
-        ) from None
-
-    if not isinstance(payload, dict):
-        raise HTTPException(
-            status_code=400,
-            detail="Request body must be a JSON object.",
-        )
-
-    
-
-    message_type = str(payload.get("message_type", "")).upper()
-
-    is_init = message_type == "INIT"
-    h1_candles = 0
-    h6_candles = 0
-
-    if is_init:
-        timeframes = payload.get("timeframes", {})
-
-        if isinstance(timeframes, dict):
-            h1 = timeframes.get("H1", {})
-            h6 = timeframes.get("H6", {})
-
-            if isinstance(h1, dict) and isinstance(h1.get("candles"), list):
-                h1_candles = len(h1["candles"])
-
-            if isinstance(h6, dict) and isinstance(h6.get("candles"), list):
-                h6_candles = len(h6["candles"])
-
-    elif message_type == "CANDLE_UPDATE":
-        candles = payload.get("candles", [])
-        count = len(candles) if isinstance(candles, list) else 0
-
-        timeframe = str(payload.get("timeframe", "")).upper()
-
-        if timeframe == "H1":
-            h1_candles = count
-        elif timeframe == "H6":
-            h6_candles = count
-
-
 
 @app.get("/v1/mt5/response/{client_id}")
 async def mt5_response(client_id: str):
