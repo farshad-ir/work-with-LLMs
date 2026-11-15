@@ -475,3 +475,49 @@ bool GatewayPoll(
 
    return GatewayHttpGet(path, responseText);
 }
+
+bool GatewayParsePollResponse(
+   const string responseText,
+   string &status,
+   string &responseId
+)
+{
+   status = "";
+   responseId = "";
+
+   CJAVal pollJson;
+
+   if(!pollJson.Deserialize(responseText))
+   {
+      Print("[GATEWAY] Invalid Poll JSON.");
+      return false;
+   }
+
+   status = pollJson["status"].ToStr();
+   responseId = pollJson["response_id"].ToStr();
+
+   if(status != "PROCESSING" &&
+      status != "COMPLETED" &&
+      status != "FAILED")
+   {
+      Print("[GATEWAY] Unexpected Poll status: ", status);
+      return false;
+   }
+
+   if((status == "COMPLETED" || status == "FAILED") &&
+      responseId == "")
+   {
+      Print("[GATEWAY] Final response has no response_id.");
+      return false;
+   }
+
+
+   if(status == "")
+   {
+      Print("[GATEWAY] Poll response has no status.");
+      return false;
+   }
+
+   return true;
+}
+
