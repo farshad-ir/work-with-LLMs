@@ -395,3 +395,48 @@ def process_mt5_request(client_id, request_id):
         conn.close()
 
     return response
+
+
+def recover_mt5_requests():
+    conn = _connect()
+
+    try:
+        rows = conn.execute(
+            """
+            SELECT client_id, request_id
+            FROM mt5_delivery_requests
+            WHERE status IN ('REGISTERED', 'PROCESSING')
+              AND response_json IS NULL
+            ORDER BY registered_at, client_id, request_id
+            """
+        ).fetchall()
+
+    finally:
+        conn.close()
+
+    results = []
+
+    for row in rows:
+        client_id = row["client_id"]
+        request_id = row["request_id"]
+
+        try:
+            response = process_mt5_request(
+                client_id,
+                request_id,
+            )
+
+            results.append({
+                "client_id": client_id,
+                "request_id": request_id,
+                "status": response.get("status"),
+            })
+
+        except Exception as exc:
+            results.append({
+                "client_id": client_id,
+                "request_id": request_id,
+                "error": str(exc),
+            })
+
+    return results
