@@ -390,33 +390,66 @@ class GatewayController extends Controller
 
 
 
+   
     /*
      * Retrieve a persistent MT5 response from Python.
+     * Supports both POLL and ACK actions.
      */
     public function pollResponses(Request $request): JsonResponse
     {
         $clientId = $request->query('client_id');
         $mt5RequestId = $request->query('request_id');
+        $action = $request->query('action', 'POLL');
+        $responseId = $request->query('response_id');
 
         if (
             !is_string($clientId) ||
             $clientId === '' ||
             !is_string($mt5RequestId) ||
-            $mt5RequestId === ''
+            $mt5RequestId === '' ||
+            !is_string($action)
         ) {
             return response()->json([
                 'error' => [
-                    'message' => 'client_id and request_id are required.',
+                    'message' => 'Invalid request parameters.',
+                ],
+            ], 400);
+        }
+
+        $action = strtoupper(trim($action));
+
+        if (!in_array($action, ['POLL', 'ACK'], true)) {
+            return response()->json([
+                'error' => [
+                    'message' => 'Unsupported action.',
+                ],
+            ], 400);
+        }
+
+        if (
+            $action === 'ACK' &&
+            (!is_string($responseId) || trim($responseId) === '')
+        ) {
+            return response()->json([
+                'error' => [
+                    'message' => 'response_id is required for ACK.',
                 ],
             ], 400);
         }
 
         try {
+            $parameters = [
+                'client_id' => $clientId,
+                'request_id' => $mt5RequestId,
+                'action' => $action,
+            ];
+
+            if ($action === 'ACK') {
+                $parameters['response_id'] = trim($responseId);
+            }
+
             $query = http_build_query(
-                [
-                    'client_id' => $clientId,
-                    'request_id' => $mt5RequestId,
-                ],
+                $parameters,
                 '',
                 '&',
                 PHP_QUERY_RFC3986
@@ -429,9 +462,10 @@ class GatewayController extends Controller
                 bin2hex(random_bytes(16))
             );
 
-            $this->logMt5Event('POLL', [
+            $this->logMt5Event($action, [
                 'client_id' => $clientId,
                 'mt5_request_id' => $mt5RequestId,
+                'response_id' => $responseId,
                 'python_status' => $result['status'],
             ]);
 
@@ -450,19 +484,21 @@ class GatewayController extends Controller
             );
 
         } catch (\Throwable $e) {
-            $this->logMt5Event('POLL_ERROR', [
+            $this->logMt5Event($action . '_ERROR', [
                 'client_id' => $clientId,
                 'mt5_request_id' => $mt5RequestId,
+                'response_id' => $responseId,
                 'message' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'error' => [
-                    'message' => 'Could not retrieve MT5 response.',
+                    'message' => 'Could not process MT5 ' . $action . ' request.',
                 ],
             ], 502);
         }
     }
+
 
 
 
