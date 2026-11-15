@@ -46,6 +46,7 @@ from app.mt5_debate_room import (
 from app.mt5_delivery import (
     init_mt5_delivery_db,
     register_mt5_request,
+    process_mt5_request,
     RequestConflictError,
 )
 from app.mt5_sqlite import execute_command
@@ -897,6 +898,11 @@ async def mt5_ingest(request: Request):
 
     try:
         result = register_mt5_request(envelope)
+        
+        result = process_mt5_request(
+            result["client_id"],
+            result["request_id"],
+        )
 
     except RequestConflictError as exc:
         return JSONResponse(
