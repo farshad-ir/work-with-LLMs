@@ -1,7 +1,7 @@
 #!/bin/bash
 
 APP_DIR="/home/yhkcinki/apps/work-with-LLMs"
-UVICORN="/home/yhkcinki/virtualenv/apps/work-with-LLMs/3.12/bin/uvicorn"
+UVICORN="/home/yhkcinki/apps/work-with-LLMs/.venv311/bin/uvicorn"
 PID_FILE="$APP_DIR/logs/uvicorn.pid"
 LOG_FILE="$APP_DIR/logs/uvicorn.log"
 
