@@ -114,7 +114,7 @@ int OnInit()
    H1_river.Set(g_ma_h1);
    H6_river.Set(g_ma_h6);
    
-   for(int i = h1Copied - 1; i >= 0; i--)
+   for(int i = h1Copied - 1; i > 0; i--)
    {
       H1_river.Update(i);
       int dir = mabif_h1.AddPoint( H1_river.Center() );
