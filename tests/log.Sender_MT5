@@ -597,3 +597,81 @@ bool GatewayPollAndPersist(
 
    return true;
 }
+
+
+//+------------------------------------------------------------------+
+//| Load and validate the persisted pending request                 |
+//+------------------------------------------------------------------+
+bool GatewayLoadPendingRequest(
+   string &clientId,
+   string &requestId
+)
+{
+   clientId = "";
+   requestId = "";
+
+   if(!FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON))
+   {
+      Print("[GATEWAY] No pending request file.");
+      return false;
+   }
+
+   int h = FileOpen(
+      GATEWAY_REQUEST_FILE,
+      FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
+   );
+
+   if(h == INVALID_HANDLE)
+   {
+      Print("[GATEWAY] Cannot open pending request. error=", GetLastError());
+      return false;
+   }
+
+   string envelope = FileReadString(h);
+   FileClose(h);
+
+   if(StringLen(envelope) == 0)
+   {
+      Print("[GATEWAY] Pending request file is empty.");
+      return false;
+   }
+
+   CJAVal requestJson;
+
+   if(!requestJson.Deserialize(envelope))
+   {
+      Print("[GATEWAY] Pending request JSON is invalid.");
+      return false;
+   }
+
+   string protocol = requestJson["protocol"].ToStr();
+   int version = (int)requestJson["version"].ToInt();
+   string messageType = requestJson["message_type"].ToStr();
+
+   clientId = requestJson["client_id"].ToStr();
+   requestId = requestJson["request_id"].ToStr();
+
+   if(protocol != "mt5-gateway" ||
+      version != 1 ||
+      messageType != "INGEST")
+   {
+      Print("[GATEWAY] Invalid pending request envelope.");
+      clientId = "";
+      requestId = "";
+      return false;
+   }
+
+   if(clientId == "" ||
+      requestId == "" ||
+      clientId != InpGatewayClientId)
+   {
+      Print("[GATEWAY] Pending request identity is invalid.");
+      clientId = "";
+      requestId = "";
+      return false;
+   }
+
+   Print("[GATEWAY] Pending request recovered. request_id=", requestId);
+
+   return true;
+}
