@@ -223,9 +223,17 @@ void OnTimer()
       g_gatewayRequestId == "")
       return;
 
-   // پاسخ نهایی قبلاً ذخیره شده؛ Poll متوقف شود.
+   // فقط پاسخ نهایی معتبر متعلق به درخواست جاری، Poll را متوقف می‌کند.
    if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
-      return;
+   {
+      if(GatewayValidateSavedResponse(
+         g_gatewayClientId,
+         g_gatewayRequestId
+      ))
+         return;
+   
+      Print("[GATEWAY] Saved response is invalid; continuing Poll.");
+   }
 
    string state;
 
