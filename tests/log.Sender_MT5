@@ -18,6 +18,8 @@ input string InpGatewayClientId = "mt5_terminal_01";
 #define GATEWAY_STATE_FILE    "LLM-LQ/Gateway/temp/current_state.txt"
 #define GATEWAY_RESPONSE_FILE "LLM-LQ/Gateway/temp/current_response.json"
 #define GATEWAY_RECEIVED_DIR  "LLM-LQ/Gateway/received"
+#define GATEWAY_COMMANDS_FILE  "LLM-LQ/Gateway/commands/commands.json"
+
 
 #include <JAson.mqh>
 
@@ -64,6 +66,8 @@ string h6Candles = "";
 
 string g_gatewayClientId = "";
 string g_gatewayRequestId = "";
+string g_gatewayLastRequestId = "";
+
 //+------------------------------------------------------------------+
 //| Gateway state machine                                            |
 //+------------------------------------------------------------------+
@@ -1329,11 +1333,203 @@ bool GatewayCleanup()
       return false;
    }
 
+   g_gatewayLastRequestId = g_gatewayRequestId;
    g_gatewayRequestId = "";
 
    Print("[GATEWAY] Request and response files cleaned.");
    return true;
 }
+
+
+bool GatewayLoadCommands(CJAVal &root)
+{
+   if(!FileIsExist(GATEWAY_COMMANDS_FILE, FILE_COMMON))
+   {
+      Print("[COMMANDS] File not found: ", GATEWAY_COMMANDS_FILE);
+      return false;
+   }
+
+   int h = FileOpen(
+      GATEWAY_COMMANDS_FILE,
+      FILE_READ | FILE_TXT | FILE_COMMON | FILE_ANSI
+   );
+
+   if(h == INVALID_HANDLE)
+   {
+      Print("[COMMANDS] Cannot open commands file. error=", GetLastError());
+      return false;
+   }
+
+   string content = "";
+
+   while(!FileIsEnding(h))
+      content += FileReadString(h);
+
+   FileClose(h);
+
+   if(content == "")
+   {
+      Print("[COMMANDS] Commands file is empty.");
+      return false;
+   }
+
+   if(!root.Deserialize(content))
+   {
+      Print("[COMMANDS] Invalid JSON.");
+      return false;
+   }
+
+   if(root.m_type != jtOBJ ||
+      root["commands"].m_type != jtARRAY)
+   {
+      Print("[COMMANDS] Expected an object with commands array.");
+      return false;
+   }
+
+   int count = root["commands"].Size();
+
+   for(int i = 0; i < count; i++)
+   {
+      string id = root["commands"][i]["id"].ToStr();
+      string command = root["commands"][i]["command"].ToStr();
+      string status = root["commands"][i]["status"].ToStr();
+
+      if(id == "" || command == "")
+      {
+         Print("[COMMANDS] Invalid command entry at index ", i);
+         return false;
+      }
+
+      if(status != "PENDING" && status != "COMPLETED")
+      {
+         Print("[COMMANDS] Invalid status. id=", id,
+               " status=", status);
+         return false;
+      }
+
+      for(int j = 0; j < i; j++)
+      {
+         if(root["commands"][j]["id"].ToStr() == id)
+         {
+            Print("[COMMANDS] Duplicate command id: ", id);
+            return false;
+         }
+      }
+   }
+
+   Print("[COMMANDS] Loaded ", count, " commands.");
+   return true;
+}
+
+bool GatewaySaveCommands(CJAVal &root)
+{
+   string content = root.Serialize();
+
+   if(content == "")
+      return false;
+
+   int h = FileOpen(
+      GATEWAY_COMMANDS_FILE,
+      FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_ANSI
+   );
+
+   if(h == INVALID_HANDLE)
+   {
+      Print("[COMMANDS] Cannot write commands file. error=", GetLastError());
+      return false;
+   }
+
+   uint written = FileWriteString(h, content);
+   FileClose(h);
+
+   if(written == 0)
+   {
+      Print("[COMMANDS] Failed to save commands file.");
+      return false;
+   }
+
+   Print("[COMMANDS] Commands file saved.");
+   return true;
+}
+
+bool GatewayReceivedCommandSucceeded(
+   const string requestId,
+   const string expectedCommand
+)
+{
+   if(requestId == "")
+      return false;
+
+   string receivedFile =
+      GATEWAY_RECEIVED_DIR + "/" + requestId + ".json";
+
+   if(!FileIsExist(receivedFile, FILE_COMMON))
+   {
+      Print("[COMMANDS] Received response not found: ", receivedFile);
+      return false;
+   }
+
+   int h = FileOpen(
+      receivedFile,
+      FILE_READ | FILE_TXT | FILE_COMMON | FILE_ANSI
+   );
+
+   if(h == INVALID_HANDLE)
+      return false;
+
+   string content = "";
+
+   while(!FileIsEnding(h))
+      content += FileReadString(h);
+
+   FileClose(h);
+
+   CJAVal result;
+
+   if(content == "" || !result.Deserialize(content))
+   {
+      Print("[COMMANDS] Invalid received response JSON.");
+      return false;
+   }
+
+   if(result["protocol"].ToStr() != "mt5-gateway" ||
+      (int)result["version"].ToInt() != 1 ||
+      result["message_type"].ToStr() != "POLL_RESULT" ||
+      result["client_id"].ToStr() != g_gatewayClientId ||
+      result["request_id"].ToStr() != requestId ||
+      result["status"].ToStr() != "COMPLETED")
+   {
+      Print("[COMMANDS] Response identity or status validation failed.");
+      return false;
+   }
+
+   if(result["payload"]["operations"].m_type != jtARRAY ||
+      result["payload"]["operations"].Size() != 1)
+   {
+      Print("[COMMANDS] Expected exactly one operation result.");
+      return false;
+   }
+
+   if(result["payload"]["operations"][0]["command"].ToStr()
+      != expectedCommand)
+   {
+      Print("[COMMANDS] Operation command mismatch.");
+      return false;
+   }
+
+   if(result["payload"]["operations"][0]["success"].m_type != jtBOOL ||
+      !result["payload"]["operations"][0]["success"].ToBool())
+   {
+      Print("[COMMANDS] Operation failed: ", expectedCommand);
+      return false;
+   }
+
+   Print("[COMMANDS] Operation succeeded: ", expectedCommand);
+   return true;
+}
+
+
+
 
 bool GatewayExecuteAction(
    const GatewayState previousState,
