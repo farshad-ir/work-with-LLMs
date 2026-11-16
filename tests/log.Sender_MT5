@@ -17,7 +17,7 @@ input string InpGatewayClientId = "mt5_terminal_01";
 #define GATEWAY_SEQUENCE_FILE "LLM-LQ/Gateway/temp/request_sequence.txt"
 #define GATEWAY_STATE_FILE    "LLM-LQ/Gateway/temp/current_state.txt"
 #define GATEWAY_RESPONSE_FILE "LLM-LQ/Gateway/temp/current_response.json"
-
+#define GATEWAY_RECEIVED_DIR  "LLM-LQ/Gateway/received"
 
 #include <JAson.mqh>
 
@@ -594,6 +594,13 @@ bool GatewayRecoverState(GatewayState &state)
          return false;
       }
 
+      
+      if(!GatewayCopySavedResponseToReceived(g_gatewayRequestId))
+      {
+         Print("[GATEWAY] Recovery failed: cannot persist received response.");
+         return false;
+      }
+
       // پاسخ نهایی ذخیره شده؛ دیگر نباید درخواست را ارسال یا Poll کنیم.
       if(state != STATE_RESPONSE_RECEIVED &&
          state != STATE_ACK_SENDING)
@@ -964,7 +971,62 @@ bool GatewaySaveResponse(const string responseText)
    return true;
 }
 
+bool GatewayCopySavedResponseToReceived(const string requestId)
+{
+   int source = FileOpen(
+      GATEWAY_RESPONSE_FILE,
+      FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
+   );
 
+   if(source == INVALID_HANDLE)
+   {
+      Print("[GATEWAY] Cannot read temporary response.");
+      return false;
+   }
+
+   string responseText = FileReadString(source);
+   FileClose(source);
+
+   if(responseText == "")
+      return false;
+
+   if(!FolderIsExist(GATEWAY_RECEIVED_DIR, FILE_COMMON))
+   {
+      if(!FolderCreate(GATEWAY_RECEIVED_DIR, FILE_COMMON) &&
+         !FolderIsExist(GATEWAY_RECEIVED_DIR, FILE_COMMON))
+      {
+         Print("[GATEWAY] Cannot create received directory.");
+         return false;
+      }
+   }
+
+   string receivedFile =
+      GATEWAY_RECEIVED_DIR + "/" + requestId + ".json";
+
+   int target = FileOpen(
+      receivedFile,
+      FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_UNICODE
+   );
+
+   if(target == INVALID_HANDLE)
+   {
+      Print("[GATEWAY] Cannot create received file. error=",
+            GetLastError());
+      return false;
+   }
+
+   uint written = FileWriteString(target, responseText);
+   FileClose(target);
+
+   if(written == 0)
+   {
+      Print("[GATEWAY] Received response write failed.");
+      return false;
+   }
+
+   Print("[GATEWAY] Response saved to received: ", receivedFile);
+   return true;
+}
 
 bool GatewayPollAndPersist(
    const string clientId,
@@ -1004,6 +1066,9 @@ bool GatewayPollAndPersist(
 
    // پاسخ نهایی باید قبل از تغییر وضعیت ذخیره شود.
    if(!GatewaySaveResponse(responseText))
+      return false;
+
+   if(!GatewayCopySavedResponseToReceived(requestId))
       return false;
 
    if(status == "COMPLETED")
