@@ -9,7 +9,7 @@
 #define GATEWAY_SLEEP_SECONDS      1
 
 #import "egg.dll"
-   int SendLatestJson();
+   int SendLatestJson(string filePath);
    int PollResponses(string pathParameter, uchar &output[], int outputCapacity);
 #import
 
@@ -73,6 +73,48 @@ private:
    string m_lastRequestId;
    uchar  m_response[16384];
 
+   string m_folderName;
+   string m_rootDir;
+   string m_feedFile;
+   string m_tempDir;
+   string m_receivedDir;
+   string m_commandsDir;
+   
+   string m_requestFile;
+   string m_sequenceFile;
+   string m_stateFile;
+   string m_responseFile;
+   string m_commandsFile;
+
+   bool GatewayEnsureFolder(const string path)
+   {
+      if(FolderIsExist(path, FILE_COMMON))
+         return true;
+   
+      if(FolderCreate(path, FILE_COMMON))
+         return true;
+   
+      return FolderIsExist(path, FILE_COMMON);
+   }
+   
+   bool GatewayCreateInitialFile( const string path, const string content )
+   {
+      if(FileIsExist(path, FILE_COMMON))
+         return true;
+   
+      int h = FileOpen(
+         path,
+         FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_ANSI
+      );
+   
+      if(h == INVALID_HANDLE)
+         return false;
+   
+      FileWriteString(h, content);
+      FileClose(h);
+   
+      return true;
+   }
 
 
    string GatewayStateToText(const GatewayState state)
@@ -588,7 +630,11 @@ private:
          return -304;
    
       // ارسال HTTP توسط DLL
-      int result = SendLatestJson();
+      int result = SendLatestJson(
+         TerminalInfoString(TERMINAL_COMMONDATA_PATH) +
+         "\\Files\\" +
+         m_feedFile
+      );
    
       Print("[GATEWAY] SendLatestJson result: ", result);
    
@@ -1660,13 +1706,52 @@ private:
    
 
 public:
-
-   bool Initialize(const string clientId)
+   bool Initialize( const string clientId, const string folderName )
    {
-      if(clientId == "")
+      if(clientId == "" || folderName == "")
          return false;
-
+   
+      if(StringFind(folderName, "/") >= 0 ||
+         StringFind(folderName, "\\") >= 0 ||
+         folderName == "." ||
+         folderName == "..")
+         return false;
+   
       m_clientId = clientId;
+      m_folderName = folderName;
+   
+      m_rootDir = "LLM-LQ/" + folderName;
+      m_feedFile = m_rootDir + "/mt5_feed.json";
+   
+      m_tempDir = m_rootDir + "/Gateway/temp";
+      m_receivedDir = m_rootDir + "/Gateway/received";
+      m_commandsDir = m_rootDir + "/Gateway/commands";
+   
+      m_requestFile = m_tempDir + "/current_request.json";
+      m_sequenceFile = m_tempDir + "/request_sequence.txt";
+      m_stateFile = m_tempDir + "/current_state.txt";
+      m_responseFile = m_tempDir + "/current_response.json";
+      m_commandsFile = m_commandsDir + "/commands.json";
+   
+      if(!GatewayEnsureFolder("LLM-LQ") ||
+         !GatewayEnsureFolder(m_rootDir) ||
+         !GatewayEnsureFolder(m_rootDir + "/Gateway") ||
+         !GatewayEnsureFolder(m_tempDir) ||
+         !GatewayEnsureFolder(m_receivedDir) ||
+         !GatewayEnsureFolder(m_commandsDir))
+      {
+         Print("[GATEWAY] Cannot create storage directories.");
+         return false;
+      }
+   
+      if(!GatewayCreateInitialFile(m_sequenceFile, "0") ||
+         !GatewayCreateInitialFile(m_stateFile, "IDLE") ||
+         !GatewayCreateInitialFile(m_commandsFile, "{\"commands\":[]}"))
+      {
+         Print("[GATEWAY] Cannot initialize storage files.");
+         return false;
+      }
+   
       return true;
    }
 
