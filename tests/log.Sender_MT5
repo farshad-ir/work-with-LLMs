@@ -22,7 +22,6 @@ input string InpGatewayClientId = "mt5_terminal_01";
 #include <JAson.mqh>
 
 #include "Common.mqh"
-#include "SimpleLogger.mqh"
 #include "MovingAverages.mqh"
 #include "Structure.mqh"
 
@@ -65,12 +64,17 @@ string h6Candles = "";
 
 string g_gatewayClientId = "";
 string g_gatewayRequestId = "";
+
+CStructure        m_stc;
+CFractalGeometry  m_fractal;
    
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
 {
+
+
 
    MqlRates h1Rates[];
    MqlRates h6Rates[];
@@ -114,8 +118,20 @@ int OnInit()
       return INIT_FAILED;
    }
 
+   // Structure
+   m_stc.Init();
+   g_ma_h1.Update();
+   g_ma_h6.Update();
+
+   m_fractal.Set(m_stc,g_ma_h1);
+   
+   m_stc.Update(300);
    H1_river.Set(g_ma_h1);
    H6_river.Set(g_ma_h6);
+   
+   m_fractal.Build();
+   
+   
    
    for(int i = h1Copied - 1; i > 0; i--)
    {
@@ -848,5 +864,4 @@ bool GatewayValidateSavedResponse(
 
    return true;
 }
-
 
