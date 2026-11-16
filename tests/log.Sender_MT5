@@ -539,6 +539,97 @@ bool GatewayLoadState(GatewayState &state)
 }
 
 
+
+bool GatewayRecoverState(GatewayState &state)
+{
+   bool hasRequest =
+      FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON);
+
+   bool hasResponse =
+      FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON);
+
+   // شناسه درخواست فعال را از فایل بازیابی کن.
+   if(hasRequest)
+   {
+      if(!GatewayLoadPendingRequest(
+         g_gatewayClientId,
+         g_gatewayRequestId
+      ))
+      {
+         Print("[GATEWAY] Recovery failed: invalid request file.");
+         return false;
+      }
+   }
+
+   // در حالت ACKNOWLEDGED فقط پاک‌سازی باقی مانده است.
+   if(state == STATE_ACKNOWLEDGED)
+      return true;
+
+   // پاسخ بدون درخواست متناظر قابل اعتماد نیست.
+   if(hasResponse && !hasRequest)
+   {
+      Print("[GATEWAY] Recovery failed: response exists without request.");
+      return false;
+   }
+
+   // هر پاسخ ذخیره‌شده باید پاسخ نهایی و متعلق به همین درخواست باشد.
+   if(hasResponse)
+   {
+      if(!GatewayValidateSavedResponse(
+         g_gatewayClientId,
+         g_gatewayRequestId
+      ))
+      {
+         Print("[GATEWAY] Recovery failed: saved response is invalid.");
+         return false;
+      }
+
+      // پاسخ نهایی ذخیره شده؛ دیگر نباید درخواست را ارسال یا Poll کنیم.
+      if(state != STATE_RESPONSE_RECEIVED &&
+         state != STATE_ACK_SENDING)
+      {
+         if(!GatewaySaveState("RESPONSE_RECEIVED"))
+            return false;
+
+         state = STATE_RESPONSE_RECEIVED;
+
+         Print("[GATEWAY] Recovery promoted state to RESPONSE_RECEIVED.");
+      }
+
+      return true;
+   }
+
+   // این وضعیت‌ها بدون فایل درخواست قابل بازیابی نیستند.
+   if(state == STATE_SENDING ||
+      state == STATE_SENT ||
+      state == STATE_PROCESSING ||
+      state == STATE_RESPONSE_RECEIVED ||
+      state == STATE_ACK_SENDING)
+   {
+      if(!hasRequest)
+      {
+         Print("[GATEWAY] Recovery failed: request file is missing.");
+         return false;
+      }
+   }
+
+   // اگر state گم شده یا IDLE است ولی درخواست وجود دارد،
+   // همان درخواست قبلی باید دوباره ارسال شود.
+   if(state == STATE_IDLE && hasRequest)
+   {
+      if(!GatewaySaveState("SENDING"))
+         return false;
+
+      state = STATE_SENDING;
+
+      Print("[GATEWAY] Recovery promoted IDLE to SENDING.");
+   }
+
+   return true;
+}
+
+
+
 string GatewayNextRequestId()
 {
    long sequence = 0;
