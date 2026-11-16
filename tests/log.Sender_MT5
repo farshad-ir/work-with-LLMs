@@ -64,6 +64,51 @@ string h6Candles = "";
 
 string g_gatewayClientId = "";
 string g_gatewayRequestId = "";
+//+------------------------------------------------------------------+
+//| Gateway state machine                                            |
+//+------------------------------------------------------------------+
+
+enum GatewayState
+{
+   STATE_IDLE = 0,
+   STATE_CREATED,
+   STATE_SENDING,
+   STATE_SENT,
+   STATE_PROCESSING,
+   STATE_RESPONSE_RECEIVED,
+   STATE_ACK_SENDING,
+   STATE_ACKNOWLEDGED,
+   STATE_ERROR
+};
+
+enum GatewayEvent
+{
+   EVENT_NONE = 0,
+   EVENT_START,
+   EVENT_REQUEST_READY,
+   EVENT_SEND_OK,
+   EVENT_SEND_FAILED,
+   EVENT_POLL_PROCESSING,
+   EVENT_RESPONSE_COMPLETED,
+   EVENT_RESPONSE_FAILED,
+   EVENT_NETWORK_ERROR,
+   EVENT_ACK_READY,
+   EVENT_ACK_OK,
+   EVENT_ACK_FAILED,
+   EVENT_CLEANUP_OK,
+   EVENT_CLEANUP_FAILED
+};
+
+// محدودیت اجرای چرخه
+#define GATEWAY_MAX_STEPS          120
+#define GATEWAY_MAX_SEND_ATTEMPTS  5
+#define GATEWAY_MAX_POLL_ATTEMPTS  60
+#define GATEWAY_MAX_ACK_ATTEMPTS   5
+#define GATEWAY_SLEEP_SECONDS      1
+
+
+
+
 
 CStructure        m_stc;
 CFractalGeometry  m_fractal;
@@ -158,69 +203,18 @@ int OnInit()
    data += "}";
    
    data += "}";
-        
-   
 
-   int result = 0;
-   
-   if(FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON))
+   g_gatewayClientId = InpGatewayClientId;
+
+   if(!GatewayExecuteRequest(data))
    {
-      if(!GatewayLoadPendingRequest(
-         g_gatewayClientId,
-         g_gatewayRequestId
-      ))
-      {
-         Print("[GATEWAY] Cannot recover pending request.");
-         return INIT_FAILED;
-      }
-   
-      if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
-      {
-         if(!GatewayValidateSavedResponse(
-            g_gatewayClientId,
-            g_gatewayRequestId
-         ))
-         {
-            Print("[GATEWAY] Saved response does not match pending request.");
-            return INIT_FAILED;
-         }
-   
-         Print("[GATEWAY] Valid final response already persisted.");
-      }
-      else
-      {
-         // Retry همان Envelope ذخیره‌شده
-         result = GatewaySubmit(data);
-      }
-   }
-   else
-   {
-      if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
-      {
-         Print("[GATEWAY] Orphan response file exists. Manual reconciliation required.");
-         return INIT_FAILED;
-      }
-   
-      result = GatewaySubmit(data);
-   
-      if(!GatewayLoadPendingRequest(
-         g_gatewayClientId,
-         g_gatewayRequestId
-      ))
-      {
-         Print("[GATEWAY] Cannot load newly created request.");
-         return INIT_FAILED;
-      }
+      Print("[GATEWAY] Request execution did not complete.");
+      return INIT_FAILED;
    }
 
+   Print("[GATEWAY] Request execution completed.");
 
-
-
-   Print("[GATEWAY] Submit result: ", result);
-   
-   EventSetTimer(3);
-   
-   return(INIT_SUCCEEDED);
+   return INIT_SUCCEEDED;
 }
 
 void OnTick()
@@ -232,50 +226,6 @@ void OnTick()
    
 }
 //+------------------------------------------------------------------+
-
-void OnTimer()
-{
-   if(g_gatewayClientId == "" ||
-      g_gatewayRequestId == "")
-      return;
-
-   // فقط پاسخ نهایی معتبر متعلق به درخواست جاری، Poll را متوقف می‌کند.
-   if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
-   {
-      if(GatewayValidateSavedResponse(
-         g_gatewayClientId,
-         g_gatewayRequestId
-      ))
-         return;
-   
-      Print("[GATEWAY] Saved response is invalid; continuing Poll.");
-   }
-
-   string state;
-
-   if(!GatewayLoadState(state))
-      return;
-
-   // تا وقتی ارسال موفق نشده، Poll نکن.
-   if(state != "SENT" &&
-      state != "REGISTERED" &&
-      state != "PROCESSING")
-      return;
-
-   if(!GatewayPollAndPersist(
-      g_gatewayClientId,
-      g_gatewayRequestId
-   ))
-   {
-      Print("[GATEWAY] Poll attempt failed; will retry.");
-   }
-}
-
-void OnDeinit(const int reason)
-{
-   EventKillTimer();
-}
-
 
 
 //+------------------------------------------------------------------+
