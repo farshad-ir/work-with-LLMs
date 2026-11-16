@@ -542,6 +542,12 @@ bool GatewayLoadState(GatewayState &state)
 
 bool GatewayRecoverState(GatewayState &state)
 {
+
+   // در حالت ACKNOWLEDGED فقط پاک‌سازی باقی مانده است.
+   if(state == STATE_ACKNOWLEDGED)
+      return true;
+
+
    bool hasRequest =
       FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON);
 
@@ -561,9 +567,7 @@ bool GatewayRecoverState(GatewayState &state)
       }
    }
 
-   // در حالت ACKNOWLEDGED فقط پاک‌سازی باقی مانده است.
-   if(state == STATE_ACKNOWLEDGED)
-      return true;
+
 
    if(state == STATE_ERROR)
    {
@@ -1554,6 +1558,10 @@ bool GatewayExecuteRequest(const string body)
          }
 
          state = nextState;
+
+         if(actionEvent == EVENT_CLEANUP_FAILED)
+            Sleep(GATEWAY_SLEEP_SECONDS * 1000);
+
          continue;
       }
 
