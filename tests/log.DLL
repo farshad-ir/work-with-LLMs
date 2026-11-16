@@ -7,6 +7,7 @@
 #include <fstream>
 #include <thread>
 #include <chrono>
+#include <unordered_map>
 
 #pragma comment(lib, "winhttp.lib")
 #pragma comment(lib, "bcrypt.lib")
@@ -29,7 +30,7 @@ static const wchar_t* ENDPOINT =
 static const INTERNET_PORT PORT = 443;
 
 // آخرین هش موفق ارسال‌شده
-static std::string lastSentHash;
+static std::unordered_map<std::wstring, std::string> lastSentHashes;
 
 // --------------------------------------------------
 // Read file as binary
@@ -570,14 +571,19 @@ int __stdcall PollResponses(
 // --------------------------------------------------
 
 extern "C" __declspec(dllexport)
-int __stdcall SendLatestJson()
+int __stdcall SendLatestJson(const wchar_t* filePath)
 {
+    if (filePath == nullptr || filePath[0] == L'\0')
+        return -21;
+    
+    std::wstring pathKey(filePath);
+
     for (int attempt = 0; attempt < 3; ++attempt)
     {
         std::vector<unsigned char> fileData;
         std::string json;
 
-        if (ReadFileBytes(FILE_PATH, fileData) &&
+        if (ReadFileBytes(filePath, fileData) &&
             ConvertToUTF8(fileData, json))
         {
             std::string hash = CalculateSHA256(json);
@@ -586,7 +592,7 @@ int __stdcall SendLatestJson()
                 return -10;
 
             // اگر JSON قبلاً ارسال شده، ارسال نکن
-            if (hash == lastSentHash)
+            if (lastSentHashes[pathKey] == hash)
                 return 204;
 
             int status = SendHTTP(json);
@@ -594,7 +600,7 @@ int __stdcall SendLatestJson()
             // فقط ارسال موفق را ذخیره کن
             if (status >= 200 && status < 300)
             {
-                lastSentHash = hash;
+                lastSentHashes[pathKey] = hash;
                 return status;
             }
 
