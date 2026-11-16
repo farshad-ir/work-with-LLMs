@@ -1331,4 +1331,241 @@ bool GatewayExecuteAction(
    return false;
 }
 
+bool GatewayExecuteRequest(const string body)
+{
+   GatewayState state;
 
+   // بازیابی وضعیت پایدار
+   if(!GatewayLoadState(state))
+   {
+      Print("[GATEWAY] Cannot load persisted state.");
+      return false;
+   }
+
+   if(!GatewayRecoverState(state))
+   {
+      Print("[GATEWAY] State recovery failed.");
+      return false;
+   }
+
+   int sendAttempts = 0;
+   int pollAttempts = 0;
+   int ackAttempts  = 0;
+
+   for(int step = 0; step < GATEWAY_MAX_STEPS; step++)
+   {
+      GatewayState nextState;
+      GatewayEvent event = EVENT_NONE;
+      GatewayEvent actionEvent = EVENT_NONE;
+
+      // --------------------------------------------------
+      // IDLE: شروع درخواست جدید
+      // --------------------------------------------------
+      if(state == STATE_IDLE)
+      {
+         if(!GatewayTransitionAndSave(
+            state,
+            EVENT_START,
+            nextState
+         ))
+            return false;
+
+         state = nextState;
+         continue;
+      }
+
+      // --------------------------------------------------
+      // CREATED: ساخت و ذخیره پایدار درخواست
+      // --------------------------------------------------
+      if(state == STATE_CREATED)
+      {
+         if(!GatewayPrepareRequest(body))
+         {
+            Print("[GATEWAY] Request preparation failed.");
+            return false;
+         }
+
+         if(!GatewayTransitionAndSave(
+            state,
+            EVENT_REQUEST_READY,
+            nextState
+         ))
+            return false;
+
+         state = nextState;
+         continue;
+      }
+
+      // --------------------------------------------------
+      // SENDING: ارسال درخواست
+      // --------------------------------------------------
+      if(state == STATE_SENDING)
+      {
+         if(sendAttempts >= GATEWAY_MAX_SEND_ATTEMPTS)
+         {
+            Print("[GATEWAY] Maximum send attempts reached.");
+            return false;
+         }
+
+         sendAttempts++;
+
+         if(!GatewayExecuteAction(
+            state,
+            state,
+            EVENT_NONE,
+            actionEvent
+         ))
+            return false;
+
+         if(!GatewayTransitionAndSave(
+            state,
+            actionEvent,
+            nextState
+         ))
+            return false;
+
+         state = nextState;
+
+         if(actionEvent == EVENT_SEND_FAILED)
+            Sleep(GATEWAY_SLEEP_SECONDS * 1000);
+
+         continue;
+      }
+
+      // --------------------------------------------------
+      // SENT / PROCESSING: دریافت وضعیت پاسخ
+      // --------------------------------------------------
+      if(state == STATE_SENT ||
+         state == STATE_PROCESSING)
+      {
+         if(pollAttempts >= GATEWAY_MAX_POLL_ATTEMPTS)
+         {
+            Print("[GATEWAY] Maximum poll attempts reached.");
+            return false;
+         }
+
+         pollAttempts++;
+
+         if(!GatewayExecuteAction(
+            state,
+            state,
+            EVENT_NONE,
+            actionEvent
+         ))
+         {
+            Print("[GATEWAY] Poll action failed.");
+            return false;
+         }
+
+         if(!GatewayTransitionAndSave(
+            state,
+            actionEvent,
+            nextState
+         ))
+            return false;
+
+         state = nextState;
+
+         if(state == STATE_SENT ||
+            state == STATE_PROCESSING)
+         {
+            Sleep(GATEWAY_SLEEP_SECONDS * 1000);
+         }
+
+         continue;
+      }
+
+      // --------------------------------------------------
+      // RESPONSE_RECEIVED: آماده‌سازی ACK
+      // --------------------------------------------------
+      if(state == STATE_RESPONSE_RECEIVED)
+      {
+         if(!GatewayTransitionAndSave(
+            state,
+            EVENT_ACK_READY,
+            nextState
+         ))
+            return false;
+
+         state = nextState;
+         continue;
+      }
+
+      // --------------------------------------------------
+      // ACK_SENDING: تأیید دریافت پاسخ در سرور
+      // --------------------------------------------------
+      if(state == STATE_ACK_SENDING)
+      {
+         if(ackAttempts >= GATEWAY_MAX_ACK_ATTEMPTS)
+         {
+            Print("[GATEWAY] Maximum ACK attempts reached.");
+            return false;
+         }
+
+         ackAttempts++;
+
+         if(!GatewayExecuteAction(
+            state,
+            state,
+            EVENT_NONE,
+            actionEvent
+         ))
+            return false;
+
+         if(!GatewayTransitionAndSave(
+            state,
+            actionEvent,
+            nextState
+         ))
+            return false;
+
+         state = nextState;
+
+         if(actionEvent == EVENT_ACK_FAILED)
+            Sleep(GATEWAY_SLEEP_SECONDS * 1000);
+
+         continue;
+      }
+
+      // --------------------------------------------------
+      // ACKNOWLEDGED: پاک‌سازی فایل‌های درخواست و پاسخ
+      // --------------------------------------------------
+      if(state == STATE_ACKNOWLEDGED)
+      {
+         if(!GatewayExecuteAction(
+            state,
+            state,
+            EVENT_NONE,
+            actionEvent
+         ))
+            return false;
+
+         if(!GatewayTransitionAndSave(
+            state,
+            actionEvent,
+            nextState
+         ))
+            return false;
+
+         if(nextState == STATE_IDLE)
+         {
+            Print("[GATEWAY] Request cycle completed.");
+            return true;
+         }
+
+         state = nextState;
+         continue;
+      }
+
+      // --------------------------------------------------
+      // ERROR یا وضعیت ناشناخته
+      // --------------------------------------------------
+      Print("[GATEWAY] Execution stopped. state=",
+            GatewayStateToText(state));
+
+      return false;
+   }
+
+   Print("[GATEWAY] Maximum execution steps reached.");
+   return false;
+}
