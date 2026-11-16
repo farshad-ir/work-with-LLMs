@@ -565,6 +565,12 @@ bool GatewayRecoverState(GatewayState &state)
    if(state == STATE_ACKNOWLEDGED)
       return true;
 
+   if(state == STATE_ERROR)
+   {
+      Print("[GATEWAY] Recovery stopped: persisted state is ERROR.");
+      return false;
+   }
+
    // پاسخ بدون درخواست متناظر قابل اعتماد نیست.
    if(hasResponse && !hasRequest)
    {
@@ -599,8 +605,9 @@ bool GatewayRecoverState(GatewayState &state)
       return true;
    }
 
-   // این وضعیت‌ها بدون فایل درخواست قابل بازیابی نیستند.
-   if(state == STATE_SENDING ||
+   // وضعیت‌های فعال باید فایل درخواست داشته باشند.
+   if(state == STATE_CREATED ||
+      state == STATE_SENDING ||
       state == STATE_SENT ||
       state == STATE_PROCESSING ||
       state == STATE_RESPONSE_RECEIVED ||
@@ -609,6 +616,17 @@ bool GatewayRecoverState(GatewayState &state)
       if(!hasRequest)
       {
          Print("[GATEWAY] Recovery failed: request file is missing.");
+         return false;
+      }
+   }
+
+   // این دو وضعیت حتماً به پاسخ نهایی ذخیره‌شده نیاز دارند.
+   if(state == STATE_RESPONSE_RECEIVED ||
+      state == STATE_ACK_SENDING)
+   {
+      if(!hasResponse)
+      {
+         Print("[GATEWAY] Recovery failed: response file is missing.");
          return false;
       }
    }
