@@ -65,7 +65,9 @@ enum GatewayEvent
    EVENT_CLEANUP_FAILED
 };
 
-
+class CMT5Gateway
+{
+private:
 
 string GatewayStateToText(const GatewayState state)
 {
@@ -455,7 +457,7 @@ string GatewayNextRequestId()
    FileWriteString(h, IntegerToString(sequence));
    FileClose(h);
 
-   return InpGatewayClientId + "-" +
+   return g_gatewayClientId + "-" +
           StringFormat("%06d", sequence);
 }
 
@@ -1650,4 +1652,32 @@ bool GatewayResumePendingRequest()
    return GatewayExecuteRequest("", false);
 }
 
+
+public:
+
+   bool Initialize(const string clientId)
+   {
+      if(clientId == "")
+         return false;
+
+      g_gatewayClientId = clientId;
+      return true;
+   }
+
+   bool ResumePendingRequest()
+   {
+      return GatewayResumePendingRequest();
+   }
+
+   bool RunCommands()
+   {
+      return GatewayRunCommands();
+   }
+
+   bool ExecuteRequest(const string body)
+   {
+      return GatewayExecuteRequest(body);
+   }
+
+};
 #endif // __MT5_GATEWAY_MQH__
