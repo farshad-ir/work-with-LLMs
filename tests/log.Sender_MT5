@@ -233,6 +233,43 @@ bool GatewayTransition(
    return true;
 }
 
+bool GatewayTransitionAndSave(
+   const GatewayState currentState,
+   const GatewayEvent event,
+   GatewayState &nextState
+)
+{
+   GatewayState calculatedState;
+
+   if(!GatewayTransition(
+      currentState,
+      event,
+      calculatedState
+   ))
+   {
+      Print("[GATEWAY] Invalid transition. state=",
+            GatewayStateToText(currentState),
+            " event=", (int)event);
+      return false;
+   }
+
+   // وضعیت جدید باید پیش از اجرای عملیات بعدی پایدار شود.
+   if(!GatewaySaveState(GatewayStateToText(calculatedState)))
+   {
+      Print("[GATEWAY] Failed to persist state: ",
+            GatewayStateToText(calculatedState));
+      return false;
+   }
+
+   nextState = calculatedState;
+
+   Print("[GATEWAY] State transition: ",
+         GatewayStateToText(currentState),
+         " -> ",
+         GatewayStateToText(nextState));
+
+   return true;
+}
 
 
 
@@ -476,6 +513,29 @@ bool GatewayLoadState(string &state)
    FileClose(h);
 
    return (state != "");
+}
+
+bool GatewayLoadState(GatewayState &state)
+{
+   // نبودن فایل وضعیت یعنی شروع یک چرخه جدید.
+   if(!FileIsExist(GATEWAY_STATE_FILE, FILE_COMMON))
+   {
+      state = STATE_IDLE;
+      return true;
+   }
+
+   string savedState;
+
+   if(!GatewayLoadState(savedState))
+      return false;
+
+   if(!GatewayTextToState(savedState, state))
+   {
+      Print("[GATEWAY] Invalid persisted state: ", savedState);
+      return false;
+   }
+
+   return true;
 }
 
 
@@ -791,17 +851,25 @@ bool GatewaySaveResponse(const string responseText)
    return true;
 }
 
+
+
 bool GatewayPollAndPersist(
    const string clientId,
-   const string requestId
+   const string requestId,
+   GatewayEvent &event
 )
 {
+   event = EVENT_NONE;
+
    string responseText;
    string status;
    string responseId;
 
    if(!GatewayPoll(clientId, requestId, responseText))
-      return false;
+   {
+      event = EVENT_NETWORK_ERROR;
+      return true;
+   }
 
    if(!GatewayParsePollResponse(
       responseText,
@@ -810,16 +878,25 @@ bool GatewayPollAndPersist(
       status,
       responseId
    ))
-      return false;
+   {
+      event = EVENT_NETWORK_ERROR;
+      return true;
+   }
 
    if(status == "PROCESSING")
+   {
+      event = EVENT_POLL_PROCESSING;
       return true;
+   }
 
+   // پاسخ نهایی باید قبل از تغییر وضعیت ذخیره شود.
    if(!GatewaySaveResponse(responseText))
       return false;
 
-   if(!GatewaySaveState("RESPONSE_RECEIVED"))
-      return false;
+   if(status == "COMPLETED")
+      event = EVENT_RESPONSE_COMPLETED;
+   else if(status == "FAILED")
+      event = EVENT_RESPONSE_FAILED;
 
    return true;
 }
