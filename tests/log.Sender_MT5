@@ -8,6 +8,7 @@
 
 
 input string InpGatewayClientId = "mt5_terminal_01";
+input string InpGatewayFolderName = "MT5-Terminal-01";
 
 
 #include "MT5-Gateway.mqh"
@@ -67,44 +68,16 @@ CFractalGeometry  m_fractal;
 CMT5Gateway Gateway;
 
 int OnInit()
-{
-   if(!Gateway.Initialize(InpGatewayClientId))
-      return INIT_FAILED;
+{   
+   if(!Gateway.Initialize(InpGatewayClientId, InpGatewayFolderName))
 
    if(!Gateway.ResumePendingRequest())
-      return INIT_FAILED;
-
-   if(!Gateway.RunCommands())
-      return INIT_FAILED;
-
-   // منطق اختصاصی اکسپرت
-   // جمع‌آوری داده‌های بازار
-   // ساخت payload
-
-   if(!Gateway.ExecuteRequest(data))
-      return INIT_FAILED;
-
-   return INIT_SUCCEEDED;
-
-
-
-
-
-
-
-
-
-
-
-   g_gatewayClientId = InpGatewayClientId;
-
-   if(!GatewayResumePendingRequest())
    {
       Print("[GATEWAY] Pending request recovery failed.");
       return INIT_FAILED;
    }
 
-   if(!GatewayRunCommands())
+   if(!Gateway.RunCommands())
    {
       Print("[COMMANDS] Command execution failed.");
       return INIT_FAILED;
@@ -197,8 +170,8 @@ int OnInit()
    data += "}";
 
    
-
-   if(!GatewayExecuteRequest(data))
+   
+   if(!Gateway.ExecuteRequest(data))
    {
       Print("[GATEWAY] Request execution did not complete.");
       return INIT_FAILED;
