@@ -288,6 +288,22 @@ int OnInit()
 {
 
 
+   g_gatewayClientId = InpGatewayClientId;
+
+   if(!GatewayResumePendingRequest())
+   {
+      Print("[GATEWAY] Pending request recovery failed.");
+      return INIT_FAILED;
+   }
+
+   if(!GatewayRunCommands())
+   {
+      Print("[COMMANDS] Command execution failed.");
+      return INIT_FAILED;
+   }
+
+
+
 
    MqlRates h1Rates[];
    MqlRates h6Rates[];
@@ -372,7 +388,7 @@ int OnInit()
    
    data += "}";
 
-   g_gatewayClientId = InpGatewayClientId;
+   
 
    if(!GatewayExecuteRequest(data))
    {
@@ -1528,6 +1544,102 @@ bool GatewayReceivedCommandSucceeded(
    return true;
 }
 
+bool GatewayRunCommands()
+{
+   if(!FileIsExist(GATEWAY_COMMANDS_FILE, FILE_COMMON))
+   {
+      Print("[COMMANDS] No commands file. Skipping.");
+      return true;
+   }
+
+   CJAVal root;
+
+   if(!GatewayLoadCommands(root))
+   {
+      Print("[COMMANDS] Cannot load commands.");
+      return false;
+   }
+
+   int count = root["commands"].Size();
+
+   for(int i = 0; i < count; i++)
+   {
+      string commandId =
+         root["commands"][i]["id"].ToStr();
+
+      string command =
+         root["commands"][i]["command"].ToStr();
+
+      string status =
+         root["commands"][i]["status"].ToStr();
+
+      if(status == "COMPLETED")
+         continue;
+
+      if(status != "PENDING")
+         return false;
+
+      string body = "";
+
+      if(command == "LIST-TABL")
+      {
+         body =
+            "{"
+            "\"command\":\"INIT\","
+            "\"operations\":["
+               "{"
+                  "\"command\":\"LIST-TABL\""
+               "}"
+            "]"
+            "}";
+      }
+      else
+      {
+         Print("[COMMANDS] Unsupported command: ",
+               command,
+               " id=", commandId);
+         return false;
+      }
+
+      Print("[COMMANDS] Executing command: ",
+            command,
+            " id=", commandId);
+
+      if(!GatewayExecuteRequest(body))
+      {
+         Print("[COMMANDS] Gateway execution failed. id=",
+               commandId);
+         return false;
+      }
+
+      string requestId = g_gatewayLastRequestId;
+
+      if(!GatewayReceivedCommandSucceeded(
+         requestId,
+         command
+      ))
+      {
+         Print("[COMMANDS] Command operation failed. id=",
+               commandId);
+         return false;
+      }
+
+      root["commands"][i]["status"] = "COMPLETED";
+
+      if(!GatewaySaveCommands(root))
+      {
+         Print("[COMMANDS] Cannot save command status. id=",
+               commandId);
+         return false;
+      }
+
+      Print("[COMMANDS] Command completed: ",
+            commandId);
+   }
+
+   Print("[COMMANDS] All pending commands processed.");
+   return true;
+}
 
 
 
