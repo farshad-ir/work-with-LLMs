@@ -1,6 +1,5 @@
-
-#property version   "2.50"
-#property strict
+#ifndef __MT5_GATEWAY_MQH__
+#define __MT5_GATEWAY_MQH__
 
 
 #define GATEWAY_MAX_STEPS          120
@@ -14,7 +13,6 @@
    int PollResponses(string pathParameter, uchar &output[], int outputCapacity);
 #import
 
-input string InpGatewayClientId = "mt5_terminal_01";
 
 #define GATEWAY_FEED_FILE     "LLM-LQ/mt5_feed.json"
 #define GATEWAY_REQUEST_FILE  "LLM-LQ/Gateway/temp/current_request.json"
@@ -28,12 +26,8 @@ input string InpGatewayClientId = "mt5_terminal_01";
 #include <JAson.mqh>
 
 
-CJAVal json;
-
 uchar response[16384];
 
-string h1Candles = "";
-string h6Candles = "";
 
 string g_gatewayClientId = "";
 string g_gatewayRequestId = "";
@@ -1655,3 +1649,5 @@ bool GatewayResumePendingRequest()
 {
    return GatewayExecuteRequest("", false);
 }
+
+#endif // __MT5_GATEWAY_MQH__
