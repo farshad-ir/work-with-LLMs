@@ -351,7 +351,7 @@ private:
       // پاسخ بدون درخواست متناظر قابل اعتماد نیست.
       if(hasResponse && !hasRequest)
       {
-         Print("[GATEWAY] Recovery failed: response exists without request.");
+         Print("[GATEWAY] Recovery failed: m_response exists without request.");
          return false;
       }
    
@@ -363,14 +363,14 @@ private:
             m_requestId
          ))
          {
-            Print("[GATEWAY] Recovery failed: saved response is invalid.");
+            Print("[GATEWAY] Recovery failed: saved m_response is invalid.");
             return false;
          }
    
          
          if(!GatewayCopySavedResponseToReceived(m_requestId))
          {
-            Print("[GATEWAY] Recovery failed: cannot persist received response.");
+            Print("[GATEWAY] Recovery failed: cannot persist received m_response.");
             return false;
          }
    
@@ -410,7 +410,7 @@ private:
       {
          if(!hasResponse)
          {
-            Print("[GATEWAY] Recovery failed: response file is missing.");
+            Print("[GATEWAY] Recovery failed: m_response file is missing.");
             return false;
          }
       }
@@ -599,12 +599,12 @@ private:
    {
       responseText = "";
    
-      ArrayInitialize(response, 0);
+      ArrayInitialize(m_response, 0);
    
       int result = PollResponses(
          pathParameter,
-         response,
-         ArraySize(response)
+         m_response,
+         ArraySize(m_response)
       );
    
       if(result <= 0)
@@ -614,7 +614,7 @@ private:
       }
    
       responseText = CharArrayToString(
-         response,
+         m_response,
          0,
          WHOLE_ARRAY,
          CP_UTF8
@@ -622,7 +622,7 @@ private:
    
       if(StringLen(responseText) == 0)
       {
-         Print("[GATEWAY] GET returned empty response. result=", result);
+         Print("[GATEWAY] GET returned empty m_response. result=", result);
          return false;
       }
    
@@ -669,7 +669,7 @@ private:
       if(clientId != expectedClientId ||
          requestId != expectedRequestId)
       {
-         Print("[GATEWAY] Poll response identity mismatch.");
+         Print("[GATEWAY] Poll m_response identity mismatch.");
          return false;
       }
    
@@ -687,7 +687,7 @@ private:
       if((status == "COMPLETED" || status == "FAILED") &&
          responseId == "")
       {
-         Print("[GATEWAY] Final response has no response_id.");
+         Print("[GATEWAY] Final m_response has no response_id.");
          return false;
       }
    
@@ -706,7 +706,7 @@ private:
    
       if(h == INVALID_HANDLE)
       {
-         Print("[GATEWAY] Cannot open response file. error=", GetLastError());
+         Print("[GATEWAY] Cannot open m_response file. error=", GetLastError());
          return false;
       }
    
@@ -715,11 +715,11 @@ private:
    
       if(written == 0)
       {
-         Print("[GATEWAY] Failed to write response file.");
+         Print("[GATEWAY] Failed to write m_response file.");
          return false;
       }
    
-      Print("[GATEWAY] Response persisted.");
+      Print("[GATEWAY] m_response persisted.");
       return true;
    }
    
@@ -732,7 +732,7 @@ private:
    
       if(source == INVALID_HANDLE)
       {
-         Print("[GATEWAY] Cannot read temporary response.");
+         Print("[GATEWAY] Cannot read temporary m_response.");
          return false;
       }
    
@@ -772,11 +772,11 @@ private:
    
       if(written == 0)
       {
-         Print("[GATEWAY] Received response write failed.");
+         Print("[GATEWAY] Received m_response write failed.");
          return false;
       }
    
-      Print("[GATEWAY] Response saved to received: ", receivedFile);
+      Print("[GATEWAY] m_response saved to received: ", receivedFile);
       return true;
    }
    
@@ -910,7 +910,7 @@ private:
    
       if(h == INVALID_HANDLE)
       {
-         Print("[GATEWAY] Cannot open saved response. error=", GetLastError());
+         Print("[GATEWAY] Cannot open saved m_response. error=", GetLastError());
          return false;
       }
    
@@ -934,11 +934,11 @@ private:
    
       if(status != "COMPLETED" && status != "FAILED")
       {
-         Print("[GATEWAY] Saved response is not final. status=", status);
+         Print("[GATEWAY] Saved m_response is not final. status=", status);
          return false;
       }
    
-      Print("[GATEWAY] Saved final response validated. request_id=",
+      Print("[GATEWAY] Saved final m_response validated. request_id=",
             expectedRequestId,
             " response_id=", responseId);
    
@@ -1014,7 +1014,7 @@ private:
    
       if(!ackJson.Deserialize(responseText))
       {
-         Print("[GATEWAY] Invalid ACK response JSON.");
+         Print("[GATEWAY] Invalid ACK m_response JSON.");
          return false;
       }
    
@@ -1055,14 +1055,14 @@ private:
       {
          Print("[GATEWAY] Cleanup failed. request=",
                requestDeleted,
-               " response=", responseDeleted);
+               " m_response=", responseDeleted);
          return false;
       }
    
-      g_gatewayLastRequestId = m_requestId;
+      m_lastRequestId = m_requestId;
       m_requestId = "";
    
-      Print("[GATEWAY] Request and response files cleaned.");
+      Print("[GATEWAY] Request and m_response files cleaned.");
       return true;
    }
    
@@ -1187,7 +1187,7 @@ private:
    
       if(!FileIsExist(receivedFile, FILE_COMMON))
       {
-         Print("[COMMANDS] Received response not found: ", receivedFile);
+         Print("[COMMANDS] Received m_response not found: ", receivedFile);
          return false;
       }
    
@@ -1210,7 +1210,7 @@ private:
    
       if(content == "" || !result.Deserialize(content))
       {
-         Print("[COMMANDS] Invalid received response JSON.");
+         Print("[COMMANDS] Invalid received m_response JSON.");
          return false;
       }
    
@@ -1221,7 +1221,7 @@ private:
          result["request_id"].ToStr() != requestId ||
          result["status"].ToStr() != "COMPLETED")
       {
-         Print("[COMMANDS] Response identity or status validation failed.");
+         Print("[COMMANDS] m_response identity or status validation failed.");
          return false;
       }
    
@@ -1318,7 +1318,7 @@ private:
             return false;
          }
    
-         string requestId = g_gatewayLastRequestId;
+         string requestId = m_lastRequestId;
    
          if(!GatewayReceivedCommandSucceeded(
             requestId,
