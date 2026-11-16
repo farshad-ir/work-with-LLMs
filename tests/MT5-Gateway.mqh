@@ -15,10 +15,10 @@
 
 
 #define GATEWAY_FEED_FILE     "LLM-LQ/mt5_feed.json"
-#define GATEWAY_REQUEST_FILE  "LLM-LQ/Gateway/temp/current_request.json"
-#define GATEWAY_SEQUENCE_FILE "LLM-LQ/Gateway/temp/request_sequence.txt"
-#define GATEWAY_STATE_FILE    "LLM-LQ/Gateway/temp/current_state.txt"
-#define GATEWAY_RESPONSE_FILE "LLM-LQ/Gateway/temp/current_response.json"
+#define m_requestFile  "LLM-LQ/Gateway/temp/current_request.json"
+#define m_sequenceFile "LLM-LQ/Gateway/temp/request_sequence.txt"
+#define m_stateFile    "LLM-LQ/Gateway/temp/current_state.txt"
+#define m_responseFile "LLM-LQ/Gateway/temp/current_response.json"
 #define GATEWAY_RECEIVED_DIR  "LLM-LQ/Gateway/received"
 #define GATEWAY_COMMANDS_FILE  "LLM-LQ/Gateway/commands/commands.json"
 
@@ -298,7 +298,7 @@ private:
    bool GatewaySaveState(const string state)
    {
       int h = FileOpen(
-         GATEWAY_STATE_FILE,
+         m_stateFile,
          FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_ANSI
       );
    
@@ -315,11 +315,11 @@ private:
    {
       state = "";
    
-      if(!FileIsExist(GATEWAY_STATE_FILE, FILE_COMMON))
+      if(!FileIsExist(m_stateFile, FILE_COMMON))
          return false;
    
       int h = FileOpen(
-         GATEWAY_STATE_FILE,
+         m_stateFile,
          FILE_READ | FILE_TXT | FILE_COMMON | FILE_ANSI
       );
    
@@ -335,7 +335,7 @@ private:
    bool GatewayLoadState(GatewayState &state)
    {
       // نبودن فایل وضعیت یعنی شروع یک چرخه جدید.
-      if(!FileIsExist(GATEWAY_STATE_FILE, FILE_COMMON))
+      if(!FileIsExist(m_stateFile, FILE_COMMON))
       {
          state = STATE_IDLE;
          return true;
@@ -364,10 +364,10 @@ private:
    
    
       bool hasRequest =
-         FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON);
+         FileIsExist(m_requestFile, FILE_COMMON);
    
       bool hasResponse =
-         FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON);
+         FileIsExist(m_responseFile, FILE_COMMON);
    
       // شناسه درخواست فعال را از فایل بازیابی کن.
       if(hasRequest)
@@ -476,10 +476,10 @@ private:
    {
       long sequence = 0;
    
-      if(FileIsExist(GATEWAY_SEQUENCE_FILE, FILE_COMMON))
+      if(FileIsExist(m_sequenceFile, FILE_COMMON))
       {
          int h = FileOpen(
-            GATEWAY_SEQUENCE_FILE,
+            m_sequenceFile,
             FILE_READ | FILE_TXT | FILE_COMMON | FILE_ANSI
          );
    
@@ -495,7 +495,7 @@ private:
       sequence++;
    
       int h = FileOpen(
-         GATEWAY_SEQUENCE_FILE,
+         m_sequenceFile,
          FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_ANSI
       );
    
@@ -512,7 +512,7 @@ private:
    bool GatewayPrepareRequest(const string body)
    {
       // درخواست حل‌نشده قبلی را بازیابی کن.
-      if(FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON))
+      if(FileIsExist(m_requestFile, FILE_COMMON))
       {
          if(!GatewayLoadPendingRequest(
             m_clientId,
@@ -565,7 +565,7 @@ private:
    
       // ذخیره پایدار پیش از ارسال
       int h = FileOpen(
-         GATEWAY_REQUEST_FILE,
+         m_requestFile,
          FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_UNICODE
       );
    
@@ -601,7 +601,7 @@ private:
    
       // خواندن همان Envelope ذخیره‌شده
       int requestHandle = FileOpen(
-         GATEWAY_REQUEST_FILE,
+         m_requestFile,
          FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
       );
    
@@ -746,7 +746,7 @@ private:
    bool GatewaySaveResponse(const string responseText)
    {
       int h = FileOpen(
-         GATEWAY_RESPONSE_FILE,
+         m_responseFile,
          FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_UNICODE
       );
    
@@ -772,7 +772,7 @@ private:
    bool GatewayCopySavedResponseToReceived(const string requestId)
    {
       int source = FileOpen(
-         GATEWAY_RESPONSE_FILE,
+         m_responseFile,
          FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
       );
    
@@ -878,14 +878,14 @@ private:
       clientId = "";
       requestId = "";
    
-      if(!FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON))
+      if(!FileIsExist(m_requestFile, FILE_COMMON))
       {
          Print("[GATEWAY] No pending request file.");
          return false;
       }
    
       int h = FileOpen(
-         GATEWAY_REQUEST_FILE,
+         m_requestFile,
          FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
       );
    
@@ -946,11 +946,11 @@ private:
    
    bool GatewayValidateSavedResponse(   const string expectedClientId,   const string expectedRequestId )
    {
-      if(!FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+      if(!FileIsExist(m_responseFile, FILE_COMMON))
          return false;
    
       int h = FileOpen(
-         GATEWAY_RESPONSE_FILE,
+         m_responseFile,
          FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
       );
    
@@ -995,11 +995,11 @@ private:
    {
       responseId = "";
    
-      if(!FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+      if(!FileIsExist(m_responseFile, FILE_COMMON))
          return false;
    
       int h = FileOpen(
-         GATEWAY_RESPONSE_FILE,
+         m_responseFile,
          FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
       );
    
@@ -1085,15 +1085,15 @@ private:
       bool requestDeleted = true;
       bool responseDeleted = true;
    
-      if(FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON))
+      if(FileIsExist(m_requestFile, FILE_COMMON))
          requestDeleted = FileDelete(
-            GATEWAY_REQUEST_FILE,
+            m_requestFile,
             FILE_COMMON
          );
    
-      if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+      if(FileIsExist(m_responseFile, FILE_COMMON))
          responseDeleted = FileDelete(
-            GATEWAY_RESPONSE_FILE,
+            m_responseFile,
             FILE_COMMON
          );
    
