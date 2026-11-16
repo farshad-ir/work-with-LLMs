@@ -14,11 +14,6 @@
 #import
 
 
-#define GATEWAY_FEED_FILE     "LLM-LQ/mt5_feed.json"
-#define m_receivedDir  "LLM-LQ/Gateway/received"
-#define m_commandsFile  "LLM-LQ/Gateway/commands/commands.json"
-
-
 #include <JAson.mqh>
 
 
@@ -783,16 +778,7 @@ private:
    
       if(responseText == "")
          return false;
-   
-      //if(!FolderIsExist(m_receivedDir, FILE_COMMON))
-      //{
-      //   if(!FolderCreate(m_receivedDir, FILE_COMMON) &&
-      //      !FolderIsExist(m_receivedDir, FILE_COMMON))
-      //    {
-      //      Print("[GATEWAY] Cannot create received directory.");
-      //      return false;
-      //   }
-      //}
+
    
       string receivedFile =
          m_receivedDir + "/" + requestId + ".json";
