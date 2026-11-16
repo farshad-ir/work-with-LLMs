@@ -1032,3 +1032,194 @@ bool GatewayValidateSavedResponse(
    return true;
 }
 
+bool GatewayGetSavedResponseId(
+   const string expectedClientId,
+   const string expectedRequestId,
+   string &responseId
+)
+{
+   responseId = "";
+
+   if(!FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+      return false;
+
+   int h = FileOpen(
+      GATEWAY_RESPONSE_FILE,
+      FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
+   );
+
+   if(h == INVALID_HANDLE)
+      return false;
+
+   string responseText = FileReadString(h);
+   FileClose(h);
+
+   string status;
+
+   if(!GatewayParsePollResponse(
+      responseText,
+      expectedClientId,
+      expectedRequestId,
+      status,
+      responseId
+   ))
+      return false;
+
+   if((status != "COMPLETED" && status != "FAILED") ||
+      responseId == "")
+   {
+      responseId = "";
+      return false;
+   }
+
+   return true;
+}
+
+
+bool GatewaySendAck()
+{
+   string responseId;
+
+   if(!GatewayGetSavedResponseId(
+      g_gatewayClientId,
+      g_gatewayRequestId,
+      responseId
+   ))
+   {
+      Print("[GATEWAY] Cannot get response_id for ACK.");
+      return false;
+   }
+
+   string path =
+      "/gateway/mt5/responses"
+      "?client_id=" + g_gatewayClientId +
+      "&request_id=" + g_gatewayRequestId +
+      "&action=ACK"
+      "&response_id=" + responseId;
+
+   string responseText;
+
+   if(!GatewayHttpGet(path, responseText))
+      return false;
+
+   CJAVal ackJson;
+
+   if(!ackJson.Deserialize(responseText))
+   {
+      Print("[GATEWAY] Invalid ACK response JSON.");
+      return false;
+   }
+
+   if(ackJson["protocol"].ToStr() != "mt5-gateway" ||
+      (int)ackJson["version"].ToInt() != 1 ||
+      ackJson["message_type"].ToStr() != "ACK_RESULT" ||
+      ackJson["client_id"].ToStr() != g_gatewayClientId ||
+      ackJson["request_id"].ToStr() != g_gatewayRequestId ||
+      ackJson["response_id"].ToStr() != responseId ||
+      ackJson["status"].ToStr() != "ACKNOWLEDGED")
+   {
+      Print("[GATEWAY] ACK_RESULT validation failed.");
+      return false;
+   }
+
+   Print("[GATEWAY] ACKNOWLEDGED. response_id=", responseId);
+   return true;
+}
+
+bool GatewayCleanup()
+{
+   bool requestDeleted = true;
+   bool responseDeleted = true;
+
+   if(FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON))
+      requestDeleted = FileDelete(
+         GATEWAY_REQUEST_FILE,
+         FILE_COMMON
+      );
+
+   if(FileIsExist(GATEWAY_RESPONSE_FILE, FILE_COMMON))
+      responseDeleted = FileDelete(
+         GATEWAY_RESPONSE_FILE,
+         FILE_COMMON
+      );
+
+   if(!requestDeleted || !responseDeleted)
+   {
+      Print("[GATEWAY] Cleanup failed. request=",
+            requestDeleted,
+            " response=", responseDeleted);
+      return false;
+   }
+
+   g_gatewayRequestId = "";
+
+   Print("[GATEWAY] Request and response files cleaned.");
+   return true;
+}
+
+bool GatewayExecuteAction(
+   const GatewayState previousState,
+   const GatewayState nextState,
+   const GatewayEvent event,
+   GatewayEvent &actionEvent
+)
+{
+   actionEvent = EVENT_NONE;
+
+   // ارسال درخواست
+   if(nextState == STATE_SENDING)
+   {
+      int result = GatewaySendRequest();
+
+      if(result >= 200 && result < 300)
+         actionEvent = EVENT_SEND_OK;
+      else
+         actionEvent = EVENT_SEND_FAILED;
+
+      return true;
+   }
+
+   // Poll پاسخ
+   if(nextState == STATE_SENT ||
+      nextState == STATE_PROCESSING)
+   {
+      return GatewayPollAndPersist(
+         g_gatewayClientId,
+         g_gatewayRequestId,
+         actionEvent
+      );
+   }
+
+   // ارسال ACK
+   if(nextState == STATE_ACK_SENDING)
+   {
+      if(GatewaySendAck())
+         actionEvent = EVENT_ACK_OK;
+      else
+         actionEvent = EVENT_ACK_FAILED;
+
+      return true;
+   }
+
+   // پاک‌سازی پس از تأیید ACK
+   if(previousState == STATE_ACKNOWLEDGED &&
+      nextState == STATE_ACKNOWLEDGED &&
+      event == EVENT_NONE)
+   {
+      if(GatewayCleanup())
+         actionEvent = EVENT_CLEANUP_OK;
+      else
+         actionEvent = EVENT_CLEANUP_FAILED;
+
+      return true;
+   }
+
+   Print("[GATEWAY] No action defined. previous=",
+         GatewayStateToText(previousState),
+         " next=", GatewayStateToText(nextState),
+         " event=", (int)event);
+
+   return false;
+}
+
+
