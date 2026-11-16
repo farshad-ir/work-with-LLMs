@@ -106,6 +106,133 @@ enum GatewayEvent
 #define GATEWAY_MAX_ACK_ATTEMPTS   5
 #define GATEWAY_SLEEP_SECONDS      1
 
+string GatewayStateToText(const GatewayState state)
+{
+   switch(state)
+   {
+      case STATE_IDLE:             return "IDLE";
+      case STATE_CREATED:          return "CREATED";
+      case STATE_SENDING:          return "SENDING";
+      case STATE_SENT:             return "SENT";
+      case STATE_PROCESSING:       return "PROCESSING";
+      case STATE_RESPONSE_RECEIVED:return "RESPONSE_RECEIVED";
+      case STATE_ACK_SENDING:      return "ACK_SENDING";
+      case STATE_ACKNOWLEDGED:     return "ACKNOWLEDGED";
+      case STATE_ERROR:            return "ERROR";
+   }
+
+   return "ERROR";
+}
+
+bool GatewayTextToState(
+   const string text,
+   GatewayState &state
+)
+{
+   if(text == "IDLE")              state = STATE_IDLE;
+   else if(text == "CREATED")      state = STATE_CREATED;
+   else if(text == "SENDING")      state = STATE_SENDING;
+   else if(text == "SENT")         state = STATE_SENT;
+   else if(text == "PROCESSING")   state = STATE_PROCESSING;
+   else if(text == "RESPONSE_RECEIVED") state = STATE_RESPONSE_RECEIVED;
+   else if(text == "ACK_SENDING")  state = STATE_ACK_SENDING;
+   else if(text == "ACKNOWLEDGED") state = STATE_ACKNOWLEDGED;
+   else if(text == "ERROR")        state = STATE_ERROR;
+   else return false;
+
+   return true;
+}
+
+bool GatewayTransition(
+   const GatewayState currentState,
+   const GatewayEvent event,
+   GatewayState &nextState
+)
+{
+   nextState = currentState;
+
+   switch(currentState)
+   {
+      case STATE_IDLE:
+         if(event == EVENT_START)
+            nextState = STATE_CREATED;
+         else
+            return false;
+         break;
+
+      case STATE_CREATED:
+         if(event == EVENT_REQUEST_READY)
+            nextState = STATE_SENDING;
+         else
+            return false;
+         break;
+
+      case STATE_SENDING:
+         if(event == EVENT_SEND_OK)
+            nextState = STATE_SENT;
+         else if(event == EVENT_SEND_FAILED ||
+                 event == EVENT_NETWORK_ERROR)
+            nextState = STATE_SENDING;
+         else
+            return false;
+         break;
+
+      case STATE_SENT:
+         if(event == EVENT_POLL_PROCESSING)
+            nextState = STATE_PROCESSING;
+         else if(event == EVENT_RESPONSE_COMPLETED ||
+                 event == EVENT_RESPONSE_FAILED)
+            nextState = STATE_RESPONSE_RECEIVED;
+         else if(event == EVENT_NETWORK_ERROR)
+            nextState = STATE_SENT;
+         else
+            return false;
+         break;
+
+      case STATE_PROCESSING:
+         if(event == EVENT_POLL_PROCESSING ||
+            event == EVENT_NETWORK_ERROR)
+            nextState = STATE_PROCESSING;
+         else if(event == EVENT_RESPONSE_COMPLETED ||
+                 event == EVENT_RESPONSE_FAILED)
+            nextState = STATE_RESPONSE_RECEIVED;
+         else
+            return false;
+         break;
+
+      case STATE_RESPONSE_RECEIVED:
+         if(event == EVENT_ACK_READY)
+            nextState = STATE_ACK_SENDING;
+         else
+            return false;
+         break;
+
+      case STATE_ACK_SENDING:
+         if(event == EVENT_ACK_OK)
+            nextState = STATE_ACKNOWLEDGED;
+         else if(event == EVENT_ACK_FAILED ||
+                 event == EVENT_NETWORK_ERROR)
+            nextState = STATE_ACK_SENDING;
+         else
+            return false;
+         break;
+
+      case STATE_ACKNOWLEDGED:
+         if(event == EVENT_CLEANUP_OK)
+            nextState = STATE_IDLE;
+         else if(event == EVENT_CLEANUP_FAILED)
+            nextState = STATE_ACKNOWLEDGED;
+         else
+            return false;
+         break;
+
+      case STATE_ERROR:
+         return false;
+   }
+
+   return true;
+}
+
 
 
 
@@ -390,11 +517,24 @@ string GatewayNextRequestId()
 }
 
 
-
-int GatewaySubmit(const string body)
+bool GatewayPrepareRequest(const string body)
 {
-   // بررسی اولیه: body باید یک JSON object باشد.
-   // اعتبارسنجی کامل JSON باید قبل از ارسال انجام شود.
+   // درخواست حل‌نشده قبلی را بازیابی کن.
+   if(FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON))
+   {
+      if(!GatewayLoadPendingRequest(
+         g_gatewayClientId,
+         g_gatewayRequestId
+      ))
+         return false;
+
+      Print("[GATEWAY] Existing request recovered: ",
+            g_gatewayRequestId);
+
+      return true;
+   }
+
+   // اعتبارسنجی اولیه JSON
    string payload = body;
    StringTrimLeft(payload);
    StringTrimRight(payload);
@@ -406,101 +546,101 @@ int GatewaySubmit(const string body)
       StringSubstr(payload, bodyLength - 1, 1) != "}")
    {
       Print("[GATEWAY] Invalid JSON object body.");
-      return -200;
+      return false;
    }
 
-   string envelope = "";
+   // ساخت شناسه جدید
+   string requestId = GatewayNextRequestId();
 
-   // اگر درخواست حل‌نشده داریم، همان را بازیابی می‌کنیم.
-   if(FileIsExist(GATEWAY_REQUEST_FILE, FILE_COMMON))
+   if(requestId == "")
+      return false;
+
+   string clientId = GatewayJsonEscape(g_gatewayClientId);
+   string escapedRequestId = GatewayJsonEscape(requestId);
+
+   // ساخت Envelope
+   string envelope = "{";
+
+   envelope += "\"protocol\":\"mt5-gateway\",";
+   envelope += "\"version\":1,";
+   envelope += "\"message_type\":\"INGEST\",";
+   envelope += "\"client_id\":\"" + clientId + "\",";
+   envelope += "\"request_id\":\"" + escapedRequestId + "\",";
+   envelope += "\"created_at\":\"" + GatewayUtcNow() + "\",";
+   envelope += "\"payload\":" + payload;
+
+   envelope += "}";
+
+   // ذخیره پایدار پیش از ارسال
+   int h = FileOpen(
+      GATEWAY_REQUEST_FILE,
+      FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_UNICODE
+   );
+
+   if(h == INVALID_HANDLE)
    {
-      int h = FileOpen(
-         GATEWAY_REQUEST_FILE,
-         FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
-      );
-
-      if(h == INVALID_HANDLE)
-         return -201;
-
-      envelope = FileReadString(h);
-      FileClose(h);
-
-      if(StringLen(envelope) == 0)
-         return -202;
-
-      Print("[GATEWAY] Existing request will be retried.");
+      Print("[GATEWAY] Cannot persist request. error=", GetLastError());
+      return false;
    }
-   else
+
+   uint written = FileWriteString(h, envelope);
+   FileClose(h);
+
+   if(written == 0)
    {
-      // ساخت شناسه جدید
-      string requestId = GatewayNextRequestId();
-
-      if(requestId == "")
-         return -203;
-
-      string clientId = GatewayJsonEscape(InpGatewayClientId);
-      string escapedRequestId = GatewayJsonEscape(requestId);
-      string createdAt = GatewayUtcNow();
-
-      // ساخت Envelope مطابق پروتکل
-      envelope = "{";
-
-      envelope += "\"protocol\":\"mt5-gateway\",";
-      envelope += "\"version\":1,";
-      envelope += "\"message_type\":\"INGEST\",";
-      envelope += "\"client_id\":\"" + clientId + "\",";
-      envelope += "\"request_id\":\"" + escapedRequestId + "\",";
-      envelope += "\"created_at\":\"" + createdAt + "\",";
-      envelope += "\"payload\":" + payload;
-
-      envelope += "}";
-
-      // ابتدا ذخیره پایدار درخواست
-      int h = FileOpen(
-         GATEWAY_REQUEST_FILE,
-         FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_UNICODE
-      );
-
-      if(h == INVALID_HANDLE)
-         return -204;
-
-      FileWriteString(h, envelope);
-      FileClose(h);
-
-      Print("[GATEWAY] Request persisted: ", requestId);
+      Print("[GATEWAY] Request persistence failed.");
+      return false;
    }
 
-   // ثبت وضعیت پیش از ارسال
-   if(!GatewaySaveState("SENDING"))
-      return -205;
+   g_gatewayRequestId = requestId;
 
-   // تحویل Envelope به فایل ثابت مورد انتظار DLL
+   Print("[GATEWAY] Request persisted: ", requestId);
+
+   return true;
+}
+
+int GatewaySendRequest()
+{
+   string clientId;
+   string requestId;
+
+   if(!GatewayLoadPendingRequest(clientId, requestId))
+      return -300;
+
+   // خواندن همان Envelope ذخیره‌شده
+   int requestHandle = FileOpen(
+      GATEWAY_REQUEST_FILE,
+      FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
+   );
+
+   if(requestHandle == INVALID_HANDLE)
+      return -301;
+
+   string envelope = FileReadString(requestHandle);
+   FileClose(requestHandle);
+
+   if(envelope == "")
+      return -302;
+
+   // تحویل Envelope به فایل مورد انتظار DLL
    int feedHandle = FileOpen(
       GATEWAY_FEED_FILE,
       FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_UNICODE
    );
 
    if(feedHandle == INVALID_HANDLE)
-      return -206;
+      return -303;
 
-   FileWriteString(feedHandle, envelope);
+   uint written = FileWriteString(feedHandle, envelope);
    FileClose(feedHandle);
 
-   // DLL خودش فایل را می‌خواند و ارسال می‌کند
+   if(written == 0)
+      return -304;
+
+   // ارسال HTTP توسط DLL
    int result = SendLatestJson();
 
    Print("[GATEWAY] SendLatestJson result: ", result);
-
-   // تمام پاسخ‌های 2xx، از جمله 204، موفقیت انتقال هستند.
-   if(result >= 200 && result < 300)
-   {
-      GatewaySaveState("SENT");
-   }
-   else
-   {
-      // درخواست و شناسه حفظ می‌شوند تا Retry با همان Envelope باشد.
-      GatewaySaveState("SENDING");
-   }
 
    return result;
 }
