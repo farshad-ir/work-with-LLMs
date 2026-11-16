@@ -15,12 +15,8 @@
 
 
 #define GATEWAY_FEED_FILE     "LLM-LQ/mt5_feed.json"
-#define m_requestFile  "LLM-LQ/Gateway/temp/current_request.json"
-#define m_sequenceFile "LLM-LQ/Gateway/temp/request_sequence.txt"
-#define m_stateFile    "LLM-LQ/Gateway/temp/current_state.txt"
-#define m_responseFile "LLM-LQ/Gateway/temp/current_response.json"
-#define GATEWAY_RECEIVED_DIR  "LLM-LQ/Gateway/received"
-#define GATEWAY_COMMANDS_FILE  "LLM-LQ/Gateway/commands/commands.json"
+#define m_receivedDir  "LLM-LQ/Gateway/received"
+#define m_commandsFile  "LLM-LQ/Gateway/commands/commands.json"
 
 
 #include <JAson.mqh>
@@ -616,7 +612,7 @@ private:
    
       // تحویل Envelope به فایل مورد انتظار DLL
       int feedHandle = FileOpen(
-         GATEWAY_FEED_FILE,
+         m_feedFile,
          FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_UNICODE
       );
    
@@ -788,10 +784,10 @@ private:
       if(responseText == "")
          return false;
    
-      //if(!FolderIsExist(GATEWAY_RECEIVED_DIR, FILE_COMMON))
+      //if(!FolderIsExist(m_receivedDir, FILE_COMMON))
       //{
-      //   if(!FolderCreate(GATEWAY_RECEIVED_DIR, FILE_COMMON) &&
-      //      !FolderIsExist(GATEWAY_RECEIVED_DIR, FILE_COMMON))
+      //   if(!FolderCreate(m_receivedDir, FILE_COMMON) &&
+      //      !FolderIsExist(m_receivedDir, FILE_COMMON))
       //    {
       //      Print("[GATEWAY] Cannot create received directory.");
       //      return false;
@@ -799,7 +795,7 @@ private:
       //}
    
       string receivedFile =
-         GATEWAY_RECEIVED_DIR + "/" + requestId + ".json";
+         m_receivedDir + "/" + requestId + ".json";
    
       int target = FileOpen(
          receivedFile,
@@ -1114,14 +1110,14 @@ private:
    
    bool GatewayLoadCommands(CJAVal &root)
    {
-      if(!FileIsExist(GATEWAY_COMMANDS_FILE, FILE_COMMON))
+      if(!FileIsExist(m_commandsFile, FILE_COMMON))
       {
-         Print("[COMMANDS] File not found: ", GATEWAY_COMMANDS_FILE);
+         Print("[COMMANDS] File not found: ", m_commandsFile);
          return false;
       }
    
       int h = FileOpen(
-         GATEWAY_COMMANDS_FILE,
+         m_commandsFile,
          FILE_READ | FILE_TXT | FILE_COMMON | FILE_ANSI
       );
    
@@ -1200,7 +1196,7 @@ private:
          return false;
    
       int h = FileOpen(
-         GATEWAY_COMMANDS_FILE,
+         m_commandsFile,
          FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_ANSI
       );
    
@@ -1229,7 +1225,7 @@ private:
          return false;
    
       string receivedFile =
-         GATEWAY_RECEIVED_DIR + "/" + requestId + ".json";
+         m_receivedDir + "/" + requestId + ".json";
    
       if(!FileIsExist(receivedFile, FILE_COMMON))
       {
@@ -1298,7 +1294,7 @@ private:
    
    bool GatewayRunCommands()
    {
-      if(!FileIsExist(GATEWAY_COMMANDS_FILE, FILE_COMMON))
+      if(!FileIsExist(m_commandsFile, FILE_COMMON))
       {
          Print("[COMMANDS] No commands file. Skipping.");
          return true;
