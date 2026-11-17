@@ -279,6 +279,16 @@ def cancel_mt5_request(client_id, request_id):
 
         if row is None:
             raise ValueError("Request not found.")
+            print(
+                "[MT5][CANCEL][DB]",
+                f"client_id={client_id}",
+                f"request_id={request_id}",
+                f"db_status={row['status']}",
+                f"has_response={bool(row['response_json'])}",
+                f"response_id={row['status'] if not row['response_json'] else json.loads(row['response_json']).get('response_id')}",
+                f"cancel_requested_at={row['cancel_requested_at']}",
+                flush=True,
+            )
 
         if row["response_json"]:
             status = "ALREADY_COMPLETED"
