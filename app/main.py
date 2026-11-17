@@ -50,7 +50,7 @@ from app.mt5_delivery import (
     recover_mt5_requests,
     get_mt5_response,
     acknowledge_mt5_response,
-    RequestConflictError,
+    RequestConflictError, cancel_mt5_request,
 )
 from app.mt5_sqlite import execute_command
 
@@ -960,13 +960,15 @@ async def mt5_response(client_id: str):
 
 
 @app.get("/v1/mt5/poll")
+@app.get("/v1/mt5/poll")
 async def mt5_poll(
     client_id: str,
-    request_id: str,
+    request_id: str | None = None,
     action: str = "POLL",
     protocol: str = "mt5-gateway",
     version: int = 1,
     response_id: str | None = None,
+    target_request_id: str | None = None,
 ):
 
     if protocol != "mt5-gateway" or version != 1:
@@ -977,7 +979,35 @@ async def mt5_poll(
         )
 
     action = action.strip().upper()
+    # عملیات CANCEL از همین GET
+    
+    if action == "CANCEL":
 
+        if not target_request_id or not target_request_id.strip():
+            return JSONResponse(
+                status_code=400,
+                content={"error": "target_request_id is required for CANCEL."},
+                headers={"Cache-Control": "no-store"},
+            )
+
+        try:
+            result = cancel_mt5_request(
+                client_id,
+                target_request_id.strip(),
+            )
+
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=404,
+                content={"error": str(exc)},
+                headers={"Cache-Control": "no-store"},
+            )
+
+        return JSONResponse(
+            status_code=200,
+            content=result,
+            headers={"Cache-Control": "no-store"},
+        )
     # عملیات ACK از همین GET
     if action == "ACK":
 
@@ -1027,7 +1057,12 @@ async def mt5_poll(
             content={"error": "Unsupported action."},
             headers={"Cache-Control": "no-store"},
         )
-
+    if not request_id or not request_id.strip():
+        return JSONResponse(
+            status_code=400,
+            content={"error": "request_id is required for POLL."},
+            headers={"Cache-Control": "no-store"},
+        )
     try:
         result = get_mt5_response(
             client_id,
