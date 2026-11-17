@@ -171,21 +171,48 @@ int OnInit()
    }
    
       
-   string data = "{";   
-   
-   data += "\"H1\":{";
-   data += "\"candles\":[" + h1Candles + "]";
-   data += "}";
-   
-   data += "}";
+string data = "{";
+
+data += "\"command\":\"CHART-INIT\",";
+data += "\"operations\":[";
+
+// MAKE
+data += "{";
+data += "\"command\":\"MAKE\",";
+data += "\"table\":\"h1Candles\",";
+data += "\"columns\":[";
+
+data += "{\"name\":\"time\",\"type\":\"TEXT\"},";
+data += "{\"name\":\"open\",\"type\":\"REAL\"},";
+data += "{\"name\":\"high\",\"type\":\"REAL\"},";
+data += "{\"name\":\"low\",\"type\":\"REAL\"},";
+data += "{\"name\":\"close\",\"type\":\"REAL\"},";
+data += "{\"name\":\"tick_volume\",\"type\":\"INTEGER\"},";
+data += "{\"name\":\"spread_points\",\"type\":\"INTEGER\"},";
+data += "{\"name\":\"river_center\",\"type\":\"REAL\"},";
+data += "{\"name\":\"river_width_pips\",\"type\":\"REAL\"},";
+data += "{\"name\":\"MABIF\",\"type\":\"TEXT\"}";
+
+data += "]";
+data += "},";
+
+// INSR
+data += "{";
+data += "\"command\":\"INSR\",";
+data += "\"table\":\"h1Candles\",";
+data += "\"records\":[" + h1Candles + "]";
+data += "}";
+
+data += "]";
+data += "}";
 
    
    
-   //if(!Gateway.ExecuteRequest(data))
-   //{
-   //   Print("[GATEWAY] Request execution did not complete.");
-   //   return INIT_FAILED;
-   //}
+if(!Gateway.ExecuteRequest(data))
+{
+   Print("[GATEWAY] Request execution did not complete.");
+   return INIT_FAILED;
+}
 
    Print("[GATEWAY] Request execution completed.");
 
@@ -247,9 +274,7 @@ string BuildCandleObject(
    data += "\"river_center\":" + DoubleToString(riverCenter, _Digits) + ",";
    data += "\"river_width_pips\":" + DoubleToString(riverWidth, 2) + ",";
 
-   data += "\"ma_bifurcation\":{";
-   data += "\"direction\":\"" + DirectionText(direction) + "\"";
-   data += "}";
+   data += "\"MABIF\":\"" + DirectionText(direction) + "\"";
 
    data += "}";
 
