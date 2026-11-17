@@ -393,7 +393,7 @@ class GatewayController extends Controller
    
     /*
      * Retrieve a persistent MT5 response from Python.
-     * Supports both POLL and ACK actions.
+     * Supports both POLL, ACK and CANCEL actions.
      */
     public function pollResponses(Request $request): JsonResponse
     {
@@ -418,7 +418,7 @@ class GatewayController extends Controller
 
         $action = strtoupper(trim($action));
 
-        if (!in_array($action, ['POLL', 'ACK'], true)) {
+        if (!in_array($action, ['POLL', 'ACK', 'CANCEL'], true)) {
             return response()->json([
                 'error' => [
                     'message' => 'Unsupported action.',
