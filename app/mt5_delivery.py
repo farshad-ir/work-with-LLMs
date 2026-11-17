@@ -365,7 +365,10 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
 
         if (
             row["status"] == "PROCESSING"
-            and not allow_processing
+            and (
+                not allow_processing
+                or row["cancel_requested_at"]
+            )
         ):
             conn.commit()
             return {
