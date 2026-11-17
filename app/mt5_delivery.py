@@ -318,6 +318,26 @@ def cancel_mt5_request(client_id, request_id):
         "status": status,
     }
 
+
+def _is_mt5_cancel_requested(client_id, request_id):
+    conn = _connect()
+
+    try:
+        row = conn.execute(
+            """
+            SELECT cancel_requested_at
+            FROM mt5_delivery_requests
+            WHERE client_id = ?
+              AND request_id = ?
+            """,
+            (client_id, request_id),
+        ).fetchone()
+
+        return bool(row and row["cancel_requested_at"])
+
+    finally:
+        conn.close()
+
 def process_mt5_request(client_id, request_id, allow_processing=False):
 
     conn = _connect()
@@ -327,7 +347,7 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
 
         row = conn.execute(
             """
-            SELECT request_json, status, response_json
+            SELECT request_json, status, response_json, cancel_requested_at
             FROM mt5_delivery_requests
             WHERE client_id = ?
               AND request_id = ?
@@ -395,6 +415,10 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
 
     if command == "INIT":
 
+        if _is_mt5_cancel_requested(client_id, request_id):
+            success = False
+            break
+
         for index, operation in enumerate(
             payload["operations"]
         ):
@@ -428,32 +452,54 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
             "error": f"Command not implemented: {command}"
         }
 
-    status = "COMPLETED" if success else "FAILED"
-
-    response = {
-        "protocol": "mt5-gateway",
-        "version": 1,
-        "message_type": "POLL_RESULT",
-        "client_id": client_id,
-        "request_id": request_id,
-        "status": status,
-        "response_id": secrets.token_hex(16),
-        "created_at": _now(),
-        "payload": response_payload,
-    }
-
-    response_json = json.dumps(
-        response,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    )
-
     conn = _connect()
 
     try:
         conn.execute("BEGIN IMMEDIATE")
+
+        row = conn.execute(
+            """
+            SELECT cancel_requested_at, response_json
+            FROM mt5_delivery_requests
+            WHERE client_id = ?
+              AND request_id = ?
+            """,
+            (client_id, request_id),
+        ).fetchone()
+
+        if row is None:
+            raise ValueError("Request not found.")
+
+        if row["response_json"]:
+            response = json.loads(row["response_json"])
+            conn.commit()
+            return response
+
+        if row["cancel_requested_at"]:
+            status = "CANCELLED"
+            response_payload["cancelled"] = True
+        else:
+            status = "COMPLETED" if success else "FAILED"
+
+        response = {
+            "protocol": "mt5-gateway",
+            "version": 1,
+            "message_type": "POLL_RESULT",
+            "client_id": client_id,
+            "request_id": request_id,
+            "status": status,
+            "response_id": secrets.token_hex(16),
+            "created_at": _now(),
+            "payload": response_payload,
+        }
+
+        response_json = json.dumps(
+            response,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
 
         conn.execute(
             """
@@ -464,6 +510,7 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
             WHERE client_id = ?
               AND request_id = ?
               AND status = 'PROCESSING'
+              AND response_json IS NULL
             """,
             (
                 status,
