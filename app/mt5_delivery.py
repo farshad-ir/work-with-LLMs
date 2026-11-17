@@ -131,20 +131,20 @@ def _validate_envelope(envelope):
 
     command = payload.get("command")
 
-    if command not in ("INIT", "CANDLE_UPDATE"):
+    if command != "CHART-INIT":
         raise ValueError("Unsupported payload command.")
-    if command == "INIT":
+    if command == "CHART-INIT":
         operations = payload.get("operations")
 
         if not isinstance(operations, list) or not operations:
             raise ValueError(
-                "INIT requires a non-empty operations array."
+                "CHART-INIT requires a non-empty operations array."
             )
 
         for operation in operations:
             if not isinstance(operation, dict):
                 raise ValueError(
-                    "Each INIT operation must be an object."
+                    "Each CHART-INIT operation must be an object."
                 )
 
             if not isinstance(operation.get("command"), str):
@@ -416,7 +416,7 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
 
     success = True
 
-    if command == "INIT":
+    if command == "CHART-INIT":
 
         for index, operation in enumerate(
             payload["operations"]
@@ -445,7 +445,7 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
         }
 
         if not success:
-            response_payload["error"] = "INIT operation failed."
+            response_payload["error"] = "CHART-INIT operation failed."
 
     else:
         success = False
