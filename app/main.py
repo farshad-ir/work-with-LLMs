@@ -984,17 +984,19 @@ async def mt5_poll(
     
     if action == "CANCEL":
 
-        if not target_request_id or not target_request_id.strip():
+        if not request_id or not request_id.strip():
             return JSONResponse(
                 status_code=400,
-                content={"error": "target_request_id is required for CANCEL."},
+                content={"error": "request_id is required for CANCEL."},
                 headers={"Cache-Control": "no-store"},
             )
-
+            
+        target_request_id = request_id.strip()
+        
         try:
             result = cancel_mt5_request(
                 client_id,
-                target_request_id.strip(),
+                target_request_id,
             )
 
         except ValueError as exc:
