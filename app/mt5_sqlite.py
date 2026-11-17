@@ -130,7 +130,10 @@ def _make(payload, conn=None):
         if name.lower() == "id":
             raise ValueError("The id column is managed automatically.")
 
-        if name in column_names:
+        if any(
+            existing_name.lower() == name.lower()
+            for existing_name in column_names
+        ):
             raise ValueError(f"Duplicate column: {name}")
 
         column_names.append(name)
@@ -163,12 +166,21 @@ def _make(payload, conn=None):
         for name in group:
             name = _validate_identifier(name)
 
-            if name not in column_names:
+            matched_name = next(
+                (
+                    existing_name
+                    for existing_name in column_names
+                    if existing_name.lower() == name.lower()
+                ),
+                None,
+            )
+
+            if matched_name is None:
                 raise ValueError(
                     f"Unknown column in unique constraint: {name}"
                 )
 
-            validated.append(f'"{name}"')
+            validated.append(f'"{matched_name}"')
 
         definitions.append(
             "UNIQUE (" + ", ".join(validated) + ")"
@@ -255,7 +267,7 @@ def _insert(payload, conn=None):
                 values = normalized_values
                 names = list(values.keys())
 
-                names = list(values.keys())
+                
 
                 quoted_names = ", ".join(
                     f'"{name}"' for name in names
