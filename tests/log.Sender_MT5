@@ -74,6 +74,12 @@ int OnInit()
       Print("[GATEWAY] Initialization failed.");
       return INIT_FAILED;
    }
+   
+   if(!Gateway.ProcessControl())
+   {
+      Print("[CONTROL] Emergency control processing failed.");
+      return INIT_FAILED;
+   }
 
    if(!Gateway.ResumePendingRequest())
    {
@@ -175,11 +181,11 @@ int OnInit()
 
    
    
-   if(!Gateway.ExecuteRequest(data))
-   {
-      Print("[GATEWAY] Request execution did not complete.");
-      return INIT_FAILED;
-   }
+   //if(!Gateway.ExecuteRequest(data))
+   //{
+   //   Print("[GATEWAY] Request execution did not complete.");
+   //   return INIT_FAILED;
+   //}
 
    Print("[GATEWAY] Request execution completed.");
 
