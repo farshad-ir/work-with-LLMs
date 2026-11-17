@@ -1332,7 +1332,30 @@ private:
                serverStatus);
          return false;
       }
-   
+         // The server already knows this request.
+      // Continue with POLL instead of retrying POST.
+      GatewayState currentState;
+
+      if(!GatewayLoadState(currentState))
+      {
+         Print("[CONTROL] Cannot load gateway state after CANCEL.");
+         return false;
+      }
+
+      if(currentState == STATE_SENDING)
+      {
+         GatewayState nextState;
+
+         if(!GatewayTransitionAndSave(
+            currentState,
+            EVENT_SEND_OK,
+            nextState
+         ))
+         {
+            Print("[CONTROL] Cannot switch request to POLL state.");
+            return false;
+         }
+      }
       root["commands"][0]["status"] = "COMPLETED";
    
       if(!GatewaySaveControl(root))
