@@ -77,16 +77,59 @@ private:
    string m_responseFile;
    string m_commandsFile;
 
+
+
+
+
+
+
+
+   bool GatewayFolderExists(const string folder)
+   {
+      ResetLastError();
+   
+      bool is_file = FileIsExist(folder, FILE_COMMON);
+      int error_code = GetLastError();
+   
+      return (!is_file && error_code == 5018);
+   }
+
+
+
+
+
+
+
    bool GatewayEnsureFolder(const string path)
    {
-      if(FolderIsExist(path, FILE_COMMON))
+
+      if(!GatewayFolderExists(path))
+      {
+         if(!FolderCreate(path, FILE_COMMON) &&
+            !GatewayFolderExists(path))
+         {
+            Print("[GATEWAY] Cannot create received directory.");
+            return false;
+         }
+         
          return true;
-   
-      if(FolderCreate(path, FILE_COMMON))
-         return true;
-   
-      return FolderIsExist(path, FILE_COMMON);
+      }
+
+      return true;
+
    }
+
+
+
+
+
+
+
+
+
+
+
+   
    
    bool GatewayCreateInitialFile( const string path, const string content )
    {
@@ -913,7 +956,7 @@ private:
    
       if(clientId == "" ||
          requestId == "" ||
-         clientId != InpGatewayClientId)
+         clientId != m_clientId)
       {
          Print("[GATEWAY] Pending request identity is invalid.");
          clientId = "";
