@@ -362,13 +362,10 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
             response = json.loads(row["response_json"])
             conn.commit()
             return response
-
+        
         if (
             row["status"] == "PROCESSING"
-            and (
-                not allow_processing
-                or row["cancel_requested_at"]
-            )
+            and not allow_processing
         ):
             conn.commit()
             return {
