@@ -1280,8 +1280,8 @@ private:
    
       string clientId;
       string requestId;
-   
-      if(!GatewayLoadPendingRequest(clientId, requestId))
+      
+      if(!GatewayLoadControlRequestIds(clientId, requestId))
       {
          Print("[CONTROL] Cannot identify pending request.");
          return false;
