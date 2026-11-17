@@ -74,7 +74,6 @@ private:
 
 
    string m_requestFile;
-   string m_sequenceFile;
    string m_stateFile;
    string m_responseFile;
    string m_commandsFile;
@@ -511,39 +510,12 @@ private:
    
    string GatewayNextRequestId()
    {
-      long sequence = 0;
+      string randomPart = "";
    
-      if(FileIsExist(m_sequenceFile, FILE_COMMON))
-      {
-         int h = FileOpen(
-            m_sequenceFile,
-            FILE_READ | FILE_TXT | FILE_COMMON | FILE_ANSI
-         );
+      for(int i = 0; i < 8; i++)
+         randomPart += StringFormat("%04X", MathRand());
    
-         if(h == INVALID_HANDLE)
-            return "";
-   
-         string saved = FileReadString(h);
-         FileClose(h);
-   
-         sequence = StringToInteger(saved);
-      }
-   
-      sequence++;
-   
-      int h = FileOpen(
-         m_sequenceFile,
-         FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_ANSI
-      );
-   
-      if(h == INVALID_HANDLE)
-         return "";
-   
-      FileWriteString(h, IntegerToString(sequence));
-      FileClose(h);
-   
-      return m_clientId + "-" +
-             StringFormat("%06d", sequence);
+      return m_clientId + "-" + randomPart;
    }
    
    bool GatewayPrepareRequest(const string body)
@@ -2031,7 +2003,6 @@ public:
       m_controlDir = m_rootDir + "/Gateway/control";
    
       m_requestFile = m_tempDir + "/current_request.json";
-      m_sequenceFile = m_tempDir + "/request_sequence.txt";
       m_stateFile = m_tempDir + "/current_state.txt";
       m_responseFile = m_tempDir + "/current_response.json";
       m_commandsFile = m_commandsDir + "/commands.json";
@@ -2049,8 +2020,11 @@ public:
          return false;
       }
    
-      if(!GatewayCreateInitialFile(m_sequenceFile, "0") ||
-         !GatewayCreateInitialFile(m_stateFile, "IDLE") ||
+      MathSrand(
+         (int)(GetTickCount() ^ (uint)TimeLocal() ^ (uint)ChartID())
+      );
+      
+      if(!GatewayCreateInitialFile(m_stateFile, "IDLE") ||
          !GatewayCreateInitialFile(m_commandsFile, "{\"commands\":[]}") ||
          !GatewayCreateInitialFile(
             m_controlFile,
