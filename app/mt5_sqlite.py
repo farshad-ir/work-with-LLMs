@@ -119,7 +119,7 @@ def _make(payload, conn=None):
         '"id" INTEGER PRIMARY KEY AUTOINCREMENT'
     ]
 
-    column_names = set()
+    column_names = []
 
     for column in columns:
         if not isinstance(column, dict):
@@ -198,83 +198,157 @@ def _make(payload, conn=None):
 
 def _insert(payload, conn=None):
     table = _validate_identifier(payload.get("table"))
-    values = payload.get("values")
+    records = payload.get("records")
 
-    if not isinstance(values, dict) or not values:
+    if not isinstance(records, list) or not records:
         raise ValueError(
-            "INSR requires a non-empty values object."
+            "INSR requires a non-empty records array."
         )
 
     def _run(connection):
         columns = _get_table_columns(connection, table)
 
-        for name in values:
-            _validate_identifier(name)
+        inserted_ids = []
 
-            if name not in columns:
-                raise ValueError(
-                    f"Unknown column '{name}' in table '{table}'."
+        connection.execute("SAVEPOINT mt5_insr_batch")
+
+        try:
+            for index, values in enumerate(records):
+
+                if not isinstance(values, dict) or not values:
+                    raise ValueError(
+                        f"Record {index} must be a non-empty object."
+                    )
+
+                for name in values:
+                    _validate_identifier(name)
+
+                    if name.lower() == "id":
+                        raise ValueError(
+                            "The id column cannot be inserted manually."
+                        )
+
+                    if name not in columns:
+                        raise ValueError(
+                            f"Unknown column '{name}' "
+                            f"in table '{table}'."
+                        )
+
+                names = list(values.keys())
+
+                quoted_names = ", ".join(
+                    f'"{name}"' for name in names
                 )
 
-        if "id" in values:
-            raise ValueError("The id column cannot be inserted manually.")
+                placeholders = ", ".join(
+                    "?" for _ in names
+                )
 
-        names = list(values.keys())
+                sql = (
+                    f'INSERT INTO "{table}" ({quoted_names}) '
+                    f"VALUES ({placeholders})"
+                )
 
-        quoted_names = ", ".join(
-            f'"{name}"' for name in names
-        )
+                cursor = connection.execute(
+                    sql,
+                    [values[name] for name in names],
+                )
 
-        placeholders = ", ".join(
-            "?" for _ in names
-        )
+                inserted_ids.append(cursor.lastrowid)
 
-        sql = (
-            f'INSERT INTO "{table}" ({quoted_names}) '
-            f"VALUES ({placeholders})"
-        )
+            connection.execute("RELEASE SAVEPOINT mt5_insr_batch")
 
-        cursor = connection.execute(
-            sql,
-            [values[name] for name in names],
-        )
+        except Exception:
+            connection.execute(
+                "ROLLBACK TO SAVEPOINT mt5_insr_batch"
+            )
+            connection.execute(
+                "RELEASE SAVEPOINT mt5_insr_batch"
+            )
+            raise
 
-        return cursor.lastrowid
+        return {
+            "table": table,
+            "inserted_count": len(inserted_ids),
+            "inserted_ids": inserted_ids,
+        }
 
     if conn is None:
         with _connect() as connection:
-            inserted_id = _run(connection)
-    else:
-        inserted_id = _run(conn)
+            return _run(connection)
 
-    return {
-        "table": table,
-        "inserted_id": inserted_id,
-    }
+    return _run(conn)
 
 
 
 def _select_all(payload, conn=None):
     table = _validate_identifier(payload.get("table"))
 
-    limit = payload.get("limit", 100)
+    selected_columns = payload.get("columns")
 
-    if isinstance(limit, bool) or not isinstance(limit, int):
-        raise ValueError("limit must be an integer.")
+    if (
+        not isinstance(selected_columns, list)
+        or not selected_columns
+    ):
+        raise ValueError(
+            "SELA requires a non-empty columns array."
+        )
 
-    if limit < 1 or limit > 1000:
-        raise ValueError("limit must be between 1 and 1000.")
+    limit = payload.get("limit")
+
+    if limit is not None:
+        if isinstance(limit, bool) or not isinstance(limit, int):
+            raise ValueError("limit must be an integer.")
+
+        if limit < 1:
+            raise ValueError("limit must be greater than zero.")
 
     def _run(connection):
-        _get_table_columns(connection, table)
+        table_columns = _get_table_columns(connection, table)
+
+        if selected_columns == ["*"]:
+            column_names = list(table_columns.keys())
+        else:
+            if "*" in selected_columns:
+                raise ValueError(
+                    "'*' must be used alone in columns."
+                )
+
+            column_names = []
+
+            for name in selected_columns:
+                name = _validate_identifier(name)
+
+                if name not in table_columns:
+                    raise ValueError(
+                        f"Unknown column '{name}' in table '{table}'."
+                    )
+
+                column_names.append(name)
+
+        quoted_columns = ", ".join(
+            f'"{name}"' for name in column_names
+        )
+
+        sql = (
+            f'SELECT {quoted_columns} '
+            f'FROM "{table}" ORDER BY "id" ASC'
+        )
+
+        params = ()
+
+        if limit is not None:
+            sql += " LIMIT ?"
+            params = (limit,)
 
         rows = connection.execute(
-            f'SELECT * FROM "{table}" ORDER BY "id" ASC LIMIT ?',
-            (limit,),
+            sql,
+            params,
         ).fetchall()
 
         return {
             "table": table,
+            "columns": column_names,
             "count": len(rows),
             "records": [dict(row) for row in rows],
         }
