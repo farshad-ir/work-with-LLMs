@@ -75,6 +75,21 @@ def init_mt5_delivery_db():
             )
         """)
 
+        columns = {
+            row["name"]
+            for row in conn.execute(
+                "PRAGMA table_info(mt5_delivery_requests)"
+            ).fetchall()
+        }
+
+        if "cancel_requested_at" not in columns:
+            conn.execute("""
+                ALTER TABLE mt5_delivery_requests
+                ADD COLUMN cancel_requested_at TEXT
+            """)
+
+
+        
         conn.commit()
 
     finally:
@@ -239,6 +254,69 @@ def register_mt5_request(envelope):
         "payload": None,
     }
 
+
+def cancel_mt5_request(client_id, request_id):
+    if not isinstance(client_id, str) or not client_id.strip():
+        raise ValueError("Invalid client_id.")
+
+    if not isinstance(request_id, str) or not request_id.strip():
+        raise ValueError("Invalid request_id.")
+
+    conn = _connect()
+
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+
+        row = conn.execute(
+            """
+            SELECT status, response_json, cancel_requested_at
+            FROM mt5_delivery_requests
+            WHERE client_id = ?
+              AND request_id = ?
+            """,
+            (client_id, request_id),
+        ).fetchone()
+
+        if row is None:
+            raise ValueError("Request not found.")
+
+        if row["response_json"]:
+            status = "ALREADY_COMPLETED"
+
+        elif row["cancel_requested_at"]:
+            status = "CANCEL_REQUESTED"
+
+        else:
+            conn.execute(
+                """
+                UPDATE mt5_delivery_requests
+                SET cancel_requested_at = ?
+                WHERE client_id = ?
+                  AND request_id = ?
+                  AND response_json IS NULL
+                """,
+                (_now(), client_id, request_id),
+            )
+            status = "CANCEL_REQUESTED"
+
+        conn.commit()
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+    return {
+        "protocol": "mt5-gateway",
+        "version": 1,
+        "message_type": "CONTROL_RESULT",
+        "client_id": client_id,
+        "request_id": request_id,
+        "command": "CANCEL",
+        "status": status,
+    }
 
 def process_mt5_request(client_id, request_id, allow_processing=False):
 
