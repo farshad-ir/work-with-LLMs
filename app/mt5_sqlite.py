@@ -133,7 +133,7 @@ def _make(payload, conn=None):
         if name in column_names:
             raise ValueError(f"Duplicate column: {name}")
 
-        column_names.add(name)
+        column_names.append(name)
 
         column_type = str(column.get("type", "")).upper()
 
