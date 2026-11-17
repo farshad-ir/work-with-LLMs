@@ -969,7 +969,6 @@ async def mt5_poll(
     protocol: str = "mt5-gateway",
     version: int = 1,
     response_id: str | None = None,
-    target_request_id: str | None = None,
 ):
 
     if protocol != "mt5-gateway" or version != 1:
