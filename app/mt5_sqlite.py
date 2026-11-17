@@ -157,29 +157,30 @@ def _make(payload, conn=None):
     if not isinstance(unique_groups, list):
         raise ValueError("unique must be an array.")
 
-    constraint_names = []
+    index_names = []
+    index_definitions = []
 
     for group in unique_groups:
         if not isinstance(group, dict):
-            raise ValueError("Each unique constraint must be an object.")
+            raise ValueError("Each unique index must be an object.")
 
-        constraint_name = _validate_identifier(group.get("name"))
+        index_name = _validate_identifier(group.get("name"))
 
         if any(
-            existing.lower() == constraint_name.lower()
-            for existing in constraint_names
+            existing.lower() == index_name.lower()
+            for existing in index_names
         ):
             raise ValueError(
-                f"Duplicate unique constraint name: {constraint_name}"
+                f"Duplicate unique index name: {index_name}"
             )
 
-        constraint_names.append(constraint_name)
+        index_names.append(index_name)
 
         group_columns = group.get("columns")
 
         if not isinstance(group_columns, list) or not group_columns:
             raise ValueError(
-                f"Unique constraint '{constraint_name}' "
+                f"Unique index '{index_name}' "
                 "requires a non-empty columns array."
             )
 
@@ -199,7 +200,7 @@ def _make(payload, conn=None):
 
             if matched_name is None:
                 raise ValueError(
-                    f"Unknown column in unique constraint: {name}"
+                    f"Unknown column in unique index: {name}"
                 )
 
             if any(
@@ -207,15 +208,13 @@ def _make(payload, conn=None):
                 for existing in validated
             ):
                 raise ValueError(
-                    f"Duplicate column in unique constraint: {name}"
+                    f"Duplicate column in unique index: {name}"
                 )
 
             validated.append(matched_name)
 
-        definitions.append(
-            f'CONSTRAINT "{constraint_name}" UNIQUE ('
-            + ", ".join(f'"{name}"' for name in validated)
-            + ")"
+        index_definitions.append(
+            (index_name, validated)
         )
 
     sql = (
@@ -225,12 +224,33 @@ def _make(payload, conn=None):
     )
 
     if conn is None:
-        with _connect() as conn:
-            conn.execute(f'DROP TABLE IF EXISTS "{table}"')
-            conn.execute(sql)
-    else:
+        with _connect() as connection:
+            return _make(payload, conn=connection)
+
+    conn.execute("SAVEPOINT mt5_make")
+
+    try:
         conn.execute(f'DROP TABLE IF EXISTS "{table}"')
         conn.execute(sql)
+
+        for index_name, index_columns in index_definitions:
+            index_sql = (
+                f'CREATE UNIQUE INDEX "{index_name}" '
+                f'ON "{table}" ('
+                + ", ".join(
+                    f'"{name}"' for name in index_columns
+                )
+                + ")"
+            )
+
+            conn.execute(index_sql)
+
+        conn.execute("RELEASE SAVEPOINT mt5_make")
+
+    except Exception:
+        conn.execute("ROLLBACK TO SAVEPOINT mt5_make")
+        conn.execute("RELEASE SAVEPOINT mt5_make")
+        raise
 
     return {
         "table": table,
