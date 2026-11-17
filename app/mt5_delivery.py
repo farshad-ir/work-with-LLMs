@@ -149,7 +149,7 @@ def _validate_envelope(envelope):
 
             if not isinstance(operation.get("command"), str):
                 raise ValueError(
-                    "Each INIT operation requires a command."
+                    "Each CHART-INIT operation requires a command."
                 )
                 
     return client_id, request_id, created_at
