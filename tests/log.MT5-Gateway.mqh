@@ -761,13 +761,16 @@ private:
    
       if(status != "PROCESSING" &&
          status != "COMPLETED" &&
-         status != "FAILED")
+         status != "FAILED" &&
+         status != "CANCELLED")
       {
          Print("[GATEWAY] Unexpected Poll status: ", status);
          return false;
       }
    
-      if((status == "COMPLETED" || status == "FAILED") &&
+      if((status == "COMPLETED" ||
+          status == "FAILED" ||
+          status == "CANCELLED") &&
          responseId == "")
       {
          Print("[GATEWAY] Final m_response has no response_id.");
@@ -893,10 +896,10 @@ private:
       if(!GatewayCopySavedResponseToReceived(requestId))
          return false;
    
-      if(status == "COMPLETED")
-         event = EVENT_RESPONSE_COMPLETED;
-      else if(status == "FAILED")
-         event = EVENT_RESPONSE_FAILED;
+   if(status == "COMPLETED")
+      event = EVENT_RESPONSE_COMPLETED;
+   else if(status == "FAILED" || status == "CANCELLED")
+      event = EVENT_RESPONSE_FAILED;
    
       return true;
    }
@@ -1006,7 +1009,7 @@ private:
       ))
          return false;
    
-      if(status != "COMPLETED" && status != "FAILED")
+      if(status != "COMPLETED" && status != "FAILED" && status != "CANCELLED")
       {
          Print("[GATEWAY] Saved m_response is not final. status=", status);
          return false;
@@ -1048,8 +1051,8 @@ private:
       ))
          return false;
    
-      if((status != "COMPLETED" && status != "FAILED") ||
-         responseId == "")
+      if((status != "COMPLETED" && status != "FAILED" && status != "CANCELLED") ||
+       responseId == "")
       {
          responseId = "";
          return false;
@@ -1139,66 +1142,112 @@ private:
       Print("[GATEWAY] Request and m_response files cleaned.");
       return true;
    }
+   bool GatewayLoadControlRequestIds(
+      string &clientId,
+      string &requestId
+   )
+   {
+      clientId = "";
+      requestId = "";
+   
+      if(!FileIsExist(m_requestFile, FILE_COMMON))
+         return false;
+   
+      int h = FileOpen(
+         m_requestFile,
+         FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
+      );
+   
+      if(h == INVALID_HANDLE)
+         return false;
+   
+      string content = FileReadString(h);
+      FileClose(h);
+   
+      if(content == "")
+         return false;
+   
+      CJAVal requestJson;
+   
+      if(!requestJson.Deserialize(content))
+         return false;
+   
+      clientId = requestJson["client_id"].ToStr();
+      requestId = requestJson["request_id"].ToStr();
+   
+      if(clientId == "" ||
+         requestId == "" ||
+         clientId != m_clientId)
+      {
+         clientId = "";
+         requestId = "";
+   
+         Print("[CONTROL] Invalid request identity.");
+         return false;
+      }
+   
+      return true;
+   }
    bool GatewayLoadControl(CJAVal &root)
-{
-   if(!FileIsExist(m_controlFile, FILE_COMMON))
-      return false;
-
-   int h = FileOpen(
-      m_controlFile,
-      FILE_READ | FILE_TXT | FILE_COMMON | FILE_ANSI
-   );
-
-   if(h == INVALID_HANDLE)
-      return false;
-
-   string content = "";
-
-   while(!FileIsEnding(h))
-      content += FileReadString(h);
-
-   FileClose(h);
-
-   if(content == "" || !root.Deserialize(content))
-      return false;
-
-   if(root.m_type != jtOBJ ||
-      root["commands"].m_type != jtARRAY ||
-      root["commands"].Size() != 1)
-      return false;
-
-   if(root["commands"][0]["command"].ToStr() != "CANCEL")
-      return false;
-
-   string status = root["commands"][0]["status"].ToStr();
-
-   if(status != "" && status != "COMPLETED")
-      return false;
-
-   return true;
-}
-
-
-bool GatewaySaveControl(CJAVal &root)
-{
-   string content = root.Serialize();
-
-   if(content == "")
-      return false;
-
-   int h = FileOpen(
-      m_controlFile,
-      FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_ANSI
-   );
-
-   if(h == INVALID_HANDLE)
-      return false;
-
-   uint written = FileWriteString(h, content);
-   FileClose(h);
-
-   return (written > 0);
-}
+   {
+      if(!FileIsExist(m_controlFile, FILE_COMMON))
+         return false;
+   
+      int h = FileOpen(
+         m_controlFile,
+         FILE_READ | FILE_TXT | FILE_COMMON | FILE_ANSI
+      );
+   
+      if(h == INVALID_HANDLE)
+         return false;
+   
+      string content = "";
+   
+      while(!FileIsEnding(h))
+         content += FileReadString(h);
+   
+      FileClose(h);
+   
+      if(content == "" || !root.Deserialize(content))
+         return false;
+   
+      if(root.m_type != jtOBJ ||
+         root["commands"].m_type != jtARRAY ||
+         root["commands"].Size() != 1)
+         return false;
+   
+      if(root["commands"][0]["command"].ToStr() != "CANCEL")
+         return false;
+   
+      string status = root["commands"][0]["status"].ToStr();
+   
+      if(status != "" && status != "COMPLETED")
+         return false;
+   
+      return true;
+   }
+   
+   
+   bool GatewaySaveControl(CJAVal &root)
+   {
+      string content = root.Serialize();
+   
+      if(content == "")
+         return false;
+   
+      int h = FileOpen(
+         m_controlFile,
+         FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_ANSI
+      );
+   
+      if(h == INVALID_HANDLE)
+         return false;
+   
+      uint written = FileWriteString(h, content);
+      FileClose(h);
+   
+      return (written > 0);
+   }
 
 
    bool GatewayProcessControl()
@@ -1940,7 +1989,7 @@ public:
          !GatewayCreateInitialFile(
             m_controlFile,
             "{\"commands\":[{\"command\":\"CANCEL\",\"status\":\"COMPLETED\"}]}"
-         )
+         ))
       {
          Print("[GATEWAY] Cannot initialize storage files.");
          return false;
