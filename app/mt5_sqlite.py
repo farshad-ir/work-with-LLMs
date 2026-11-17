@@ -157,13 +157,35 @@ def _make(payload, conn=None):
     if not isinstance(unique_groups, list):
         raise ValueError("unique must be an array.")
 
+    constraint_names = []
+
     for group in unique_groups:
-        if not isinstance(group, list) or not group:
-            raise ValueError("Each unique group must be a non-empty array.")
+        if not isinstance(group, dict):
+            raise ValueError("Each unique constraint must be an object.")
+
+        constraint_name = _validate_identifier(group.get("name"))
+
+        if any(
+            existing.lower() == constraint_name.lower()
+            for existing in constraint_names
+        ):
+            raise ValueError(
+                f"Duplicate unique constraint name: {constraint_name}"
+            )
+
+        constraint_names.append(constraint_name)
+
+        group_columns = group.get("columns")
+
+        if not isinstance(group_columns, list) or not group_columns:
+            raise ValueError(
+                f"Unique constraint '{constraint_name}' "
+                "requires a non-empty columns array."
+            )
 
         validated = []
 
-        for name in group:
+        for name in group_columns:
             name = _validate_identifier(name)
 
             matched_name = next(
@@ -180,10 +202,20 @@ def _make(payload, conn=None):
                     f"Unknown column in unique constraint: {name}"
                 )
 
-            validated.append(f'"{matched_name}"')
+            if any(
+                existing.lower() == matched_name.lower()
+                for existing in validated
+            ):
+                raise ValueError(
+                    f"Duplicate column in unique constraint: {name}"
+                )
+
+            validated.append(matched_name)
 
         definitions.append(
-            "UNIQUE (" + ", ".join(validated) + ")"
+            f'CONSTRAINT "{constraint_name}" UNIQUE ('
+            + ", ".join(f'"{name}"' for name in validated)
+            + ")"
         )
 
     sql = (
