@@ -363,7 +363,11 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
             conn.commit()
             return response
 
-        if row["status"] == "PROCESSING" and not allow_processing:
+        if (
+            row["status"] == "PROCESSING"
+            and not allow_processing
+            and not row["cancel_requested_at"]
+        ):
             conn.commit()
             return {
                 "client_id": client_id,
@@ -415,13 +419,12 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
 
     if command == "INIT":
 
-        if _is_mt5_cancel_requested(client_id, request_id):
-            success = False
-            break
-
         for index, operation in enumerate(
             payload["operations"]
         ):
+            if _is_mt5_cancel_requested(client_id, request_id):
+                success = False
+                break
             execution_id = f"{client_id}:{request_id}:{index}"
 
             result = execute_command(
@@ -478,6 +481,7 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
         if row["cancel_requested_at"]:
             status = "CANCELLED"
             response_payload["cancelled"] = True
+            response_payload["error"] = "Request was cancelled."
         else:
             status = "COMPLETED" if success else "FAILED"
 
