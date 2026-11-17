@@ -220,7 +220,9 @@ def _insert(payload, conn=None):
                         f"Record {index} must be a non-empty object."
                     )
 
-                for name in values:
+                normalized_values = {}
+
+                for name, value in values.items():
                     _validate_identifier(name)
 
                     if name.lower() == "id":
@@ -228,11 +230,30 @@ def _insert(payload, conn=None):
                             "The id column cannot be inserted manually."
                         )
 
-                    if name not in columns:
+                    matched_name = next(
+                        (
+                            existing_name
+                            for existing_name in columns
+                            if existing_name.lower() == name.lower()
+                        ),
+                        None,
+                    )
+
+                    if matched_name is None:
                         raise ValueError(
                             f"Unknown column '{name}' "
                             f"in table '{table}'."
                         )
+
+                    if matched_name in normalized_values:
+                        raise ValueError(
+                            f"Duplicate column reference: {name}"
+                        )
+
+                    normalized_values[matched_name] = value
+
+                values = normalized_values
+                names = list(values.keys())
 
                 names = list(values.keys())
 
@@ -319,12 +340,26 @@ def _select_all(payload, conn=None):
             for name in selected_columns:
                 name = _validate_identifier(name)
 
-                if name not in table_columns:
+                matched_name = next(
+                    (
+                        existing_name
+                        for existing_name in table_columns
+                        if existing_name.lower() == name.lower()
+                    ),
+                    None,
+                )
+
+                if matched_name is None:
                     raise ValueError(
                         f"Unknown column '{name}' in table '{table}'."
                     )
 
-                column_names.append(name)
+                if matched_name in column_names:
+                    raise ValueError(
+                        f"Duplicate column reference: {name}"
+                    )
+
+                column_names.append(matched_name)
 
         quoted_columns = ", ".join(
             f'"{name}"' for name in column_names
