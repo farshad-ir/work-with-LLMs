@@ -1332,9 +1332,12 @@ private:
                serverStatus);
          return false;
       }
-         // The server already knows this request.
-      // Continue with POLL instead of retrying POST.
+
+      // The server already knows this request.
+      // Ensure the local state continues with POLL, never POST.
+
       GatewayState currentState;
+      GatewayState nextState;
 
       if(!GatewayLoadState(currentState))
       {
@@ -1342,10 +1345,41 @@ private:
          return false;
       }
 
+      // IDLE -> CREATED
+      if(currentState == STATE_IDLE)
+      {
+         if(!GatewayTransitionAndSave(
+            currentState,
+            EVENT_START,
+            nextState
+         ))
+         {
+            Print("[CONTROL] Cannot recover IDLE state after CANCEL.");
+            return false;
+         }
+
+         currentState = nextState;
+      }
+
+      // CREATED -> SENDING
+      if(currentState == STATE_CREATED)
+      {
+         if(!GatewayTransitionAndSave(
+            currentState,
+            EVENT_REQUEST_READY,
+            nextState
+         ))
+         {
+            Print("[CONTROL] Cannot recover CREATED state after CANCEL.");
+            return false;
+         }
+
+         currentState = nextState;
+      }
+
+      // SENDING -> SENT
       if(currentState == STATE_SENDING)
       {
-         GatewayState nextState;
-
          if(!GatewayTransitionAndSave(
             currentState,
             EVENT_SEND_OK,
@@ -1355,7 +1389,16 @@ private:
             Print("[CONTROL] Cannot switch request to POLL state.");
             return false;
          }
+
+         currentState = nextState;
       }
+
+      if(currentState == STATE_ERROR)
+      {
+         Print("[CONTROL] Cannot resume request from ERROR state.");
+         return false;
+      }
+
       root["commands"][0]["status"] = "COMPLETED";
    
       if(!GatewaySaveControl(root))
