@@ -8,7 +8,7 @@
 
 
 input string InpGatewayClientId = "mt5_terminal_01";
-input string InpGatewayFolderName = "MT5-Terminal-01";
+input string InpGatewayFolderName = "LLM-B";
 
 
 #include "MT5-Gateway.mqh"
@@ -249,4 +249,6 @@ string BuildCandleObject(
 
    return data;
 }
+
+
 
