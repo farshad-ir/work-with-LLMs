@@ -1139,7 +1139,166 @@ private:
       Print("[GATEWAY] Request and m_response files cleaned.");
       return true;
    }
+   bool GatewayLoadControl(CJAVal &root)
+{
+   if(!FileIsExist(m_controlFile, FILE_COMMON))
+      return false;
+
+   int h = FileOpen(
+      m_controlFile,
+      FILE_READ | FILE_TXT | FILE_COMMON | FILE_ANSI
+   );
+
+   if(h == INVALID_HANDLE)
+      return false;
+
+   string content = "";
+
+   while(!FileIsEnding(h))
+      content += FileReadString(h);
+
+   FileClose(h);
+
+   if(content == "" || !root.Deserialize(content))
+      return false;
+
+   if(root.m_type != jtOBJ ||
+      root["commands"].m_type != jtARRAY ||
+      root["commands"].Size() != 1)
+      return false;
+
+   if(root["commands"][0]["command"].ToStr() != "CANCEL")
+      return false;
+
+   string status = root["commands"][0]["status"].ToStr();
+
+   if(status != "" && status != "COMPLETED")
+      return false;
+
+   return true;
+}
+
+
+bool GatewaySaveControl(CJAVal &root)
+{
+   string content = root.Serialize();
+
+   if(content == "")
+      return false;
+
+   int h = FileOpen(
+      m_controlFile,
+      FILE_WRITE | FILE_TXT | FILE_COMMON | FILE_ANSI
+   );
+
+   if(h == INVALID_HANDLE)
+      return false;
+
+   uint written = FileWriteString(h, content);
+   FileClose(h);
+
+   return (written > 0);
+}
+
+
+   bool GatewayProcessControl()
+   {
+      CJAVal root;
    
+      if(!GatewayLoadControl(root))
+      {
+         Print("[CONTROL] Cannot load control.json.");
+         return false;
+      }
+   
+      string status = root["commands"][0]["status"].ToStr();
+   
+      if(status == "COMPLETED")
+      {
+         Print("[CONTROL] No pending emergency command.");
+         return true;
+      }
+   
+      // اگر درخواست معوقی وجود ندارد، فرمان مصرف‌شده محسوب می‌شود.
+      if(!FileIsExist(m_requestFile, FILE_COMMON))
+      {
+         Print("[CONTROL] No pending request. CANCEL skipped.");
+   
+         root["commands"][0]["status"] = "COMPLETED";
+   
+         return GatewaySaveControl(root);
+      }
+   
+      string clientId;
+      string requestId;
+   
+      if(!GatewayLoadPendingRequest(clientId, requestId))
+      {
+         Print("[CONTROL] Cannot identify pending request.");
+         return false;
+      }
+   
+      string path =
+         "/gateway/mt5/responses"
+         "?client_id=" + clientId +
+         "&request_id=" + requestId +
+         "&action=CANCEL";
+   
+      string responseText;
+   
+      Print("[CONTROL] Sending emergency CANCEL. request_id=",
+            requestId);
+   
+      if(!GatewayHttpGet(path, responseText))
+      {
+         Print("[CONTROL] CANCEL request failed.");
+         return false;
+      }
+   
+      CJAVal result;
+   
+      if(!result.Deserialize(responseText))
+      {
+         Print("[CONTROL] Invalid CANCEL response JSON.");
+         return false;
+      }
+   
+      if(result["protocol"].ToStr() != "mt5-gateway" ||
+         (int)result["version"].ToInt() != 1 ||
+         result["message_type"].ToStr() != "CONTROL_RESULT" ||
+         result["client_id"].ToStr() != clientId ||
+         result["request_id"].ToStr() != requestId ||
+         result["command"].ToStr() != "CANCEL")
+      {
+         Print("[CONTROL] CANCEL response validation failed.");
+         return false;
+      }
+   
+      string serverStatus = result["status"].ToStr();
+   
+      if(serverStatus != "CANCEL_REQUESTED" &&
+         serverStatus != "ALREADY_COMPLETED")
+      {
+         Print("[CONTROL] Unexpected server status: ",
+               serverStatus);
+         return false;
+      }
+   
+      root["commands"][0]["status"] = "COMPLETED";
+   
+      if(!GatewaySaveControl(root))
+      {
+         Print("[CONTROL] Cannot save completed control command.");
+         return false;
+      }
+   
+      Print("[CONTROL] Emergency CANCEL accepted. request_id=",
+            requestId,
+            " server_status=",
+            serverStatus);
+   
+      return true;
+   }
    bool GatewayLoadCommands(CJAVal &root)
    {
       if(!FileIsExist(m_commandsFile, FILE_COMMON))
@@ -1778,7 +1937,10 @@ public:
       if(!GatewayCreateInitialFile(m_sequenceFile, "0") ||
          !GatewayCreateInitialFile(m_stateFile, "IDLE") ||
          !GatewayCreateInitialFile(m_commandsFile, "{\"commands\":[]}") ||
-         !GatewayCreateInitialFile(m_controlFile,  "{\"commands\":[]}"))
+         !GatewayCreateInitialFile(
+            m_controlFile,
+            "{\"commands\":[{\"command\":\"CANCEL\",\"status\":\"COMPLETED\"}]}"
+         )
       {
          Print("[GATEWAY] Cannot initialize storage files.");
          return false;
@@ -1786,7 +1948,10 @@ public:
    
       return true;
    }
-
+   bool ProcessControl()
+   {
+      return GatewayProcessControl();
+   }
    bool ResumePendingRequest()
    {
       return GatewayResumePendingRequest();
