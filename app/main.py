@@ -895,16 +895,6 @@ async def mt5_ingest(request: Request, background_tasks: BackgroundTasks,):
 
     try:
         envelope = await request.json()
-        print(
-            "[MT5][INGEST] RECEIVED",
-            f"client_id={envelope.get('client_id') if isinstance(envelope, dict) else None}",
-            f"request_id={envelope.get('request_id') if isinstance(envelope, dict) else None}",
-            f"message_type={envelope.get('message_type') if isinstance(envelope, dict) else None}",
-            f"protocol={envelope.get('protocol') if isinstance(envelope, dict) else None}",
-            f"version={envelope.get('version') if isinstance(envelope, dict) else None}",
-            f"payload_command={envelope.get('payload', {}).get('command') if isinstance(envelope, dict) and isinstance(envelope.get('payload'), dict) else None}",
-            flush=True,
-        )
 
     except Exception:
         return JSONResponse(
@@ -925,11 +915,7 @@ async def mt5_ingest(request: Request, background_tasks: BackgroundTasks,):
             )
 
     except RequestConflictError as exc:
-        print(
-            "[MT5][INGEST] CONFLICT",
-            f"error={exc}",
-            flush=True,
-        )
+
         return JSONResponse(
             status_code=409,
             content={
@@ -938,11 +924,7 @@ async def mt5_ingest(request: Request, background_tasks: BackgroundTasks,):
         )
 
     except (ValueError, TypeError) as exc:
-        print(
-            "[MT5][INGEST] VALIDATION FAILED",
-            f"error={exc}",
-            flush=True,
-        )
+        
         return JSONResponse(
             status_code=400,
             content={
@@ -1011,13 +993,6 @@ async def mt5_poll(
             )
             
         target_request_id = request_id.strip()
-
-        print(
-            "[MT5][CANCEL] RECEIVED",
-            f"client_id={client_id}",
-            f"request_id={target_request_id}",
-            flush=True,
-        )
         
         try:
             result = cancel_mt5_request(
@@ -1511,21 +1486,9 @@ def _response_output_char_count(response: dict) -> int:
 @app.post("/v1/responses")
 async def codex_responses(request: Request):
 
-    print("[CODEX] Waiting for request body", flush=True)
-
     try:
         raw_body = await request.body()
 
-        
-        print(
-            f"[CODEX] Request body received: {len(raw_body)} bytes",
-            flush=True
-        )
-        print(
-            f"[CODEX] Request ID: {request.headers.get('x-gateway-request-id', 'MISSING')}",
-            flush=True
-        )
-        
         body = parse_json_object(raw_body)
         input_chars = len(raw_body.decode("utf-8"))
         # MODIFIED: Extract consumer identifier
