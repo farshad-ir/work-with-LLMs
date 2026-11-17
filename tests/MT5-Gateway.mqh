@@ -70,12 +70,15 @@ private:
    string m_tempDir;
    string m_receivedDir;
    string m_commandsDir;
-   
+   string m_controlDir;
+
+
    string m_requestFile;
    string m_sequenceFile;
    string m_stateFile;
    string m_responseFile;
    string m_commandsFile;
+   string m_controlFile;
 
 
 
@@ -1751,19 +1754,22 @@ public:
       m_tempDir = m_rootDir + "/Gateway/temp";
       m_receivedDir = m_rootDir + "/Gateway/received";
       m_commandsDir = m_rootDir + "/Gateway/commands";
+      m_controlDir = m_rootDir + "/Gateway/control";
    
       m_requestFile = m_tempDir + "/current_request.json";
       m_sequenceFile = m_tempDir + "/request_sequence.txt";
       m_stateFile = m_tempDir + "/current_state.txt";
       m_responseFile = m_tempDir + "/current_response.json";
       m_commandsFile = m_commandsDir + "/commands.json";
-   
+   ‍‍   m_controlFile  = m_controlDir + "/control.json";
+
       if(!GatewayEnsureFolder("LLM-LQ") ||
          !GatewayEnsureFolder(m_rootDir) ||
          !GatewayEnsureFolder(m_rootDir + "/Gateway") ||
          !GatewayEnsureFolder(m_tempDir) ||
          !GatewayEnsureFolder(m_receivedDir) ||
-         !GatewayEnsureFolder(m_commandsDir))
+         !GatewayEnsureFolder(m_commandsDir) ||
+         !GatewayEnsureFolder(m_controlDir))
       {
          Print("[GATEWAY] Cannot create storage directories.");
          return false;
@@ -1771,7 +1777,8 @@ public:
    
       if(!GatewayCreateInitialFile(m_sequenceFile, "0") ||
          !GatewayCreateInitialFile(m_stateFile, "IDLE") ||
-         !GatewayCreateInitialFile(m_commandsFile, "{\"commands\":[]}"))
+         !GatewayCreateInitialFile(m_commandsFile, "{\"commands\":[]}") ||
+         !GatewayCreateInitialFile(m_controlFile,  "{\"commands\":[]}"))
       {
          Print("[GATEWAY] Cannot initialize storage files.");
          return false;
