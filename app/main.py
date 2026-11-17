@@ -50,7 +50,8 @@ from app.mt5_delivery import (
     recover_mt5_requests,
     get_mt5_response,
     acknowledge_mt5_response,
-    RequestConflictError, cancel_mt5_request,
+    RequestConflictError, 
+    cancel_mt5_request,
 )
 from app.mt5_sqlite import execute_command
 
@@ -959,7 +960,7 @@ async def mt5_response(client_id: str):
     }
 
 
-@app.get("/v1/mt5/poll")
+
 @app.get("/v1/mt5/poll")
 async def mt5_poll(
     client_id: str,
