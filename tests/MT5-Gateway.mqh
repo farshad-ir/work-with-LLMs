@@ -1761,7 +1761,7 @@ public:
       m_stateFile = m_tempDir + "/current_state.txt";
       m_responseFile = m_tempDir + "/current_response.json";
       m_commandsFile = m_commandsDir + "/commands.json";
-   ‍‍   m_controlFile  = m_controlDir + "/control.json";
+      m_controlFile = m_controlDir + "/control.json";
 
       if(!GatewayEnsureFolder("LLM-LQ") ||
          !GatewayEnsureFolder(m_rootDir) ||
