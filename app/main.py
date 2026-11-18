@@ -982,43 +982,7 @@ async def mt5_poll(
     )
 
 
-@app.get("/v1/mt5/ack")
-async def mt5_ack(
-    client_id: str,
-    request_id: str,
-    response_id: str,
-):
-    envelope = {
-        "protocol": "mt5-gateway",
-        "version": 1,
-        "message_type": "ACK",
-        "client_id": client_id,
-        "request_id": request_id,
-        "response_id": response_id,
-    }
-
-    try:
-        result = acknowledge_mt5_response(envelope)
-
-    except RequestConflictError as exc:
-        return JSONResponse(
-            status_code=409,
-            content={"error": str(exc)},
-            headers={"Cache-Control": "no-store"},
-        )
-
-    except ValueError as exc:
-        return JSONResponse(
-            status_code=400,
-            content={"error": str(exc)},
-            headers={"Cache-Control": "no-store"},
-        )
-
-    return JSONResponse(
-        status_code=200,
-        content=result,
-        headers={"Cache-Control": "no-store"},
-    )    
+  
 @app.get("/", response_class=HTMLResponse)
 async def dashboard():
     page = TEMPLATES_DIR / "index.html"
