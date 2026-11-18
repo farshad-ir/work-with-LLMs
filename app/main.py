@@ -1,6 +1,5 @@
 from threading import Lock
 import tempfile
-import sqlite3
 import json
 import os
 import secrets
@@ -37,11 +36,6 @@ from app.model_rotation import (
     record_request_result,
     get_rotation_status,
     _provider_key,
-)
-from app.mt5_debate_room import (
-    init_mt5_debate_db,
-    process_mt5_message,
-    get_mt5_receive_report,
 )
 from app.mt5_delivery import (
     init_mt5_delivery_db,
@@ -650,7 +644,6 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_mt5_debate_db()
     init_mt5_delivery_db()
 
     recovery_results = recover_mt5_requests()
@@ -684,92 +677,9 @@ class SequentialResponsesMiddleware:
 
 
 
-MT5_CLIENT_ID = "mt5_terminal_01"
 
 
-MT5_STATS_DB = (
-    Path(__file__).resolve().parent.parent
-    / "data"
-    / "mt5_stats.sqlite3"
-)
 
-
-def _init_mt5_stats_db():
-    MT5_STATS_DB.parent.mkdir(parents=True, exist_ok=True)
-
-    with sqlite3.connect(MT5_STATS_DB) as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS mt5_stats (
-                client_id TEXT PRIMARY KEY,
-                requests INTEGER NOT NULL DEFAULT 0,
-                bytes INTEGER NOT NULL DEFAULT 0,
-                characters INTEGER NOT NULL DEFAULT 0,
-                words INTEGER NOT NULL DEFAULT 0,
-                updated_at TEXT
-            )
-        """)
-
-
-def _record_mt5_stats(raw_body: bytes):
-    text = raw_body.decode("utf-8")
-    byte_count = len(raw_body)
-    character_count = len(text)
-    word_count = len(text.split())
-    updated_at = datetime.now(timezone.utc).isoformat()
-
-    _init_mt5_stats_db()
-
-    with sqlite3.connect(MT5_STATS_DB) as conn:
-        conn.execute("""
-            INSERT INTO mt5_stats (
-                client_id,
-                requests,
-                bytes,
-                characters,
-                words,
-                updated_at
-            )
-            VALUES (?, 1, ?, ?, ?, ?)
-            ON CONFLICT(client_id) DO UPDATE SET
-                requests = requests + 1,
-                bytes = bytes + excluded.bytes,
-                characters = characters + excluded.characters,
-                words = words + excluded.words,
-                updated_at = excluded.updated_at
-        """, (
-            MT5_CLIENT_ID,
-            byte_count,
-            character_count,
-            word_count,
-            updated_at,
-        ))
-
-
-def _get_mt5_stats():
-    _init_mt5_stats_db()
-
-    with sqlite3.connect(MT5_STATS_DB) as conn:
-        conn.row_factory = sqlite3.Row
-
-        row = conn.execute(
-            """
-            SELECT requests, bytes, characters, words, updated_at
-            FROM mt5_stats
-            WHERE client_id = ?
-            """,
-            (MT5_CLIENT_ID,),
-        ).fetchone()
-
-    if row is None:
-        return {
-            "requests": 0,
-            "bytes": 0,
-            "characters": 0,
-            "words": 0,
-            "updated_at": None,
-        }
-
-    return dict(row)
 
 
 app = FastAPI(
@@ -945,21 +855,6 @@ async def mt5_ingest(request: Request, background_tasks: BackgroundTasks,):
 
 
 
-@app.get("/v1/mt5/response/{client_id}")
-async def mt5_response(client_id: str):
-
-    if client_id != MT5_CLIENT_ID:
-        raise HTTPException(
-            status_code=404,
-            detail="MT5 client not found.",
-        )
-
-    return {
-        "success": True,
-        "client_id": MT5_CLIENT_ID,
-        "statistics": _get_mt5_stats(),
-        "report": get_mt5_receive_report(),
-    }
 
 
 
