@@ -1,0 +1,620 @@
+#include <windows.h>
+#include <winhttp.h>
+#include <bcrypt.h>
+
+#include <string>
+#include <vector>
+#include <fstream>
+#include <thread>
+#include <chrono>
+#include <unordered_map>
+
+#pragma comment(lib, "winhttp.lib")
+#pragma comment(lib, "bcrypt.lib")
+
+
+
+// --------------------------------------------------
+// Configuration
+// --------------------------------------------------
+
+static const wchar_t* FILE_PATH =
+    L"C:\\Users\\Rezvan\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\LLM-LQ\\mt5_feed.json";
+
+static const wchar_t* SERVER =
+    L"api.rezvan.biz";
+
+static const wchar_t* ENDPOINT =
+    L"/gateway/mt5";
+
+static const INTERNET_PORT PORT = 443;
+
+// آخرین هش موفق ارسال‌شده
+static std::unordered_map<std::wstring, std::string> lastSentHashes;
+
+// --------------------------------------------------
+// Read file as binary
+// --------------------------------------------------
+
+bool ReadFileBytes(const wchar_t* path, std::vector<unsigned char>& data)
+{
+    std::ifstream file(path, std::ios::binary);
+
+    if (!file)
+        return false;
+
+    data.assign(
+        std::istreambuf_iterator<char>(file),
+        std::istreambuf_iterator<char>()
+    );
+
+    return !data.empty();
+}
+
+// --------------------------------------------------
+// Convert UTF-16 / UTF-8 to UTF-8
+// --------------------------------------------------
+
+bool ConvertToUTF8(
+    const std::vector<unsigned char>& data,
+    std::string& output)
+{
+    if (data.empty())
+        return false;
+
+    // UTF-16 Little Endian BOM
+    if (data.size() >= 2 &&
+        data[0] == 0xFF &&
+        data[1] == 0xFE)
+    {
+        const wchar_t* wide =
+            reinterpret_cast<const wchar_t*>(data.data() + 2);
+
+        int wcharCount = (int)((data.size() - 2) / 2);
+
+        int utf8Size = WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            wide,
+            wcharCount,
+            NULL,
+            0,
+            NULL,
+            NULL
+        );
+
+        if (utf8Size <= 0)
+            return false;
+
+        output.resize(utf8Size);
+
+        WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            wide,
+            wcharCount,
+            &output[0],
+            utf8Size,
+            NULL,
+            NULL
+        );
+
+        return true;
+    }
+
+    // UTF-16 Big Endian BOM
+    if (data.size() >= 2 &&
+        data[0] == 0xFE &&
+        data[1] == 0xFF)
+    {
+        std::vector<unsigned char> swapped;
+
+        for (size_t i = 2; i + 1 < data.size(); i += 2)
+        {
+            swapped.push_back(data[i + 1]);
+            swapped.push_back(data[i]);
+        }
+
+        const wchar_t* wide =
+            reinterpret_cast<const wchar_t*>(swapped.data());
+
+        int wcharCount = (int)(swapped.size() / 2);
+
+        int utf8Size = WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            wide,
+            wcharCount,
+            NULL,
+            0,
+            NULL,
+            NULL
+        );
+
+        if (utf8Size <= 0)
+            return false;
+
+        output.resize(utf8Size);
+
+        WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            wide,
+            wcharCount,
+            &output[0],
+            utf8Size,
+            NULL,
+            NULL
+        );
+
+        return true;
+    }
+
+    // UTF-8 BOM
+    if (data.size() >= 3 &&
+        data[0] == 0xEF &&
+        data[1] == 0xBB &&
+        data[2] == 0xBF)
+    {
+        output.assign(data.begin() + 3, data.end());
+        return true;
+    }
+
+    // تشخیص احتمالی UTF-16 بدون BOM
+    size_t evenZeros = 0;
+    size_t oddZeros = 0;
+
+    for (size_t i = 0; i < data.size(); ++i)
+    {
+        if (data[i] == 0)
+        {
+            if (i % 2 == 0)
+                evenZeros++;
+            else
+                oddZeros++;
+        }
+    }
+
+    bool probableUTF16 =
+        (oddZeros > data.size() / 4) ||  (evenZeros > data.size() / 4);
+
+    if (probableUTF16)
+    {
+        std::vector<unsigned char> adjusted = data;
+
+        // اگر الگوی Little Endian محتمل باشد
+        if (oddZeros > evenZeros)
+        {
+            const wchar_t* wide =
+                reinterpret_cast<const wchar_t*>(adjusted.data());
+
+            int wcharCount = (int)(adjusted.size() / 2);
+
+            int utf8Size = WideCharToMultiByte(
+                CP_UTF8, 0, wide, wcharCount,
+                NULL, 0, NULL, NULL
+            );
+
+            if (utf8Size <= 0)
+                return false;
+
+            output.resize(utf8Size);
+
+            WideCharToMultiByte(
+                CP_UTF8, 0, wide, wcharCount,
+                &output[0], utf8Size, NULL, NULL
+            );
+
+            return true;
+        }
+
+        // الگوی Big Endian
+        for (size_t i = 0; i + 1 < adjusted.size(); i += 2)
+        {
+            unsigned char temp = adjusted[i];
+            adjusted[i] = adjusted[i + 1];
+            adjusted[i + 1] = temp;
+        }
+
+        const wchar_t* wide =
+            reinterpret_cast<const wchar_t*>(adjusted.data());
+
+        int wcharCount = (int)(adjusted.size() / 2);
+
+        int utf8Size = WideCharToMultiByte(
+            CP_UTF8, 0, wide, wcharCount,
+            NULL, 0, NULL, NULL
+        );
+
+        if (utf8Size <= 0)
+            return false;
+
+        output.resize(utf8Size);
+
+        WideCharToMultiByte(
+            CP_UTF8, 0, wide, wcharCount,
+            &output[0], utf8Size, NULL, NULL
+        );
+
+        return true;
+    }
+
+    // فرض UTF-8
+    output.assign(data.begin(), data.end());
+
+    return true;
+}
+
+// --------------------------------------------------
+// SHA-256
+// --------------------------------------------------
+
+std::string CalculateSHA256(const std::string& data)
+{
+    BCRYPT_ALG_HANDLE hAlg = NULL;
+    BCRYPT_HASH_HANDLE hHash = NULL;
+
+    DWORD hashLength = 0;
+    DWORD resultLength = 0;
+
+    if (BCryptOpenAlgorithmProvider(
+        &hAlg,
+        BCRYPT_SHA256_ALGORITHM,
+        NULL,
+        0) != 0)
+    {
+        return "";
+    }
+
+    BCryptGetProperty(
+        hAlg,
+        BCRYPT_HASH_LENGTH,
+        (PUCHAR)&hashLength,
+        sizeof(hashLength),
+        &resultLength,
+        0
+    );
+
+    std::vector<unsigned char> hash(hashLength);
+
+    BCryptCreateHash(
+        hAlg,
+        &hHash,
+        NULL,
+        0,
+        NULL,
+        0,
+        0
+    );
+
+    BCryptHashData(
+        hHash,
+        (PUCHAR)data.data(),
+        (ULONG)data.size(),
+        0
+    );
+
+    BCryptFinishHash(
+        hHash,
+        hash.data(),
+        hashLength,
+        0
+    );
+
+    BCryptDestroyHash(hHash);
+    BCryptCloseAlgorithmProvider(hAlg, 0);
+
+    const char* hex = "0123456789abcdef";
+
+    std::string result;
+
+    for (unsigned char b : hash)
+    {
+        result += hex[b >> 4];
+        result += hex[b & 0x0F];
+    }
+
+    return result;
+}
+
+// --------------------------------------------------
+// HTTP POST
+// --------------------------------------------------
+
+int SendHTTP(const std::string& json)
+{
+    HINTERNET session = WinHttpOpen(
+        L"MT5-Communication-DLL/1.0",
+        WINHTTP_ACCESS_TYPE_NO_PROXY,
+        WINHTTP_NO_PROXY_NAME,
+        WINHTTP_NO_PROXY_BYPASS,
+        0
+    );
+
+    if (!session)
+        return -1;
+
+    HINTERNET connection = WinHttpConnect(
+        session,
+        SERVER,
+        PORT,
+        0
+    );
+
+    if (!connection)
+    {
+        WinHttpCloseHandle(session);
+        return -2;
+    }
+
+    HINTERNET request = WinHttpOpenRequest(
+        connection,
+        L"POST",
+        ENDPOINT,
+        NULL,
+        WINHTTP_NO_REFERER,
+        WINHTTP_DEFAULT_ACCEPT_TYPES,
+        WINHTTP_FLAG_SECURE
+    );
+
+    if (!request)
+    {
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return -3;
+    }
+
+    const wchar_t* headers =
+        L"Content-Type: application/json; charset=utf-8\r\n";
+
+    BOOL sent = WinHttpSendRequest(
+        request,
+        headers,
+        -1L,
+        (LPVOID)json.data(),
+        (DWORD)json.size(),
+        (DWORD)json.size(),
+        0
+    );
+
+    if (!sent)
+    {
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return -4;
+    }
+
+    BOOL received = WinHttpReceiveResponse(request, NULL);
+
+
+
+    if (!received)
+    {
+
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return -5;
+    }
+
+
+
+
+
+    DWORD statusCode = 0;
+    DWORD statusSize = sizeof(statusCode);
+
+    WinHttpQueryHeaders(
+        request,
+        WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+        WINHTTP_HEADER_NAME_BY_INDEX,
+        &statusCode,
+        &statusSize,
+        WINHTTP_NO_HEADER_INDEX
+    );
+
+    WinHttpCloseHandle(request);
+    WinHttpCloseHandle(connection);
+    WinHttpCloseHandle(session);
+
+    return (int)statusCode;
+}
+
+// --------------------------------------------------
+// HTTP GET - Poll responses from Gateway
+// --------------------------------------------------
+
+extern "C" __declspec(dllexport)
+int __stdcall PollResponses(
+    const wchar_t* pathParameter,
+    unsigned char* output,
+    int outputCapacity)
+{
+    if (pathParameter == NULL || output == NULL || outputCapacity <= 0)
+        return -100;
+
+    std::wstring endpoint = pathParameter;
+
+    HINTERNET session = WinHttpOpen(
+        L"MT5-Communication-DLL/1.0",
+        WINHTTP_ACCESS_TYPE_NO_PROXY,
+        WINHTTP_NO_PROXY_NAME,
+        WINHTTP_NO_PROXY_BYPASS,
+        0
+    );
+
+    if (!session)
+        return -101;
+
+    HINTERNET connection = WinHttpConnect(
+        session,
+        SERVER,
+        PORT,
+        0
+    );
+
+    if (!connection)
+    {
+        WinHttpCloseHandle(session);
+        return -102;
+    }
+
+    HINTERNET request = WinHttpOpenRequest(
+        connection,
+        L"GET",
+        endpoint.c_str(),
+        NULL,
+        WINHTTP_NO_REFERER,
+        WINHTTP_DEFAULT_ACCEPT_TYPES,
+        WINHTTP_FLAG_SECURE
+    );
+
+    if (!request)
+    {
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return -103;
+    }
+
+    BOOL sent = WinHttpSendRequest(
+        request,
+        WINHTTP_NO_ADDITIONAL_HEADERS,
+        0,
+        WINHTTP_NO_REQUEST_DATA,
+        0,
+        0,
+        0
+    );
+
+    if (!sent)
+    {
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return -104;
+    }
+
+    if (!WinHttpReceiveResponse(request, NULL))
+    {
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return -105;
+    }
+
+    DWORD statusCode = 0;
+    DWORD statusSize = sizeof(statusCode);
+
+    WinHttpQueryHeaders(
+        request,
+        WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+        WINHTTP_HEADER_NAME_BY_INDEX,
+        &statusCode,
+        &statusSize,
+        WINHTTP_NO_HEADER_INDEX
+    );
+
+    if (statusCode < 200 || statusCode >= 300)
+    {
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return (int)statusCode;
+    }
+
+    int totalBytes = 0;
+
+    while (true)
+    {
+        DWORD available = 0;
+
+        if (!WinHttpQueryDataAvailable(request, &available))
+        {
+            totalBytes = -106;
+            break;
+        }
+
+        if (available == 0)
+            break;
+
+        if (totalBytes + (int)available > outputCapacity)
+        {
+            totalBytes = -107;
+            break;
+        }
+
+        DWORD bytesRead = 0;
+
+        if (!WinHttpReadData(
+            request,
+            output + totalBytes,
+            available,
+            &bytesRead))
+        {
+            totalBytes = -108;
+            break;
+        }
+
+        totalBytes += (int)bytesRead;
+    }
+
+    WinHttpCloseHandle(request);
+    WinHttpCloseHandle(connection);
+    WinHttpCloseHandle(session);
+
+    return totalBytes;
+}
+
+// --------------------------------------------------
+// Exported function
+// --------------------------------------------------
+
+extern "C" __declspec(dllexport)
+int __stdcall SendLatestJson(const wchar_t* filePath)
+{
+    if (filePath == nullptr || filePath[0] == L'\0')
+        return -21;
+    
+    std::wstring pathKey(filePath);
+
+    for (int attempt = 0; attempt < 3; ++attempt)
+    {
+        std::vector<unsigned char> fileData;
+        std::string json;
+
+        if (ReadFileBytes(filePath, fileData) &&
+            ConvertToUTF8(fileData, json))
+        {
+            std::string hash = CalculateSHA256(json);
+
+            if (hash.empty())
+                return -10;
+
+            // اگر JSON قبلاً ارسال شده، ارسال نکن
+            if (lastSentHashes[pathKey] == hash)
+                return 204;
+
+            int status = SendHTTP(json);
+
+            // فقط ارسال موفق را ذخیره کن
+            if (status >= 200 && status < 300)
+            {
+                lastSentHashes[pathKey] = hash;
+                return status;
+            }
+
+            // خطای HTTP
+            return status;
+        }
+
+        // فرصت برای کامل شدن فایل
+        if (attempt < 2)
+            std::this_thread::sleep_for(
+                std::chrono::seconds(5)
+            );
+    }
+
+    return -20;
+}
+

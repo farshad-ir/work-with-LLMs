@@ -1,0 +1,21 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\GatewayController;
+
+Route::domain('api.rezvan.biz')
+    ->prefix('gateway')
+    ->group(function () {
+
+        Route::get('/health', function () {
+            return response()->json([
+                'service' => 'Rezvan Gateway',
+                'status' => 'ok',
+            ]);
+        });
+
+        Route::post('/v1/responses', [GatewayController::class, 'codex']);
+        Route::post('/internal/responses/ready', [GatewayController::class, 'responseReady']);
+        Route::post('/mt5', [GatewayController::class, 'mt5']);
+        Route::get('/mt5/responses', [GatewayController::class, 'pollResponses']);
+    });
