@@ -1364,11 +1364,18 @@ private:
 
          currentState = nextState;
       }
-
+      
       if(currentState == STATE_ERROR)
       {
-         Print("[CONTROL] Cannot resume request from ERROR state.");
-         return false;
+         if(!GatewaySaveState("SENT"))
+         {
+            Print("[CONTROL] Cannot recover ERROR state after CANCEL.");
+            return false;
+         }
+      
+         currentState = STATE_SENT;
+      
+         Print("[CONTROL] ERROR recovered to SENT. Poll will continue.");
       }
 
       root["commands"][0]["status"] = "COMPLETED";
