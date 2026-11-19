@@ -262,6 +262,32 @@ def cancel_mt5_request(client_id, request_id):
     if not isinstance(request_id, str) or not request_id.strip():
         raise ValueError("Invalid request_id.")
 
+    now = _now()
+    response_id = secrets.token_hex(16)
+
+    response = {
+        "protocol": "mt5-gateway",
+        "version": 1,
+        "message_type": "POLL_RESULT",
+        "client_id": client_id,
+        "request_id": request_id,
+        "status": "COMPLETED",
+        "response_id": response_id,
+        "created_at": now,
+        "payload": {
+            "cancelled": True,
+            "message": "Request force-completed by CANCEL command."
+        },
+    }
+
+    response_json = json.dumps(
+        response,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
+
     conn = _connect()
 
     try:
@@ -269,7 +295,7 @@ def cancel_mt5_request(client_id, request_id):
 
         row = conn.execute(
             """
-            SELECT status, response_json, cancel_requested_at
+            SELECT response_json
             FROM mt5_delivery_requests
             WHERE client_id = ?
               AND request_id = ?
@@ -277,26 +303,67 @@ def cancel_mt5_request(client_id, request_id):
             (client_id, request_id),
         ).fetchone()
 
-        if row is None:
-            raise ValueError("Request not found.")
-
-        if row["response_json"]:
+        if row is not None and row["response_json"]:
             status = "ALREADY_COMPLETED"
 
-        elif row["cancel_requested_at"]:
+        elif row is None:
+            request_json = "{}"
+            payload_hash = hashlib.sha256(
+                request_json.encode("utf-8")
+            ).hexdigest()
+
+            conn.execute(
+                """
+                INSERT INTO mt5_delivery_requests (
+                    client_id,
+                    request_id,
+                    payload_hash,
+                    request_json,
+                    status,
+                    created_at,
+                    registered_at,
+                    response_id,
+                    response_json,
+                    cancel_requested_at
+                )
+                VALUES (?, ?, ?, ?, 'COMPLETED', ?, ?, ?, ?, ?)
+                """,
+                (
+                    client_id,
+                    request_id,
+                    payload_hash,
+                    request_json,
+                    now,
+                    now,
+                    response_id,
+                    response_json,
+                    now,
+                ),
+            )
+
             status = "CANCEL_REQUESTED"
 
         else:
             conn.execute(
                 """
                 UPDATE mt5_delivery_requests
-                SET cancel_requested_at = ?
+                SET status = 'COMPLETED',
+                    cancel_requested_at = ?,
+                    response_id = ?,
+                    response_json = ?
                 WHERE client_id = ?
                   AND request_id = ?
                   AND response_json IS NULL
                 """,
-                (_now(), client_id, request_id),
+                (
+                    now,
+                    response_id,
+                    response_json,
+                    client_id,
+                    request_id,
+                ),
             )
+
             status = "CANCEL_REQUESTED"
 
         conn.commit()
