@@ -67,6 +67,29 @@ CStructure        m_stc;
 CFractalGeometry  m_fractal;
 CMT5Gateway Gateway;
 
+void OnTimer()
+{
+
+
+   if(!Gateway.ProcessControl())
+   {
+      Print("[CONTROL] Emergency control processing failed.");
+   }
+
+   if(!Gateway.ResumePendingRequest())
+   {
+      Print("[GATEWAY] Pending request recovery failed.");
+   }
+
+   if(!Gateway.RunCommands())
+   {
+      Print("[COMMANDS] Command execution failed.");
+   }
+
+
+}
+
+
 int OnInit()
 {   
    if(!Gateway.Initialize(InpGatewayClientId, InpGatewayFolderName))
@@ -74,25 +97,11 @@ int OnInit()
       Print("[GATEWAY] Initialization failed.");
       return INIT_FAILED;
    }
-   
-   if(!Gateway.ProcessControl())
+   if(!EventSetTimer(30))
    {
-      Print("[CONTROL] Emergency control processing failed.");
-      return INIT_FAILED;
+      Print("[TIMER] Initialization failed.");
+      return INIT_FAILED;      
    }
-
-   if(!Gateway.ResumePendingRequest())
-   {
-      Print("[GATEWAY] Pending request recovery failed.");
-      return INIT_FAILED;
-   }
-
-   if(!Gateway.RunCommands())
-   {
-      Print("[COMMANDS] Command execution failed.");
-      return INIT_FAILED;
-   }
-
 
 
 
@@ -208,11 +217,11 @@ data += "}";
 
    
    
-//if(!Gateway.ExecuteRequest(data))
-//{
-//   Print("[GATEWAY] Request execution did not complete.");
-//   return INIT_FAILED;
-//}
+if(!Gateway.ExecuteRequest(data))
+{
+   Print("[GATEWAY] Request execution did not complete.");
+   return INIT_FAILED;
+}
 
    Print("[GATEWAY] Request execution completed.");
 
