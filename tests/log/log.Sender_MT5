@@ -208,11 +208,11 @@ data += "}";
 
    
    
-if(!Gateway.ExecuteRequest(data))
-{
-   Print("[GATEWAY] Request execution did not complete.");
-   return INIT_FAILED;
-}
+//if(!Gateway.ExecuteRequest(data))
+//{
+//   Print("[GATEWAY] Request execution did not complete.");
+//   return INIT_FAILED;
+//}
 
    Print("[GATEWAY] Request execution completed.");
 
@@ -280,6 +280,5 @@ string BuildCandleObject(
 
    return data;
 }
-
 
 
