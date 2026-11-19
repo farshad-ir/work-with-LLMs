@@ -95,7 +95,6 @@ int OnInit()
    if(!Gateway.Initialize(InpGatewayClientId, InpGatewayFolderName))
    {
       Print("[GATEWAY] Initialization failed.");
-      return INIT_FAILED;
    }
    if(!EventSetTimer(30))
    {
