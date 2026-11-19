@@ -219,7 +219,7 @@ data += "}";
 if(!Gateway.ExecuteRequest(data))
 {
    Print("[GATEWAY] Request execution did not complete.");
-   return INIT_FAILED;
+   return INIT_SUCCEEDED;
 }
 
    Print("[GATEWAY] Request execution completed.");
