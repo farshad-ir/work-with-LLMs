@@ -1442,33 +1442,25 @@ private:
    
       for(int i = 0; i < count; i++)
       {
-         string id = root["commands"][i]["id"].ToStr();
-         string command = root["commands"][i]["command"].ToStr();
-         string status = root["commands"][i]["status"].ToStr();
-   
-         if(id == "" || command == "")
+         string command =
+            root["commands"][i]["command"].ToStr();
+      
+         string result =
+            root["commands"][i]["result"].ToStr();
+      
+         if(command == "")
          {
-            Print("[COMMANDS] Invalid command entry at index ", i);
+            Print("[COMMANDS] Empty command at index ", i);
             return false;
          }
-   
-         if(status != "PENDING" && status != "COMPLETED")
+      
+         if(result != "" && result != "OK" && result != "NOK")
          {
-            Print("[COMMANDS] Invalid status. id=", id,
-                  " status=", status);
+            Print("[COMMANDS] Invalid result at index ", i,
+                  " result=", result);
             return false;
          }
-   
-         for(int j = 0; j < i; j++)
-         {
-            if(root["commands"][j]["id"].ToStr() == id)
-            {
-               Print("[COMMANDS] Duplicate command id: ", id);
-               return false;
-            }
-         }
-      }
-   
+      }   
       Print("[COMMANDS] Loaded ", count, " commands.");
       return true;
    }
@@ -1597,21 +1589,24 @@ private:
    
       for(int i = 0; i < count; i++)
       {
-         string commandId =
-            root["commands"][i]["id"].ToStr();
-   
          string command =
-            root["commands"][i]["command"].ToStr();
-   
-         string status =
-            root["commands"][i]["status"].ToStr();
-   
-         if(status == "COMPLETED")
+         root["commands"][i]["command"].ToStr();
+         
+         string result =
+            root["commands"][i]["result"].ToStr();
+         
+         if(result != "")
             continue;
-   
-         if(status != "PENDING")
+         
+         root["commands"][i]["result"] = "NOK";
+         
+         if(!GatewaySaveCommands(root))
+         {
+            Print("[COMMANDS] Cannot save execution marker.");
             return false;
-   
+         }
+
+
          string body = "";
    
          if(command == "LIST-TABL")
@@ -1657,17 +1652,15 @@ private:
             return false;
          }
    
-         root["commands"][i]["status"] = "COMPLETED";
-   
+         root["commands"][i]["result"] = "OK";
+         
          if(!GatewaySaveCommands(root))
          {
-            Print("[COMMANDS] Cannot save command status. id=",
-                  commandId);
+            Print("[COMMANDS] Cannot save command result.");
             return false;
          }
-   
-         Print("[COMMANDS] Command completed: ",
-               commandId);
+         
+         Print("[COMMANDS] Command completed: ", command);
       }
    
       Print("[COMMANDS] All pending commands processed.");
