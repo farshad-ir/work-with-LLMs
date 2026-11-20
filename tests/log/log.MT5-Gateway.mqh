@@ -1495,68 +1495,96 @@ private:
       return true;
    }
    
-   bool GatewayReceivedCommandSucceeded( const string requestId,   const string expectedCommand )
+      bool GatewayReadCommandResponse(
+      const string requestId,
+      string &responseStatus,
+      string &payloadJson
+   )
    {
+      responseStatus = "";
+      payloadJson = "";
+
       if(requestId == "")
          return false;
-   
+
       string receivedFile =
          m_receivedDir + "/" + requestId + ".json";
-   
+
       if(!FileIsExist(receivedFile, FILE_COMMON))
       {
-         Print("[COMMANDS] Received m_response not found: ", receivedFile);
+         Print("[COMMANDS] Received response not found: ", receivedFile);
          return false;
       }
-   
+
       int h = FileOpen(
          receivedFile,
          FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
       );
-   
+
       if(h == INVALID_HANDLE)
          return false;
-   
+
       string content = "";
-   
+
       while(!FileIsEnding(h))
          content += FileReadString(h);
-   
+
       FileClose(h);
-   
+
       CJAVal result;
-   
+
       if(content == "" || !result.Deserialize(content))
       {
-         Print("[COMMANDS] Invalid received m_response JSON.");
+         Print("[COMMANDS] Invalid received response JSON.");
          return false;
       }
-   
+
       if(result["protocol"].ToStr() != "mt5-gateway" ||
          (int)result["version"].ToInt() != 1 ||
          result["message_type"].ToStr() != "POLL_RESULT" ||
          result["client_id"].ToStr() != m_clientId ||
-         result["request_id"].ToStr() != requestId ||
-         result["status"].ToStr() != "COMPLETED")
+         result["request_id"].ToStr() != requestId)
       {
-         Print("[COMMANDS] m_response identity or status validation failed.");
+         Print("[COMMANDS] Response envelope identity validation failed.");
          return false;
       }
-   
-      if(result["payload"]["operations"].m_type != jtARRAY ||
-         result["payload"]["operations"].Size() != 1)
+
+      responseStatus = result["status"].ToStr();
+
+      if(responseStatus != "COMPLETED" &&
+         responseStatus != "FAILED" &&
+         responseStatus != "CANCELLED")
       {
-         Print("[COMMANDS] Expected exactly one operation result.");
+         Print("[COMMANDS] Invalid final response status: ",
+               responseStatus);
          return false;
       }
-   
-      if(result["payload"]["operations"][0]["command"].ToStr()
-         != expectedCommand)
+
+      if(result["response_id"].ToStr() == "")
       {
-         Print("[COMMANDS] Operation command mismatch.");
+         Print("[COMMANDS] Final response has no response_id.");
          return false;
       }
-   
+
+      if(result["payload"].m_type == jtUNDEF)
+      {
+         Print("[COMMANDS] Final response has no payload.");
+         return false;
+      }
+
+      payloadJson = result["payload"].Serialize();
+
+      if(payloadJson == "")
+      {
+         Print("[COMMANDS] Cannot serialize response payload.");
+         return false;
+      }
+
+      Print("[COMMANDS] Response received. status=",
+            responseStatus);
+
+      return true;
+   }   
       if(result["payload"]["operations"][0]["success"].m_type != jtBOOL ||
          !result["payload"]["operations"][0]["success"].ToBool())
       {
@@ -1659,24 +1687,35 @@ private:
          }
    
          string requestId = m_lastRequestId;
-   
-         if(!GatewayReceivedCommandSucceeded(
+         string responseStatus = "";
+         string payloadJson = "";
+
+         if(!GatewayReadCommandResponse(
             requestId,
-            command
+            responseStatus,
+            payloadJson
          ))
          {
-            Print("[COMMANDS] Command operation failed.");
+            Print("[COMMANDS] Cannot read command response.");
             return false;
          }
-   
-         root["commands"][i]["result"] = "OK";
-         
+
+         root["commands"][i]["status"] = responseStatus;
+         root["commands"][i]["result"] = payloadJson;
+
          if(!GatewaySaveCommands(root))
          {
-            Print("[COMMANDS] Cannot save command result.");
+            Print("[COMMANDS] Cannot save command response.");
             return false;
          }
-         
+
+         if(responseStatus != "COMPLETED")
+         {
+            Print("[COMMANDS] Command did not complete. status=",
+                  responseStatus);
+            return false;
+         }
+
          Print("[COMMANDS] Command completed: ", command);
          processedCount++;
       }
