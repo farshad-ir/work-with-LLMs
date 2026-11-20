@@ -1445,19 +1445,18 @@ private:
          string command =
             root["commands"][i]["command"].ToStr();
       
-         string result =
-            root["commands"][i]["result"].ToStr();
-      
+         string status =
+            root["commands"][i]["status"].ToStr();
+
          if(command == "")
          {
             Print("[COMMANDS] Empty command at index ", i);
             return false;
          }
-      
-         if(result != "" && result != "OK" && result != "NOK")
+
+         if(root["commands"][i]["status"].m_type != jtSTR)
          {
-            Print("[COMMANDS] Invalid result at index ", i,
-                  " result=", result);
+            Print("[COMMANDS] Invalid status type at index ", i);
             return false;
          }
       }   
