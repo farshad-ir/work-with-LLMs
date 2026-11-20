@@ -579,46 +579,71 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
 
     elif command == "CONSULT-LLM":
 
-        select_result = None
-        select = payload.get("select")
+        try:
+            select_result = None
+            select = payload.get("select")
 
-        if select is not None:
-            operation = {
-                "command": select["type"],
-                "table": select["table"],
-                "columns": select["columns"],
-            }
-
-            if "limit" in select:
-                operation["limit"] = select["limit"]
-
-            execution_id = (
-                f"{client_id}:{request_id}:CONSULT-LLM:SELA"
-            )
-
-            select_response = execute_command(
-                operation,
-                execution_id=execution_id,
-            )
-
-            if not select_response.get("success"):
+            if _is_mt5_cancel_requested(client_id, request_id):
                 success = False
                 response_payload = {
-                    "error": "CONSULT-LLM SELA failed.",
-                    "details": select_response.get("error"),
+                    "error": "Request was cancelled."
                 }
+
             else:
-                select_result = select_response["result"]
+                if select is not None:
+                    operation = {
+                        "command": select["type"],
+                        "table": select["table"],
+                        "columns": select["columns"],
+                    }
 
-        if success:
-            result = consult_mt5(
-                payload["inquiry"],
-                select_result=select_result,
-            )
+                    if "limit" in select:
+                        operation["limit"] = select["limit"]
 
+                    execution_id = (
+                        f"{client_id}:{request_id}:CONSULT-LLM:SELA"
+                    )
+
+                    select_response = execute_command(
+                        operation,
+                        execution_id=execution_id,
+                    )
+
+                    if not select_response.get("success"):
+                        success = False
+                        response_payload = {
+                            "error": "CONSULT-LLM SELA failed.",
+                            "details": select_response.get("error"),
+                        }
+                    else:
+                        select_result = select_response["result"]
+
+                if success:
+                    if _is_mt5_cancel_requested(
+                        client_id,
+                        request_id,
+                    ):
+                        success = False
+                        response_payload = {
+                            "error": "Request was cancelled."
+                        }
+
+                    else:
+                        result = consult_mt5(
+                            payload["inquiry"],
+                            select_result=select_result,
+                        )
+
+                        response_payload = {
+                            "model_key": result["model_key"],
+                            "answer": result["answer"],
+                        }
+
+        except Exception as exc:
+            success = False
             response_payload = {
-                "model_key": result["model_key"],
-                "answer": result["answer"],
+                "error": "CONSULT-LLM processing failed.",
+                "details": str(exc)[:500],
             }
 
     else:
