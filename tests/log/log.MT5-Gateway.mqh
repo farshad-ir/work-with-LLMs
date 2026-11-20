@@ -1621,22 +1621,18 @@ private:
                "]"
                "}";
          }
+         
          else
          {
-            Print("[COMMANDS] Unsupported command: ",
-                  command,
-                  " id=", commandId);
+            Print("[COMMANDS] Unsupported command: ", command);
             return false;
          }
-   
-         Print("[COMMANDS] Executing command: ",
-               command,
-               " id=", commandId);
-   
+         
+         Print("[COMMANDS] Executing command: ", command);
+         
          if(!GatewayExecuteRequest(body))
          {
-            Print("[COMMANDS] Gateway execution failed. id=",
-                  commandId);
+            Print("[COMMANDS] Gateway execution failed.");
             return false;
          }
    
@@ -1647,8 +1643,7 @@ private:
             command
          ))
          {
-            Print("[COMMANDS] Command operation failed. id=",
-                  commandId);
+            Print("[COMMANDS] Command operation failed.");
             return false;
          }
    
