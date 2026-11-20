@@ -1495,7 +1495,7 @@ private:
       return true;
    }
    
-      bool GatewayReadCommandResponse(
+   bool GatewayReadCommandResponse(
       const string requestId,
       string &responseStatus,
       string &payloadJson
@@ -1585,16 +1585,7 @@ private:
 
       return true;
    }   
-      if(result["payload"]["operations"][0]["success"].m_type != jtBOOL ||
-         !result["payload"]["operations"][0]["success"].ToBool())
-      {
-         Print("[COMMANDS] Operation failed: ", expectedCommand);
-         return false;
-      }
-   
-      Print("[COMMANDS] Operation succeeded: ", expectedCommand);
-      return true;
-   }
+
    
    bool GatewayRunCommands()
    {
