@@ -287,7 +287,15 @@ class MT5Cabin:
             cursor="xterm",
             state="disabled"
         )
-
+        
+        self.response.bind(
+            "<Control-a>",
+            self.select_all_response
+        )
+        self.response.bind(
+            "<Control-A>",
+            self.select_all_response
+        )
         response_scrollbar = ttk.Scrollbar(
             viewer_text_frame,
             orient="vertical",
@@ -554,7 +562,10 @@ class MT5Cabin:
                 "error": str(exc)
             }
 
+    def select_all_response(self, event=None):
 
+        self.response.tag_add("sel", "1.0", "end-1c")
+        return "break"
 
     def set_viewer_text(self, text):
 
