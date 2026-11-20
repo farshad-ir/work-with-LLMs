@@ -1,7 +1,7 @@
 import json
 import os
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from pathlib import Path
 from datetime import datetime
 
@@ -240,21 +240,66 @@ class MT5Cabin:
 
         response_frame = ttk.LabelFrame(
             main,
-            text="Latest Received Response",
+            text="JSON Viewer",
             padding=8
         )
+        
         response_frame.pack(fill="both", expand=True, pady=8)
 
+        viewer_toolbar = ttk.Frame(response_frame)
+        viewer_toolbar.pack(fill="x", pady=(0, 6))
+
+        self.viewer_path_var = tk.StringVar(value="")
+
+        self.viewer_path_entry = ttk.Entry(
+            viewer_toolbar,
+            textvariable=self.viewer_path_var,
+            state="readonly"
+        )
+        self.viewer_path_entry.pack(
+            side="left",
+            fill="x",
+            expand=True,
+            padx=(0, 5)
+        )
+
+        ttk.Button(
+            viewer_toolbar,
+            text="Browse",
+            command=self.browse_json_file
+        ).pack(side="left", padx=3)
+
+        ttk.Button(
+            viewer_toolbar,
+            text="Open",
+            command=self.open_json_file
+        ).pack(side="left", padx=3)
+
+        viewer_text_frame = ttk.Frame(response_frame)
+        viewer_text_frame.pack(fill="both", expand=True)
+
         self.response = tk.Text(
-            response_frame,
+            viewer_text_frame,
             height=12,
             font=("Consolas", 9),
-            wrap="none"
+            wrap="none",
+            cursor="xterm",
+            state="disabled"
         )
-        self.response.pack(fill="both", expand=True)
 
-        self.response.insert("1.0", "Waiting for received response...")
-        self.response.configure(state="disabled")
+        response_scrollbar = ttk.Scrollbar(
+            viewer_text_frame,
+            orient="vertical",
+            command=self.response.yview
+        )
+        self.response.configure(
+            yscrollcommand=response_scrollbar.set
+        )
+
+        self.response.pack(side="left", fill="both", expand=True)
+        response_scrollbar.pack(side="right", fill="y")
+
+        self.set_viewer_text("Waiting for received response...")
 
     # --------------------------------------------------
     # Validation
@@ -420,7 +465,7 @@ class MT5Cabin:
 
             messagebox.showinfo(
                 "MT5 Cabin",
-                "SENT"
+                "فرمان ارسال شد."
             )
 
             self.refresh()
@@ -463,7 +508,7 @@ class MT5Cabin:
 
             messagebox.showinfo(
                 "MT5 Cabin",
-                "SENT"
+                "درخواست لغو ارسال شد."
             )
 
             self.refresh()
