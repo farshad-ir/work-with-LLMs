@@ -239,4 +239,4 @@ def consult_mt5(
                 )
                 
 
-            time.sleep(۱)
+            time.sleep(1)
