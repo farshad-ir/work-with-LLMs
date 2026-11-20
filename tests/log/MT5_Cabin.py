@@ -251,7 +251,7 @@ class MT5Cabin:
         
         self.viewer_frame.pack(fill="both", expand=True, pady=8)
 
-        viewer_toolbar = ttk.Frame(response_frame)
+        viewer_toolbar = ttk.Frame(self.viewer_frame)
         viewer_toolbar.pack(fill="x", pady=(0, 6))
 
         self.viewer_path_var = tk.StringVar(value="")
@@ -288,7 +288,7 @@ class MT5Cabin:
         )
         self.viewer_toggle_button.pack(side="right", padx=3)
         
-        viewer_text_frame = ttk.Frame(response_frame)
+        viewer_text_frame = ttk.Frame(self.viewer_frame)
         viewer_text_frame.pack(fill="both", expand=True)
 
         self.response = tk.Text(
