@@ -556,7 +556,7 @@ class MT5Cabin:
 
 
 
-        def set_viewer_text(self, text):
+    def set_viewer_text(self, text):
 
         self.response.configure(state="normal")
         self.response.delete("1.0", "end")
