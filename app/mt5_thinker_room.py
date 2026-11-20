@@ -231,7 +231,12 @@ def consult_mt5(
                     error_type="mt5_provider_error",
                     error_message=str(exc)[:500],
                 )
-            except Exception:
-                pass
+                
+            except Exception as record_exc:
+                _gateway_log(
+                    "[ROTATION] "
+                    f"Failed to record provider error: {record_exc}"
+                )
+                
 
             time.sleep(۱)
