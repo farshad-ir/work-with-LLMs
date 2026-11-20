@@ -1461,7 +1461,7 @@ private:
             return false;
          }
       }   
-      Print("[COMMANDS] Loaded ", count, " commands.");
+      
       return true;
    }
    
@@ -1586,7 +1586,8 @@ private:
       }
    
       int count = root["commands"].Size();
-   
+      int processedCount = 0;
+
       for(int i = 0; i < count; i++)
       {
          string command =
@@ -1656,6 +1657,7 @@ private:
          }
          
          Print("[COMMANDS] Command completed: ", command);
+         processedCount++;
       }
    
       Print("[COMMANDS] All pending commands processed.");
