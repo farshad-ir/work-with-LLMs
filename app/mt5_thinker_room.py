@@ -210,4 +210,4 @@ def consult_mt5(
             except Exception:
                 pass
 
-            time.sleep(0)
+            time.sleep(۱)
