@@ -1,5 +1,6 @@
 import json
 import time
+import os
 
 import httpx
 
@@ -9,6 +10,14 @@ from app.model_rotation import (
     record_request_result,
 )
 
+GATEWAY_LOG_ENABLED = os.getenv(
+    "GATEWAY_LOG_ENABLED", "false"
+).lower() in ("1", "true", "yes", "on")
+
+
+def _gateway_log(message: str) -> None:
+    if GATEWAY_LOG_ENABLED:
+        print(message)
 
 def _normalize_provider_name(name: str) -> str:
     name = str(name).strip().lower()
@@ -31,16 +40,31 @@ def _record_result(
     error_type: str | None = None,
     error_message: str | None = None,
 ) -> None:
-    record_request_result(
-        model_key=model_key,
-        input_chars=input_chars,
-        output_chars=output_chars,
-        success=success,
-        ends_model_test=not success,
-        error_type=error_type,
-        error_message=error_message,
-        consumer_id="mt5",
-    )
+
+    try:
+        result = record_request_result(
+            model_key=model_key,
+            input_chars=input_chars,
+            output_chars=output_chars,
+            success=success,
+            ends_model_test=not success,
+            error_type=error_type,
+            error_message=error_message,
+            consumer_id="mt5",
+        )
+
+        _gateway_log(
+            "[ROTATION] "
+            f"model={result['model_key']} "
+            f"success={result['success']} "
+            f"chars={result['lifetime_chars']} "
+            f"status={result['test_status']}"
+        )
+
+    except (RuntimeError, ValueError, OSError) as exc:
+        _gateway_log(
+            f"[ROTATION] Could not record result: {exc}"
+        )
 
 
 def consult_mt5(
