@@ -7,7 +7,6 @@ from datetime import datetime
 
 
 APP_TITLE = "MT5 Cabin 0.1"
-REFRESH_INTERVAL = 1000
 
 
 class CabinError(Exception):
@@ -115,7 +114,7 @@ class MT5Cabin:
         self.build_ui()
         self.validate_root()
 
-        self.window.after(REFRESH_INTERVAL, self.auto_refresh)
+        
 
     # --------------------------------------------------
     # UI
@@ -236,7 +235,7 @@ class MT5Cabin:
         ttk.Button(
             buttons,
             text="Refresh",
-            command=self.refresh
+            command=lambda: self.refresh(show_message=True)
         ).pack(side="right", padx=3)
 
         response_frame = ttk.LabelFrame(
@@ -416,19 +415,12 @@ class MT5Cabin:
                     "commands.json already contains an unprocessed command."
                 )
 
-            if not messagebox.askyesno(
-                "Confirm Command",
-                "Write this command to commands.json?"
-            ):
-                return
 
             atomic_write_json(self.commands_file, data)
 
             messagebox.showinfo(
                 "MT5 Cabin",
-                "Command written successfully.\n\n"
-                "The EA must execute OnInit/RunCommands "
-                "to read this command."
+                "SENT"
             )
 
             self.refresh()
@@ -455,17 +447,7 @@ class MT5Cabin:
                     "current_request.json cannot be read."
                 )
 
-            if not messagebox.askyesno(
-                "Confirm CANCEL",
-                "Write CANCEL request?\n\n"
-                "Important:\n"
-                "This only submits a cancellation request. "
-                "It does NOT confirm that the remote operation stopped.\n\n"
-                "The current EA implementation processes control "
-                "during OnInit, so cancellation is not guaranteed "
-                "to be immediate."
-            ):
-                return
+
 
             atomic_write_json(
                 self.control_file,
@@ -481,9 +463,7 @@ class MT5Cabin:
 
             messagebox.showinfo(
                 "MT5 Cabin",
-                "CANCEL request written to control.json.\n\n"
-                "The EA must execute ProcessControl() "
-                "to read it."
+                "SENT"
             )
 
             self.refresh()
@@ -532,7 +512,7 @@ class MT5Cabin:
     # Refresh
     # --------------------------------------------------
 
-    def refresh(self):
+    def refresh(self, show_message=False):
 
         if not self.root_validated:
             return
@@ -580,16 +560,14 @@ class MT5Cabin:
                 self.response.delete("1.0", "end")
                 self.response.insert("1.0", display)
                 self.response.configure(state="disabled")
-
+                
+                if show_message:
+                    messagebox.showinfo("MT5 Cabin", "رفرش شد.")
+        
         except Exception as exc:
             self.status_var.set(f"Refresh error: {exc}")
 
-    def auto_refresh(self):
-        self.refresh()
-        self.window.after(
-            REFRESH_INTERVAL,
-            self.auto_refresh
-        )
+
 
     def run(self):
         self.window.mainloop()
