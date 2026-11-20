@@ -131,8 +131,6 @@ def _validate_envelope(envelope):
 
     command = payload.get("command")
 
-    if command != "CHART-INIT":
-        raise ValueError("Unsupported payload command.")
     if command == "CHART-INIT":
         operations = payload.get("operations")
 
@@ -151,6 +149,70 @@ def _validate_envelope(envelope):
                 raise ValueError(
                     "Each CHART-INIT operation requires a command."
                 )
+
+    elif command == "CONSULT-LLM":
+        inquiry = payload.get("inquiry")
+
+        if not isinstance(inquiry, dict):
+            raise ValueError(
+                "CONSULT-LLM requires an inquiry object."
+            )
+
+        question = inquiry.get("question")
+
+        if not isinstance(question, str) or not question.strip():
+            raise ValueError(
+                "CONSULT-LLM requires a non-empty inquiry.question."
+            )
+
+        select = payload.get("select")
+
+        if select is not None:
+            if not isinstance(select, dict):
+                raise ValueError(
+                    "CONSULT-LLM select must be an object."
+                )
+
+            if select.get("type") != "SELA":
+                raise ValueError(
+                    "CONSULT-LLM supports only SELA select type."
+                )
+
+            table = select.get("table")
+
+            if not isinstance(table, str) or not table.strip():
+                raise ValueError(
+                    "SELA requires a non-empty table."
+                )
+
+            columns = select.get("columns")
+
+            if (
+                not isinstance(columns, list)
+                or not columns
+                or any(
+                    not isinstance(column, str) or not column.strip()
+                    for column in columns
+                )
+            ):
+                raise ValueError(
+                    "SELA requires a non-empty columns array of strings."
+                )
+
+            limit = select.get("limit")
+
+            if limit is not None:
+                if (
+                    isinstance(limit, bool)
+                    or not isinstance(limit, int)
+                    or limit < 1
+                ):
+                    raise ValueError(
+                        "SELA limit must be a positive integer."
+                    )
+
+    else:
+        raise ValueError("Unsupported payload command.")
                 
     return client_id, request_id, created_at
 
