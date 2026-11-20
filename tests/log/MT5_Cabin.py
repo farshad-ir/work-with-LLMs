@@ -328,10 +328,10 @@ class MT5Cabin:
 
             if not isinstance(command["result"], str):
                 raise CabinError("Command result must be a string.")
-
-            if command["result"] not in ("", "OK", "NOK"):
+                
+            if command["result"] != "":
                 raise CabinError(
-                    "Command result must be empty, OK, or NOK."
+                    "A new command must have an empty result."
                 )
 
             return data
