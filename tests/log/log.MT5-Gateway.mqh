@@ -1660,7 +1660,9 @@ private:
          processedCount++;
       }
    
-      Print("[COMMANDS] All pending commands processed.");
+      if(processedCount == 0)
+         Print("[COMMANDS] No pending commands found.");
+      
       return true;
    }
    
