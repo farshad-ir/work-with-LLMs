@@ -113,7 +113,7 @@ class MT5Cabin:
 
         self.build_ui()
         self.validate_root()
-
+        self.refresh()
         
 
     # --------------------------------------------------
@@ -250,6 +250,7 @@ class MT5Cabin:
         viewer_toolbar.pack(fill="x", pady=(0, 6))
 
         self.viewer_path_var = tk.StringVar(value="")
+        self.viewer_is_latest = True
 
         self.viewer_path_entry = ttk.Entry(
             viewer_toolbar,
@@ -553,6 +554,108 @@ class MT5Cabin:
                 "error": str(exc)
             }
 
+
+
+        def set_viewer_text(self, text):
+
+        self.response.configure(state="normal")
+        self.response.delete("1.0", "end")
+        self.response.insert("1.0", text)
+        self.response.configure(state="disabled")
+
+
+    def display_json_file(self, path: Path):
+
+        if not path.is_file():
+            raise CabinError(f"JSON file not found:\n{path}")
+
+        content = read_text_auto(path)
+        data = json.loads(content)
+
+        modified = datetime.fromtimestamp(
+            path.stat().st_mtime
+        ).strftime("%Y-%m-%d %H:%M:%S")
+
+        display = (
+            f"File: {path.name}\n"
+            f"Modified: {modified}\n\n"
+            + json.dumps(
+                data,
+                ensure_ascii=False,
+                indent=4
+            )
+        )
+
+        self.viewer_path_var.set(str(path))
+        self.set_viewer_text(display)
+
+
+    def browse_json_file(self):
+
+        selected = filedialog.askopenfilename(
+            title="Select JSON File",
+            initialdir=str(self.received_dir),
+            filetypes=[
+                ("JSON files", "*.json"),
+                ("All files", "*.*")
+            ]
+        )
+
+        if selected:
+            self.viewer_path_var.set(selected)
+            self.viewer_is_latest = False
+
+
+    def open_json_file(self):
+
+        selected = self.viewer_path_var.get().strip()
+
+        if not selected:
+            messagebox.showwarning(
+                "JSON Viewer",
+                "Please select a JSON file first."
+            )
+            return
+
+        try:
+            self.display_json_file(Path(selected))
+
+        except Exception as exc:
+            messagebox.showerror(
+                "JSON Viewer Error",
+                str(exc)
+            )
+
+
+    def refresh_viewer(self):
+
+        if self.viewer_is_latest:
+            latest = self.get_latest_response()
+
+            if not latest:
+                self.viewer_path_var.set("")
+                self.set_viewer_text(
+                    "Waiting for received response..."
+                )
+                return
+
+            path = self.received_dir / latest["file"]
+
+            if "error" in latest:
+                self.viewer_path_var.set(str(path))
+                self.set_viewer_text(
+                    f"File: {latest['file']}\n"
+                    f"Error: {latest['error']}"
+                )
+                return
+
+            self.display_json_file(path)
+
+        else:
+            selected = self.viewer_path_var.get().strip()
+
+            if selected:
+                self.display_json_file(Path(selected))
     # --------------------------------------------------
     # Refresh
     # --------------------------------------------------
@@ -582,29 +685,7 @@ class MT5Cabin:
                     "New commands are blocked."
                 )
 
-            latest = self.get_latest_response()
-
-            if latest:
-                if "error" in latest:
-                    display = (
-                        f"File: {latest['file']}\n"
-                        f"Error: {latest['error']}"
-                    )
-                else:
-                    display = (
-                        f"File: {latest['file']}\n"
-                        f"Modified: {latest['modified']}\n\n"
-                        + json.dumps(
-                            latest["data"],
-                            ensure_ascii=False,
-                            indent=4
-                        )
-                    )
-
-                self.response.configure(state="normal")
-                self.response.delete("1.0", "end")
-                self.response.insert("1.0", display)
-                self.response.configure(state="disabled")
+            self.refresh_viewer()
                 
             if show_message:
                 messagebox.showinfo("MT5 Cabin", "رفرش شد.")
