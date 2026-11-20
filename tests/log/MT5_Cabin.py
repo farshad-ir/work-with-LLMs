@@ -208,6 +208,7 @@ class MT5Cabin:
                     "commands": [
                         {
                             "command": "LIST-TABL",
+                            "status": "",
                             "result": ""
                         }
                     ]
@@ -366,38 +367,18 @@ class MT5Cabin:
 
             commands = data.get("commands")
 
-            if not isinstance(commands, list):
-                raise CabinError("'commands' must be an array.")
+            if not isinstance(commands, list) or not commands:
+                raise CabinError("'commands' must be a non-empty array.")
 
-            if len(commands) != 1:
-                raise CabinError(
-                    "Version 0.1 supports exactly one command."
-                )
+            for command in commands:
 
-            command = commands[0]
+                if not isinstance(command, dict):
+                    raise CabinError("Each command must be an object.")
 
-            if not isinstance(command, dict):
-                raise CabinError("Command entry must be an object.")
-
-            required = {"command", "result"}
-
-            if set(command.keys()) != required:
-                raise CabinError(
-                    "Command must contain only 'command' and 'result'."
-                )
-
-            if command["command"] != "LIST-TABL":
-                raise CabinError(
-                    "MT5 Gateway v0.1 currently supports LIST-TABL only."
-                )
-
-            if not isinstance(command["result"], str):
-                raise CabinError("Command result must be a string.")
-                
-            if command["result"] != "":
-                raise CabinError(
-                    "A new command must have an empty result."
-                )
+                if not isinstance(command.get("status"), str):
+                    raise CabinError(
+                        "Each command must have a string status."
+                    )
 
             return data
 
@@ -444,7 +425,7 @@ class MT5Cabin:
             commands = data.get("commands", [])
 
             for command in commands:
-                if command.get("result") == "":
+                if command.get("status") == "":
                     return True
 
         except Exception as exc:
