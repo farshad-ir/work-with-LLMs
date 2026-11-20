@@ -429,22 +429,28 @@ def _select_all(payload, conn=None):
             f'"{name}"' for name in column_names
         )
 
-        sql = (
-            f'SELECT {quoted_columns} '
-            f'FROM "{table}" ORDER BY "id" ASC'
-        )
-
-        params = ()
-
         if limit is not None:
-            sql += " LIMIT ?"
+            sql = (
+                f'SELECT {quoted_columns} '
+                f'FROM ('
+                f'SELECT * FROM "{table}" '
+                f'ORDER BY "id" DESC LIMIT ?'
+                f') AS recent '
+                f'ORDER BY "id" ASC'
+            )
             params = (limit,)
+        else:
+            sql = (
+                f'SELECT {quoted_columns} '
+                f'FROM "{table}" ORDER BY "id" ASC'
+            )
+            params = ()
 
         rows = connection.execute(
             sql,
             params,
         ).fetchall()
-
+        
         return {
             "table": table,
             "columns": column_names,
