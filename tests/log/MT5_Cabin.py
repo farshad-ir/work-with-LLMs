@@ -561,8 +561,8 @@ class MT5Cabin:
                 self.response.insert("1.0", display)
                 self.response.configure(state="disabled")
                 
-                if show_message:
-                    messagebox.showinfo("MT5 Cabin", "رفرش شد.")
+            if show_message:
+                messagebox.showinfo("MT5 Cabin", "رفرش شد.")
         
         except Exception as exc:
             self.status_var.set(f"Refresh error: {exc}")
