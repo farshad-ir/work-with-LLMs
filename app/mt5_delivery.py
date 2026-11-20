@@ -4,6 +4,7 @@ import sqlite3
 import secrets
 
 from app.mt5_sqlite import execute_command
+from app.mt5_thinker_room import consult_mt5
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -575,6 +576,50 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
 
         if not success:
             response_payload["error"] = "CHART-INIT operation failed."
+
+    elif command == "CONSULT-LLM":
+
+        select_result = None
+        select = payload.get("select")
+
+        if select is not None:
+            operation = {
+                "command": select["type"],
+                "table": select["table"],
+                "columns": select["columns"],
+            }
+
+            if "limit" in select:
+                operation["limit"] = select["limit"]
+
+            execution_id = (
+                f"{client_id}:{request_id}:CONSULT-LLM:SELA"
+            )
+
+            select_response = execute_command(
+                operation,
+                execution_id=execution_id,
+            )
+
+            if not select_response.get("success"):
+                success = False
+                response_payload = {
+                    "error": "CONSULT-LLM SELA failed.",
+                    "details": select_response.get("error"),
+                }
+            else:
+                select_result = select_response["result"]
+
+        if success:
+            result = consult_mt5(
+                payload["inquiry"],
+                select_result=select_result,
+            )
+
+            response_payload = {
+                "model_key": result["model_key"],
+                "answer": result["answer"],
+            }
 
     else:
         success = False
