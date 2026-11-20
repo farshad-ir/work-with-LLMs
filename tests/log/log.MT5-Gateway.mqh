@@ -1589,26 +1589,26 @@ private:
 
       for(int i = 0; i < count; i++)
       {
+
          string command =
-         root["commands"][i]["command"].ToStr();
-         
-         string result =
-            root["commands"][i]["result"].ToStr();
-         
-         if(result != "")
+            root["commands"][i]["command"].ToStr();
+
+         string status =
+            root["commands"][i]["status"].ToStr();
+
+         if(status != "")
             continue;
-         
-         root["commands"][i]["result"] = "NOK";
-         
+
+         root["commands"][i]["status"] = "PROCESSING";
+
          if(!GatewaySaveCommands(root))
          {
-            Print("[COMMANDS] Cannot save execution marker.");
+            Print("[COMMANDS] Cannot save execution status.");
             return false;
          }
 
-
          string body = "";
-   
+
          if(command == "LIST-TABL")
          {
             body =
@@ -1621,13 +1621,35 @@ private:
                "]"
                "}";
          }
-         
          else
          {
-            Print("[COMMANDS] Unsupported command: ", command);
+            CJAVal bodyObject;
+            bodyObject.Clear(jtOBJ);
+
+            for(int fieldIndex = 0;
+                fieldIndex < root["commands"][i].Size();
+                fieldIndex++)
+            {
+               string fieldName =
+                  root["commands"][i].m_e[fieldIndex].m_key;
+
+               if(fieldName == "status" ||
+                  fieldName == "result")
+                  continue;
+
+               bodyObject.Add(
+                  root["commands"][i].m_e[fieldIndex]
+               );
+            }
+
+            body = bodyObject.Serialize();
+         }
+
+         if(body == "")
+         {
+            Print("[COMMANDS] Cannot serialize command body.");
             return false;
          }
-         
          Print("[COMMANDS] Executing command: ", command);
          
          if(!GatewayExecuteRequest(body))
