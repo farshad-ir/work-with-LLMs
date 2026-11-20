@@ -122,7 +122,12 @@ class MT5Cabin:
 
     def build_ui(self):
 
-        main = ttk.Frame(self.window, padding=12)
+        
+        self.main_frame = ttk.Frame(self.window, padding=12)
+        main = self.main_frame
+        self.viewer_maximized = False
+        self.normal_layout = None
+        
         main.pack(fill="both", expand=True)
 
         ttk.Label(
@@ -238,13 +243,13 @@ class MT5Cabin:
             command=lambda: self.refresh(show_message=True)
         ).pack(side="right", padx=3)
 
-        response_frame = ttk.LabelFrame(
+        self.viewer_frame = ttk.LabelFrame(
             main,
             text="JSON Viewer",
             padding=8
         )
         
-        response_frame.pack(fill="both", expand=True, pady=8)
+        self.viewer_frame.pack(fill="both", expand=True, pady=8)
 
         viewer_toolbar = ttk.Frame(response_frame)
         viewer_toolbar.pack(fill="x", pady=(0, 6))
@@ -275,7 +280,14 @@ class MT5Cabin:
             text="Open",
             command=self.open_json_file
         ).pack(side="left", padx=3)
-
+        
+        self.viewer_toggle_button = ttk.Button(
+            viewer_toolbar,
+            text="Maximize",
+            command=self.toggle_viewer
+        )
+        self.viewer_toggle_button.pack(side="right", padx=3)
+        
         viewer_text_frame = ttk.Frame(response_frame)
         viewer_text_frame.pack(fill="both", expand=True)
 
@@ -561,7 +573,42 @@ class MT5Cabin:
                 "file": latest.name,
                 "error": str(exc)
             }
+            
+    def toggle_viewer(self):
 
+        if not self.viewer_maximized:
+
+            self.normal_layout = [
+                (widget, widget.pack_info())
+                for widget in self.main_frame.winfo_children()
+            ]
+
+            for widget in self.main_frame.winfo_children():
+                widget.pack_forget()
+
+            self.viewer_frame.pack(fill="both", expand=True)
+
+            self.viewer_toggle_button.configure(
+                text="Restore"
+            )
+
+            self.viewer_maximized = True
+
+        else:
+
+            self.viewer_frame.pack_forget()
+
+            for widget, pack_options in self.normal_layout:
+                widget.pack(**pack_options)
+
+            self.normal_layout = None
+
+            self.viewer_toggle_button.configure(
+                text="Maximize"
+            )
+
+            self.viewer_maximized = False
+            
     def select_all_response(self, event=None):
 
         self.response.tag_add("sel", "1.0", "end-1c")
