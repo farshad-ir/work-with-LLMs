@@ -203,9 +203,8 @@ class MT5Cabin:
                 {
                     "commands": [
                         {
-                            "id": "list-tables-001",
                             "command": "LIST-TABL",
-                            "status": "PENDING"
+                            "result": ""
                         }
                     ]
                 },
@@ -315,22 +314,25 @@ class MT5Cabin:
             if not isinstance(command, dict):
                 raise CabinError("Command entry must be an object.")
 
-            required = ("id", "command", "status")
+            required = {"command", "result"}
 
-            for key in required:
-                if key not in command:
-                    raise CabinError(f"Missing field: {key}")
-
-            if not isinstance(command["id"], str) or not command["id"].strip():
-                raise CabinError("Command id must be a non-empty string.")
+            if set(command.keys()) != required:
+                raise CabinError(
+                    "Command must contain only 'command' and 'result'."
+                )
 
             if command["command"] != "LIST-TABL":
                 raise CabinError(
                     "MT5 Gateway v0.1 currently supports LIST-TABL only."
                 )
 
-            if command["status"] != "PENDING":
-                raise CabinError("Command status must be PENDING.")
+            if not isinstance(command["result"], str):
+                raise CabinError("Command result must be a string.")
+
+            if command["result"] not in ("", "OK", "NOK"):
+                raise CabinError(
+                    "Command result must be empty, OK, or NOK."
+                )
 
             return data
 
@@ -377,7 +379,7 @@ class MT5Cabin:
             commands = data.get("commands", [])
 
             for command in commands:
-                if command.get("status") == "PENDING":
+                if command.get("result") == "":
                     return True
 
         except Exception as exc:
@@ -409,10 +411,9 @@ class MT5Cabin:
                     "A current request already exists. "
                     "New command is blocked."
                 )
-
             if self.get_pending_command():
                 raise CabinError(
-                    "commands.json already contains a PENDING command."
+                    "commands.json already contains an unprocessed command."
                 )
 
             if not messagebox.askyesno(
