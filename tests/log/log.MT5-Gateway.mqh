@@ -1677,7 +1677,7 @@ private:
                return false;
             }
          }
-         Print("[COMMANDS] Executing command: ", command);
+         
          
          bool gatewaySuccess = false;
 
@@ -2046,6 +2046,21 @@ private:
    
    bool GatewayResumePendingRequest()
    {
+      GatewayState state;
+   
+      if(!GatewayLoadState(state))
+      {
+         Print("[GATEWAY] Cannot load state for resume.");
+         return false;
+      }
+   
+      if(state == STATE_IDLE ||
+         !FileIsExist(m_requestFile, FILE_COMMON))
+      {
+         Print("[GATEWAY] No pending request to resume.");
+         return false;
+      }
+   
       return GatewayExecuteRequest("", false);
    }
    
