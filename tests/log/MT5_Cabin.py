@@ -207,7 +207,7 @@ class MT5Cabin:
         self.editor_toggle_button.pack(side="right", padx=3)
         
         self.editor = tk.Text(
-            editor_frame,
+            self.editor_frame,
             height=9,
             font=("Consolas", 10),
             wrap="none"
@@ -587,7 +587,10 @@ class MT5Cabin:
             }
             
     def toggle_viewer(self):
-
+        
+        if self.editor_maximized:
+            return
+        
         if not self.viewer_maximized:
 
             self.normal_layout = [
