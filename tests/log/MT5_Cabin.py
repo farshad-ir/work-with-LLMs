@@ -283,7 +283,8 @@ class MT5Cabin:
             text="Open",
             command=self.open_json_file
         ).pack(side="left", padx=3)
-                self.viewer_json_button = ttk.Button(
+        
+        self.viewer_json_button = ttk.Button(
             viewer_toolbar,
             text="JSON",
             command=self.show_json_view
