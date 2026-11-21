@@ -2027,7 +2027,26 @@ private:
       Print("[GATEWAY] Maximum execution steps reached.");
       return false;
    }
-      
+
+   bool GatewayResumePendingRequest()
+   {
+      GatewayState state;
+
+      if(!GatewayLoadState(state))
+      {
+         Print("[GATEWAY] Cannot load state for resume.");
+         return false;
+      }
+
+      if(state == STATE_IDLE ||
+         !FileIsExist(m_requestFile, FILE_COMMON))
+      {
+         Print("[GATEWAY] No pending request to resume.");
+         return false;
+      }
+
+      return GatewayExecuteRequest("", false);
+   }
 
 public:
    bool Initialize( const string clientId, const string folderName )
@@ -2092,6 +2111,11 @@ public:
       return GatewayProcessControl();
    }
 
+   bool ResumePendingRequest()
+   {
+      ResumePendingRequest();
+   }
+   
    bool RunCommands()
    {
       return GatewayRunCommands();
