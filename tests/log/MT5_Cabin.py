@@ -127,6 +127,8 @@ class MT5Cabin:
         self.main_frame = ttk.Frame(self.window, padding=12)
         main = self.main_frame
         self.viewer_maximized = False
+        self.editor_maximized = False
+        
         self.normal_layout = None
         
         main.pack(fill="both", expand=True)
@@ -187,13 +189,23 @@ class MT5Cabin:
             pady=(8, 0)
         )
 
-        editor_frame = ttk.LabelFrame(
+        self.editor_frame = ttk.LabelFrame(
             main,
             text="Command JSON Editor",
             padding=8
         )
-        editor_frame.pack(fill="both", expand=True, pady=8)
+        self.editor_frame.pack(fill="both", expand=True, pady=8)
 
+        editor_toolbar = ttk.Frame(self.editor_frame)
+        editor_toolbar.pack(fill="x", pady=(0, 6))
+
+        self.editor_toggle_button = ttk.Button(
+            editor_toolbar,
+            text="Maximize",
+            command=self.toggle_editor
+        )
+        self.editor_toggle_button.pack(side="right", padx=3)
+        
         self.editor = tk.Text(
             editor_frame,
             height=9,
@@ -608,6 +620,46 @@ class MT5Cabin:
             )
 
             self.viewer_maximized = False
+            
+    def toggle_editor(self):
+
+        if not self.editor_maximized:
+
+            if self.viewer_maximized:
+                return
+
+            self.normal_layout = [
+                (widget, widget.pack_info())
+                for widget in self.main_frame.winfo_children()
+            ]
+
+            for widget in self.main_frame.winfo_children():
+                widget.pack_forget()
+
+            self.editor_frame.pack(fill="both", expand=True)
+
+            self.editor_toggle_button.configure(
+                text="Restore"
+            )
+
+            self.editor_maximized = True
+
+        else:
+
+            self.editor_frame.pack_forget()
+
+            for widget, pack_options in self.normal_layout:
+                widget.pack(**pack_options)
+
+            self.normal_layout = None
+
+            self.editor_toggle_button.configure(
+                text="Maximize"
+            )
+
+            self.editor_maximized = False
+
+    
             
     def select_all_response(self, event=None):
 
