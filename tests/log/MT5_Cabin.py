@@ -128,6 +128,7 @@ class MT5Cabin:
         main = self.main_frame
         self.viewer_maximized = False
         self.editor_maximized = False
+        self.command_form_maximized = False
         
         self.normal_layout = None
         
@@ -218,6 +219,12 @@ class MT5Cabin:
             width=20
         )
         self.command_type_selector.pack(side="left")
+        self.command_form_toggle_button = ttk.Button(
+            command_selector_frame,
+            text="Maximize",
+            command=self.toggle_command_form
+        )
+        self.command_form_toggle_button.pack(side="right", padx=3)
 
         self.command_type_selector.bind(
             "<<ComboboxSelected>>",
@@ -517,6 +524,48 @@ class MT5Cabin:
                 textvariable=self.resend_end_var,
                 width=20
             ).pack(side="left", padx=5)
+
+    def toggle_command_form(self):
+
+        if not self.command_form_maximized:
+
+            if self.viewer_maximized or self.editor_maximized:
+                return
+
+            self.normal_layout = [
+                (widget, widget.pack_info())
+                for widget in self.main_frame.winfo_children()
+            ]
+
+            for widget in self.main_frame.winfo_children():
+                widget.pack_forget()
+
+            self.command_form_frame.pack(
+                fill="both",
+                expand=True
+            )
+
+            self.command_form_toggle_button.configure(
+                text="Restore"
+            )
+
+            self.command_form_maximized = True
+
+        else:
+
+            self.command_form_frame.pack_forget()
+
+            for widget, pack_options in self.normal_layout:
+                widget.pack(**pack_options)
+
+            self.normal_layout = None
+
+            self.command_form_toggle_button.configure(
+                text="Maximize"
+            )
+
+            self.command_form_maximized = False
+
     
     # --------------------------------------------------
     # Validation
@@ -754,7 +803,7 @@ class MT5Cabin:
             
     def toggle_viewer(self):
         
-        if self.editor_maximized:
+        if self.editor_maximized or self.command_form_maximized:
             return
         
         if not self.viewer_maximized:
@@ -794,7 +843,7 @@ class MT5Cabin:
 
         if not self.editor_maximized:
 
-            if self.viewer_maximized:
+            if self.viewer_maximized or self.command_form_maximized:
                 return
 
             self.normal_layout = [
