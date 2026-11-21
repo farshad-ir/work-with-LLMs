@@ -1497,7 +1497,7 @@ private:
    
    bool GatewayReadCommandResponse(
       const string requestId,
-      string &responseStatus,
+      string &responseStatus
    )
    {
       responseStatus = "";
@@ -1681,7 +1681,7 @@ private:
 
          if(!GatewayReadCommandResponse(
             requestId,
-            responseStatus,
+            responseStatus
             
          ))
          {
