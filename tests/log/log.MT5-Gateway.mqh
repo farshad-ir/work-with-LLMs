@@ -1615,63 +1615,84 @@ private:
          string status =
             root["commands"][i]["status"].ToStr();
 
-         if(status != "")
+         bool resumePending = (status == "PROCESSING");
+
+         if(status != "" && !resumePending)
             continue;
 
-         root["commands"][i]["status"] = "PROCESSING";
-
-         if(!GatewaySaveCommands(root))
+         if(!resumePending)
          {
-            Print("[COMMANDS] Cannot save execution status.");
-            return false;
+            root["commands"][i]["status"] = "PROCESSING";
+
+            if(!GatewaySaveCommands(root))
+            {
+               Print("[COMMANDS] Cannot save execution status.");
+               return false;
+            }
          }
 
          string body = "";
 
-         if(command == "LIST-TABL")
+         if(!resumePending)
          {
-            body =
-               "{"
-               "\"command\":\"INIT\","
-               "\"operations\":["
-                  "{"
-                     "\"command\":\"LIST-TABL\""
-                  "}"
-               "]"
-               "}";
-         }
-         else
-         {
-            CJAVal bodyObject;
-            bodyObject.Clear(jtOBJ);
-
-            for(int fieldIndex = 0;
-                fieldIndex < root["commands"][i].Size();
-                fieldIndex++)
+            if(command == "LIST-TABL")
             {
-               string fieldName =
-                  root["commands"][i].m_e[fieldIndex].m_key;
+               body =
+                  "{"
+                  "\"command\":\"INIT\","
+                  "\"operations\":["
+                     "{"
+                        "\"command\":\"LIST-TABL\""
+                     "}"
+                  "]"
+                  "}";
+            }
+            else
+            {
+               CJAVal bodyObject;
+               bodyObject.Clear(jtOBJ);
 
-               if(fieldName == "status" ||
-                  fieldName == "result")
-                  continue;
+               for(int fieldIndex = 0;
+                   fieldIndex < root["commands"][i].Size();
+                   fieldIndex++)
+               {
+                  string fieldName =
+                     root["commands"][i].m_e[fieldIndex].m_key;
 
-               bodyObject.Add(
-                  root["commands"][i].m_e[fieldIndex]
-               );
+                  if(fieldName == "status" ||
+                     fieldName == "result")
+                     continue;
+
+                  bodyObject.Add(
+                     root["commands"][i].m_e[fieldIndex]
+                  );
+               }
+
+               body = bodyObject.Serialize();
             }
 
-            body = bodyObject.Serialize();
-         }
-
-         if(body == "")
-         {
-            Print("[COMMANDS] Cannot serialize command body.");
-            return false;
+            if(body == "")
+            {
+               Print("[COMMANDS] Cannot serialize command body.");
+               return false;
+            }
          }
          Print("[COMMANDS] Executing command: ", command);
          
-         if(!GatewayExecuteRequest(body))
+         bool gatewaySuccess = false;
+
+         if(resumePending)
+         {
+            Print("[COMMANDS] Resuming pending command: ", command);
+            gatewaySuccess = GatewayResumePendingRequest();
+         }
+         else
+         {
+            Print("[COMMANDS] Executing command: ", command);
+            gatewaySuccess = GatewayExecuteRequest(body);
+         }
+
+         if(!gatewaySuccess)
          {
             Print("[COMMANDS] Gateway execution failed.");
             return false;
