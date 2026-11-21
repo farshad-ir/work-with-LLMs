@@ -1699,6 +1699,13 @@ private:
          }
    
          string requestId = m_lastRequestId;
+
+         if(requestId == "")
+         {
+            Print("[COMMANDS] Missing request ID after gateway execution.");
+            return false;
+         }
+
          string responseStatus = "";
          string payloadJson = "";
 
