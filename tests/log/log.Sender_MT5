@@ -34,8 +34,8 @@ input string InpGatewayFolderName = "LLM-B";
 //+------------------------------------------------------------------+
 //| Configuration                                                    |
 //+------------------------------------------------------------------+
-#define H1_HISTORY_CAPACITY 100
-#define H6_HISTORY_CAPACITY 20
+#define H1_HISTORY_CAPACITY 101
+#define H6_HISTORY_CAPACITY 21
 
 
 //+------------------------------------------------------------------+
@@ -161,7 +161,7 @@ int OnInit()
    
    
    
-   for(int i = h1Copied - 1; i > 0; i--)
+   for(int i = h1Copied-1; i > 0; i--)
    {
       H1_river.Update(i);
       int dir = mabif_h1.AddPoint( H1_river.Center() );
@@ -219,10 +219,16 @@ data += "}";
 if(!Gateway.ExecuteRequest(data))
 {
    Print("[GATEWAY] Request execution did not complete.");
-   return INIT_SUCCEEDED;
-}
+   
+}else{
 
    Print("[GATEWAY] Request execution completed.");
+
+}
+
+Print("");
+Print("");
+Print("");   
 
    return INIT_SUCCEEDED;
 }
