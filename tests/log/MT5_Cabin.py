@@ -208,8 +208,7 @@ class MT5Cabin:
                     "commands": [
                         {
                             "command": "LIST-TABL",
-                            "status": "",
-                            "result": ""
+                            "status": ""
                         }
                     ]
                 },
@@ -443,6 +442,8 @@ class MT5Cabin:
 
         try:
             data = self.validate_command()
+            for command in data["commands"]:
+                command.pop("result", None)
 
             state = self.get_state()
             request_id = self.get_current_request()
