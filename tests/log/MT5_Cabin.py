@@ -232,11 +232,7 @@ class MT5Cabin:
         buttons = ttk.Frame(main)
         buttons.pack(fill="x", pady=5)
 
-        ttk.Button(
-            buttons,
-            text="Validate JSON",
-            command=self.validate_command
-        ).pack(side="left", padx=3)
+        
 
         ttk.Button(
             buttons,
