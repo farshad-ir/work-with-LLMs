@@ -1615,81 +1615,63 @@ private:
          string status =
             root["commands"][i]["status"].ToStr();
 
-         bool resumePending = (status == "PROCESSING");
-
-         if(status != "" && !resumePending)
+         if(status != "")
             continue;
-
-         if(!resumePending)
-         {
-            root["commands"][i]["status"] = "PROCESSING";
-
-            if(!GatewaySaveCommands(root))
-            {
-               Print("[COMMANDS] Cannot save execution status.");
-               return false;
-            }
-         }
 
          string body = "";
 
-         if(!resumePending)
+         if(command == "LIST-TABL")
          {
-            if(command == "LIST-TABL")
-            {
-               body =
+            body =
+               "{"
+               "\"command\":\"CHART-INIT\","
+               "\"operations\":["
                   "{"
-                  "\"command\":\"CHART-INIT\","
-                  "\"operations\":["
-                     "{"
-                        "\"command\":\"LIST-TABL\""
-                     "}"
-                  "]"
-                  "}";
-            }
-            else
-            {
-               CJAVal bodyObject;
-               bodyObject.Clear(jtOBJ);
-
-               for(int fieldIndex = 0;
-                   fieldIndex < root["commands"][i].Size();
-                   fieldIndex++)
-               {
-                  string fieldName =
-                     root["commands"][i].m_e[fieldIndex].m_key;
-
-                  if(fieldName == "status" ||
-                     fieldName == "result")
-                     continue;
-
-                  bodyObject.Add(
-                     root["commands"][i].m_e[fieldIndex]
-                  );
-               }
-
-               body = bodyObject.Serialize();
-            }
-
-            if(body == "")
-            {
-               Print("[COMMANDS] Cannot serialize command body.");
-               return false;
-            }
-         }
-         
-         
-         bool gatewaySuccess = false;
-
-         if(resumePending)
-         {
-            Print("[COMMANDS] Resuming pending command: ", command);
-            gatewaySuccess = GatewayResumePendingRequest();
+                     "\"command\":\"LIST-TABL\""
+                  "}"
+               "]"
+               "}";
          }
          else
          {
-            Print("[COMMANDS] Executing command: ", command);
-            gatewaySuccess = GatewayExecuteRequest(body);
+            CJAVal bodyObject;
+            bodyObject.Clear(jtOBJ);
+
+            for(int fieldIndex = 0;
+                fieldIndex < root["commands"][i].Size();
+                fieldIndex++)
+            {
+               string fieldName =
+                  root["commands"][i].m_e[fieldIndex].m_key;
+
+               if(fieldName == "status" ||
+                  fieldName == "result")
+                  continue;
+
+               bodyObject.Add(
+                  root["commands"][i].m_e[fieldIndex]
+               );
+            }
+
+            body = bodyObject.Serialize();
+         }
+
+         if(body == "")
+         {
+            Print("[COMMANDS] Cannot serialize command body.");
+            return false;
+         }
+         
+         
+         
+         Print("[COMMANDS] Executing command: ", command);
+
+         bool gatewaySuccess = GatewayExecuteRequest(body);
+
+         if(!gatewaySuccess)
+         {
+            Print("[COMMANDS] Gateway execution failed.");
+            return false;
          }
 
          if(!gatewaySuccess)
@@ -2050,27 +2032,7 @@ private:
       Print("[GATEWAY] Maximum execution steps reached.");
       return false;
    }
-   
-   bool GatewayResumePendingRequest()
-   {
-      GatewayState state;
-   
-      if(!GatewayLoadState(state))
-      {
-         Print("[GATEWAY] Cannot load state for resume.");
-         return false;
-      }
-   
-      if(state == STATE_IDLE ||
-         !FileIsExist(m_requestFile, FILE_COMMON))
-      {
-         Print("[GATEWAY] No pending request to resume.");
-         return false;
-      }
-   
-      return GatewayExecuteRequest("", false);
-   }
-   
+      
 
 public:
    bool Initialize( const string clientId, const string folderName )
@@ -2133,10 +2095,6 @@ public:
    bool ProcessControl()
    {
       return GatewayProcessControl();
-   }
-   bool ResumePendingRequest()
-   {
-      return GatewayResumePendingRequest();
    }
 
    bool RunCommands()
