@@ -1674,11 +1674,6 @@ private:
             return false;
          }
 
-         if(!gatewaySuccess)
-         {
-            Print("[COMMANDS] Gateway execution failed.");
-            return false;
-         }
    
          string requestId = m_lastRequestId;
 
