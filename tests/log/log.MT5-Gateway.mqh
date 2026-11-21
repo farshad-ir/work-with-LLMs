@@ -62,7 +62,7 @@ private:
    string m_clientId;
    string m_requestId;
    string m_lastRequestId;
-   uchar  m_response[262144]];
+   uchar  m_response[262144];
 
    string m_folderName;
    string m_rootDir;
