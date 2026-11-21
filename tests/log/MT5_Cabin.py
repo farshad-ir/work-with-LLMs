@@ -649,6 +649,7 @@ class MT5Cabin:
             raise CabinError(f"JSON file not found:\n{path}")
 
         content = read_text_auto(path)
+        data = json.loads(content)
         self.viewer_current_data = data
 
         modified = datetime.fromtimestamp(
@@ -686,8 +687,7 @@ class MT5Cabin:
         else:
             self.show_json_view()
 
-        self.viewer_path_var.set(str(path))
-        self.set_viewer_text(display)
+
 
 
     def browse_json_file(self):
