@@ -1639,7 +1639,7 @@ private:
             {
                body =
                   "{"
-                  "\"command\":\"INIT\","
+                  "\"command\":\"CHART-INIT\","
                   "\"operations\":["
                      "{"
                         "\"command\":\"LIST-TABL\""
