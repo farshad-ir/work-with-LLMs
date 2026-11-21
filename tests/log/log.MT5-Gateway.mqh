@@ -2113,7 +2113,7 @@ public:
 
    bool ResumePendingRequest()
    {
-      ResumePendingRequest();
+      return GatewayResumePendingRequest();
    }
    
    bool RunCommands()
