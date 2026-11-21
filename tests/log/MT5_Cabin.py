@@ -391,6 +391,7 @@ class MT5Cabin:
         response_scrollbar.pack(side="right", fill="y")
 
         self.set_viewer_text("Waiting for received response...")
+        self.on_command_type_changed()
 
     def on_command_type_changed(self, event=None):
 
