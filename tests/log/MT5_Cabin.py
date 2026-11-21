@@ -189,6 +189,50 @@ class MT5Cabin:
             pady=(8, 0)
         )
 
+        self.command_form_frame = ttk.LabelFrame(
+            main,
+            text="Command Form",
+            padding=8
+        )
+        self.command_form_frame.pack(fill="x", pady=5)
+
+        command_selector_frame = ttk.Frame(self.command_form_frame)
+        command_selector_frame.pack(fill="x")
+
+        ttk.Label(
+            command_selector_frame,
+            text="Command Type:"
+        ).pack(side="left", padx=(0, 8))
+
+        self.command_type_var = tk.StringVar(value="CHART-INIT")
+
+        self.command_type_selector = ttk.Combobox(
+            command_selector_frame,
+            textvariable=self.command_type_var,
+            values=[
+                "CONSULT-LLM",
+                "CHART-INIT",
+                "MT5-RESEND"
+            ],
+            state="readonly",
+            width=20
+        )
+        self.command_type_selector.pack(side="left")
+
+        self.command_type_selector.bind(
+            "<<ComboboxSelected>>",
+            self.on_command_type_changed
+        )
+
+        self.command_fields_frame = ttk.Frame(
+            self.command_form_frame
+        )
+        self.command_fields_frame.pack(
+            fill="both",
+            expand=True,
+            pady=(10, 0)
+        )
+        
         self.editor_frame = ttk.LabelFrame(
             main,
             text="Command JSON Editor",
@@ -348,6 +392,131 @@ class MT5Cabin:
 
         self.set_viewer_text("Waiting for received response...")
 
+    def on_command_type_changed(self, event=None):
+
+        for widget in self.command_fields_frame.winfo_children():
+            widget.destroy()
+
+        command_type = self.command_type_var.get()
+
+        if command_type == "CONSULT-LLM":
+            self.build_consult_form()
+
+        elif command_type == "CHART-INIT":
+            ttk.Label(
+                self.command_fields_frame,
+                text="This command does not require additional input."
+            ).pack(anchor="w")
+
+        elif command_type == "MT5-RESEND":
+            self.build_resend_form()
+
+    def build_consult_form(self):
+
+        candles_frame = ttk.Frame(self.command_fields_frame)
+        candles_frame.pack(fill="x", pady=3)
+
+        ttk.Label(
+            candles_frame,
+            text="Candle Count (optional):"
+        ).pack(side="left")
+
+        self.candle_count_var = tk.StringVar()
+
+        ttk.Entry(
+            candles_frame,
+            textvariable=self.candle_count_var,
+            width=12
+        ).pack(side="left", padx=8)
+
+        ttk.Label(
+            self.command_fields_frame,
+            text="Question:"
+        ).pack(anchor="w", pady=(8, 3))
+
+        self.question_text = tk.Text(
+            self.command_fields_frame,
+            height=7,
+            font=("Arial", 10),
+            wrap="word"
+        )
+        self.question_text.pack(fill="both", expand=True)
+
+        translation_frame = ttk.Frame(self.command_fields_frame)
+        translation_frame.pack(fill="x", pady=5)
+
+        self.translate_button = ttk.Button(
+            translation_frame,
+            text="Translate to English",
+            state="disabled"
+        )
+        self.translate_button.pack(side="left")
+
+        ttk.Label(
+            translation_frame,
+            text="Translation engine not connected."
+        ).pack(side="left", padx=8)
+
+    def build_resend_form(self):
+
+        self.resend_mode_var = tk.StringVar(value="SEND-NEXT")
+
+        ttk.Radiobutton(
+            self.command_fields_frame,
+            text="Send Next",
+            variable=self.resend_mode_var,
+            value="SEND-NEXT",
+            command=self.update_resend_fields
+        ).pack(anchor="w")
+
+        ttk.Radiobutton(
+            self.command_fields_frame,
+            text="Date Range",
+            variable=self.resend_mode_var,
+            value="DATE-RANGE",
+            command=self.update_resend_fields
+        ).pack(anchor="w")
+
+        self.resend_date_frame = ttk.Frame(
+            self.command_fields_frame
+        )
+        self.resend_date_frame.pack(fill="x", pady=5)
+
+        self.update_resend_fields()
+
+    def update_resend_fields(self):
+
+        for widget in self.resend_date_frame.winfo_children():
+            widget.destroy()
+
+        if self.resend_mode_var.get() == "DATE-RANGE":
+
+            ttk.Label(
+                self.resend_date_frame,
+                text="Start Date:"
+            ).pack(side="left")
+
+            self.resend_start_var = tk.StringVar()
+
+            ttk.Entry(
+                self.resend_date_frame,
+                textvariable=self.resend_start_var,
+                width=20
+            ).pack(side="left", padx=5)
+
+            ttk.Label(
+                self.resend_date_frame,
+                text="End Date:"
+            ).pack(side="left", padx=(10, 0))
+
+            self.resend_end_var = tk.StringVar()
+
+            ttk.Entry(
+                self.resend_date_frame,
+                textvariable=self.resend_end_var,
+                width=20
+            ).pack(side="left", padx=5)
+    
     # --------------------------------------------------
     # Validation
     # --------------------------------------------------
@@ -788,6 +957,7 @@ class MT5Cabin:
                 self.set_viewer_text(
                     "Waiting for received response..."
                 )
+                self.on_command_type_changed()
                 return
 
             path = self.received_dir / latest["file"]
