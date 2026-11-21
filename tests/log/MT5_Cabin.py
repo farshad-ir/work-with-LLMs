@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from pathlib import Path
 from datetime import datetime
+import html
 
 
 APP_TITLE = "MT5 Cabin 0.1"
@@ -256,6 +257,8 @@ class MT5Cabin:
 
         self.viewer_path_var = tk.StringVar(value="")
         self.viewer_is_latest = True
+        self.viewer_mode = "json"
+        self.viewer_current_data = None
 
         self.viewer_path_entry = ttk.Entry(
             viewer_toolbar,
@@ -280,6 +283,20 @@ class MT5Cabin:
             text="Open",
             command=self.open_json_file
         ).pack(side="left", padx=3)
+                self.viewer_json_button = ttk.Button(
+            viewer_toolbar,
+            text="JSON",
+            command=self.show_json_view
+        )
+        self.viewer_json_button.pack(side="left", padx=3)
+
+        self.viewer_answer_button = ttk.Button(
+            viewer_toolbar,
+            text="Answer",
+            command=self.show_answer_view,
+            state="disabled"
+        )
+        self.viewer_answer_button.pack(side="left", padx=3)
         
         self.viewer_toggle_button = ttk.Button(
             viewer_toolbar,
