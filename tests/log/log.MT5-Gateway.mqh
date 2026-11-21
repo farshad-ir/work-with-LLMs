@@ -1498,11 +1498,10 @@ private:
    bool GatewayReadCommandResponse(
       const string requestId,
       string &responseStatus,
-      string &payloadJson
    )
    {
       responseStatus = "";
-      payloadJson = "";
+      
 
       if(requestId == "")
          return false;
@@ -1572,13 +1571,7 @@ private:
          return false;
       }
 
-      payloadJson = result["payload"].Serialize();
-
-      if(payloadJson == "")
-      {
-         Print("[COMMANDS] Cannot serialize response payload.");
-         return false;
-      }
+   
 
       Print("[COMMANDS] Response received. status=",
             responseStatus);
@@ -1684,12 +1677,12 @@ private:
          }
 
          string responseStatus = "";
-         string payloadJson = "";
+         
 
          if(!GatewayReadCommandResponse(
             requestId,
             responseStatus,
-            payloadJson
+            
          ))
          {
             Print("[COMMANDS] Cannot read command response.");
@@ -1697,7 +1690,7 @@ private:
          }
 
          root["commands"][i]["status"] = responseStatus;
-         root["commands"][i]["result"] = payloadJson;
+         
 
          if(!GatewaySaveCommands(root))
          {
