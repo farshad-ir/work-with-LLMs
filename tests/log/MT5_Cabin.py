@@ -620,7 +620,28 @@ class MT5Cabin:
         self.response.delete("1.0", "end")
         self.response.insert("1.0", text)
         self.response.configure(state="disabled")
+        
+    def show_json_view(self):
 
+        self.viewer_mode = "json"
+
+        self.response.configure(wrap="none")
+
+        if hasattr(self, "viewer_json_text"):
+            self.set_viewer_text(self.viewer_json_text)
+
+
+    def show_answer_view(self):
+
+        if not self.viewer_answer_text:
+            return
+
+        self.viewer_mode = "answer"
+
+        self.response.configure(wrap="word")
+
+        self.set_viewer_text(self.viewer_answer_text)
+        
 
     def display_json_file(self, path: Path):
 
@@ -628,7 +649,7 @@ class MT5Cabin:
             raise CabinError(f"JSON file not found:\n{path}")
 
         content = read_text_auto(path)
-        data = json.loads(content)
+        self.viewer_current_data = data
 
         modified = datetime.fromtimestamp(
             path.stat().st_mtime
@@ -643,6 +664,27 @@ class MT5Cabin:
                 indent=4
             )
         )
+
+        payload = data.get("payload", {})
+        answer = payload.get("answer") if isinstance(payload, dict) else None
+
+        self.viewer_json_text = display
+        self.viewer_answer_text = (
+            html.unescape(answer)
+            if isinstance(answer, str)
+            else None
+        )
+
+        self.viewer_path_var.set(str(path))
+
+        self.viewer_answer_button.configure(
+            state="normal" if self.viewer_answer_text else "disabled"
+        )
+
+        if self.viewer_mode == "answer" and self.viewer_answer_text:
+            self.show_answer_view()
+        else:
+            self.show_json_view()
 
         self.viewer_path_var.set(str(path))
         self.set_viewer_text(display)
