@@ -1658,45 +1658,48 @@ private:
          
          
          Print("[COMMANDS] Executing command: ", command);
-
+         
          bool gatewaySuccess = GatewayExecuteRequest(body);
-
-         if(!gatewaySuccess)
+         
+         string requestId = m_lastRequestId;
+         
+         if(!gatewaySuccess && requestId == "")
          {
-            Print("[COMMANDS] Gateway execution failed.");
+            Print("[COMMANDS] Gateway execution failed. No request ID.");
             return false;
          }
-
-   
-         string requestId = m_lastRequestId;
-
+         
          if(requestId == "")
          {
             Print("[COMMANDS] Missing request ID after gateway execution.");
             return false;
          }
-
+         
          string responseStatus = "";
          
-
-         if(!GatewayReadCommandResponse(
-            requestId,
-            responseStatus
-            
-         ))
+         if(!GatewayReadCommandResponse(requestId, responseStatus))
          {
             Print("[COMMANDS] Cannot read command response.");
             return false;
          }
-
+         
          root["commands"][i]["status"] = responseStatus;
          
-
          if(!GatewaySaveCommands(root))
          {
             Print("[COMMANDS] Cannot save command response.");
             return false;
          }
+         
+         if(!gatewaySuccess)
+         {
+            Print("[COMMANDS] Gateway execution failed, but final response was saved. status=",
+                  responseStatus);
+            return false;
+         }
+
+   
+
 
          if(responseStatus != "COMPLETED")
          {
