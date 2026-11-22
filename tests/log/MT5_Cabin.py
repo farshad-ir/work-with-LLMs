@@ -636,9 +636,11 @@ class MT5Cabin:
                     raise CabinError(
                         "Start Date/Time must be earlier than End Date/Time."
                     )
-            
+
+                command["operation"] = "TAKE-DATE"
                 command["start"] = start_date
                 command["end"] = end_date
+                
 
     
 
