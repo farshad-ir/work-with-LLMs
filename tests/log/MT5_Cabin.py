@@ -1094,7 +1094,7 @@ class MT5Cabin:
                 self.set_viewer_text(
                     "Waiting for received response..."
                 )
-                self.on_command_type_changed()
+                
                 return
 
             path = self.received_dir / latest["file"]
