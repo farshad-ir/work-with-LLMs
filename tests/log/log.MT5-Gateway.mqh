@@ -2138,7 +2138,7 @@ private:
       Print("[COMMANDS] No command found for resumed request. request_id=",
             requestId);
    
-      return false;
+      return true;
    }
 
 public:
