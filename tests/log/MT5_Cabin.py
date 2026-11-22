@@ -612,17 +612,35 @@ class MT5Cabin:
                 command["operation"] = "SEND-NEXT"
 
             else:
-
+            
                 start_date = self.resend_start_var.get().strip()
                 end_date = self.resend_end_var.get().strip()
-
-                if not start_date or not end_date:
-                    raise CabinError(
-                        "Please enter both Start Date and End Date."
+            
+                try:
+                    start_dt = datetime.strptime(
+                        start_date,
+                        "%Y-%m-%d %H:%M:%S"
                     )
-
+            
+                    end_dt = datetime.strptime(
+                        end_date,
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+            
+                except ValueError as exc:
+                    raise CabinError(
+                        "Both dates must use YYYY-MM-DD HH:MM:SS format."
+                    ) from exc
+            
+                if start_dt >= end_dt:
+                    raise CabinError(
+                        "Start Date/Time must be earlier than End Date/Time."
+                    )
+            
                 command["start"] = start_date
                 command["end"] = end_date
+
+    
 
         else:
             raise CabinError(
