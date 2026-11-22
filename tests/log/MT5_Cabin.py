@@ -240,51 +240,18 @@ class MT5Cabin:
             pady=(10, 0)
         )
         
-        self.editor_frame = ttk.LabelFrame(
-            main,
-            text="Command JSON Editor",
-            padding=8
-        )
-        self.editor_frame.pack(fill="both", expand=True, pady=8)
 
-        editor_toolbar = ttk.Frame(self.editor_frame)
-        editor_toolbar.pack(fill="x", pady=(0, 6))
-
-        self.editor_toggle_button = ttk.Button(
-            editor_toolbar,
-            text="Maximize",
-            command=self.toggle_editor
-        )
-        self.editor_toggle_button.pack(side="right", padx=3)
-        
-        self.editor = tk.Text(
-            self.editor_frame,
-            height=9,
-            font=("Consolas", 10),
-            wrap="none"
-        )
-        self.editor.pack(fill="both", expand=True)
-
-        self.editor.insert(
-            "1.0",
-            json.dumps(
-                {
-                    "commands": [
-                        {
-                            "command": "LIST-TABL",
-                            "status": ""
-                        }
-                    ]
-                },
-                indent=4
-            )
-        )
 
         buttons = ttk.Frame(main)
         buttons.pack(fill="x", pady=5)
 
         
-
+        ttk.Button(
+            buttons,
+            text="Preview JSON",
+            command=self.preview_command
+        ).pack(side="left", padx=3)
+        
         ttk.Button(
             buttons,
             text="SEND COMMAND",
@@ -585,37 +552,154 @@ class MT5Cabin:
 
         self.root_validated = True
 
-    def validate_command(self):
+       def build_command_data(self):
 
-        try:
-            raw = self.editor.get("1.0", "end-1c")
-            data = json.loads(raw)
+        command_type = self.command_type_var.get()
+        command = {}
 
-            if not isinstance(data, dict):
-                raise CabinError("Root JSON must be an object.")
+        if command_type == "CONSULT-LLM":
 
-            commands = data.get("commands")
+            question = self.question_text.get(
+                "1.0",
+                "end-1c"
+            ).strip()
 
-            if not isinstance(commands, list) or not commands:
-                raise CabinError("'commands' must be a non-empty array.")
+            if not question:
+                raise CabinError("Please enter a question.")
 
-            for command in commands:
+            command["command"] = "CONSULT-LLM"
 
-                if not isinstance(command, dict):
-                    raise CabinError("Each command must be an object.")
+            candle_count = self.candle_count_var.get().strip()
 
-                if not isinstance(command.get("status"), str):
+            if candle_count:
+                try:
+                    count = int(candle_count)
+                except ValueError as exc:
                     raise CabinError(
-                        "Each command must have a string status."
+                        "Candle Count must be a positive integer."
+                    ) from exc
+
+                if count <= 0:
+                    raise CabinError(
+                        "Candle Count must be a positive integer."
                     )
 
-            return data
+                command["select"] = {
+                    "type": "SELA",
+                    "table": "h1Candles",
+                    "columns": ["*"],
+                    "limit": count
+                }
 
-        except json.JSONDecodeError as exc:
+            command["inquiry"] = {
+                "question": question
+            }
+
+        elif command_type == "CHART-INIT":
+
+            # Keep the existing CHART-INIT behavior unchanged.
+            command = {
+                "command": "LIST-TABL",
+                "status": ""
+            }
+
+        elif command_type == "MT5-RESEND":
+
+            command["command"] = "MT5-RESEND"
+
+            if self.resend_mode_var.get() == "SEND-NEXT":
+
+                command["operation"] = "SEND-NEXT"
+
+            else:
+
+                start_date = self.resend_start_var.get().strip()
+                end_date = self.resend_end_var.get().strip()
+
+                if not start_date or not end_date:
+                    raise CabinError(
+                        "Please enter both Start Date and End Date."
+                    )
+
+                command["start"] = start_date
+                command["end"] = end_date
+
+        else:
             raise CabinError(
-                f"Invalid JSON:\n{exc}"
-            ) from exc
+                f"Unsupported command type: {command_type}"
+            )
 
+        command["status"] = ""
+
+        return {
+            "commands": [command]
+        }
+
+    def preview_command(self):
+
+        try:
+            data = self.build_command_data()
+
+            preview_text = json.dumps(
+                data,
+                ensure_ascii=False,
+                indent=4
+            )
+
+            if (
+                hasattr(self, "preview_window")
+                and self.preview_window.winfo_exists()
+            ):
+                self.preview_window.lift()
+
+                self.preview_text.configure(state="normal")
+                self.preview_text.delete("1.0", "end")
+                self.preview_text.insert("1.0", preview_text)
+                self.preview_text.configure(state="disabled")
+                return
+
+            self.preview_window = tk.Toplevel(self.window)
+            self.preview_window.title("Command JSON Preview")
+            self.preview_window.geometry("620x420")
+
+            preview_frame = ttk.Frame(
+                self.preview_window,
+                padding=10
+            )
+            preview_frame.pack(fill="both", expand=True)
+
+            self.preview_text = tk.Text(
+                preview_frame,
+                font=("Consolas", 10),
+                wrap="none"
+            )
+
+            scrollbar = ttk.Scrollbar(
+                preview_frame,
+                orient="vertical",
+                command=self.preview_text.yview
+            )
+
+            self.preview_text.configure(
+                yscrollcommand=scrollbar.set
+            )
+
+            self.preview_text.pack(
+                side="left",
+                fill="both",
+                expand=True
+            )
+
+            scrollbar.pack(side="right", fill="y")
+
+            self.preview_text.insert("1.0", preview_text)
+            self.preview_text.configure(state="disabled")
+
+        except Exception as exc:
+            messagebox.showerror("Preview Error", str(exc))
+
+
+    
     # --------------------------------------------------
     # Gateway state
     # --------------------------------------------------
