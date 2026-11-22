@@ -68,7 +68,7 @@
     "commands": [
         {
             "command": "MT5-RESEND",
-            "operation": "MAKE",
+            "operation": "TAKE-DATES",
             "start": "2026.01.01 00:00",
             "end": "2026.03.01 00:00",
             "status": ""
