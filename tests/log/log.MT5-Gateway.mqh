@@ -79,6 +79,7 @@ private:
    string m_commandsFile;
    string m_controlFile;
    bool m_mt5ResendPending;
+   string m_cabin_order;
 
 
 
@@ -1643,7 +1644,8 @@ private:
          if(command == "MT5-RESEND")
          {
             m_mt5ResendPending = true;
-         
+            m_cabin_order = root["commands"][i]["operation"].AsString();
+
             root["commands"][i]["status"] = "DISPATCHED";
          
             if(!GatewaySaveCommands(root))
@@ -2239,6 +2241,10 @@ public:
    bool IsMT5ResendPending()
    {
       return m_mt5ResendPending;
+   }
+   string get_cabin_order()
+   {
+      return m_cabin_order;
    }
    bool ResumePendingRequest()
    {
