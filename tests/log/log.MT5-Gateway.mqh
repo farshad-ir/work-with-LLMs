@@ -1453,12 +1453,18 @@ private:
             Print("[COMMANDS] Empty command at index ", i);
             return false;
          }
-
-         if(root["commands"][i]["status"].m_type != jtSTR)
+         
+         if(root["commands"][i]["status"].m_type == jtNULL ||
+            root["commands"][i]["status"].m_type == jtUNDEF)
+         {
+            root["commands"][i]["status"] = "";
+         }
+         else if(root["commands"][i]["status"].m_type != jtSTR)
          {
             Print("[COMMANDS] Invalid status type at index ", i);
             return false;
          }
+
       }   
       
       return true;
