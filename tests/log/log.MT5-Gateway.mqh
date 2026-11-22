@@ -78,7 +78,7 @@ private:
    string m_responseFile;
    string m_commandsFile;
    string m_controlFile;
-
+   bool m_mt5ResendPending;
 
 
 
@@ -1638,6 +1638,23 @@ private:
 
          string body = "";
 
+
+
+         if(command == "MT5-RESEND")
+         {
+            m_mt5ResendPending = true;
+         
+            root["commands"][i]["status"] = "DISPATCHED";
+         
+            if(!GatewaySaveCommands(root))
+               return false;
+         
+            Print("[COMMANDS] MT5-RESEND dispatched to Expert.");
+            processedCount++;
+         
+            //continue;
+         }
+         else
          if(command == "LIST-TABL")
          {
             body =
@@ -2184,6 +2201,7 @@ public:
       m_responseFile = m_tempDir + "/current_response.json";
       m_commandsFile = m_commandsDir + "/commands.json";
       m_controlFile = m_controlDir + "/control.json";
+      m_mt5ResendPending = false;
 
       if(!GatewayEnsureFolder("LLM-LQ") ||
          !GatewayEnsureFolder(m_rootDir) ||
@@ -2218,7 +2236,10 @@ public:
    {
       return GatewayProcessControl();
    }
-
+   bool IsMT5ResendPending()
+   {
+      return m_mt5ResendPending;
+   }
    bool ResumePendingRequest()
    {
       return GatewayResumePendingRequest();
