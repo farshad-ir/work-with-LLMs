@@ -1665,10 +1665,27 @@ private:
          
          string requestId = m_lastRequestId;
          
-         if(!gatewaySuccess && requestId == "")
+         if(!gatewaySuccess)
          {
-            Print("[COMMANDS] Gateway execution failed. No request ID.");
-            return false;
+            if(m_requestId != "")
+            {
+               root["commands"][i]["request_id"] = m_requestId;
+         
+               if(!GatewaySaveCommands(root))
+               {
+                  Print("[COMMANDS] Cannot save pending request ID.");
+                  return false;
+               }
+         
+               Print("[COMMANDS] Pending request saved. request_id=", m_requestId);
+            }
+            else
+            {
+               Print("[COMMANDS] Gateway execution failed. No active request ID.");
+            }
+         
+            if(requestId == "")
+               return false;
          }
          
          if(requestId == "")
