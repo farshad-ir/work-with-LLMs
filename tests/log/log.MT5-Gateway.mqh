@@ -1610,6 +1610,16 @@ private:
 
          if(status != "")
             continue;
+         
+         string pendingRequestId =
+            root["commands"][i]["request_id"].ToStr();
+         
+         if(pendingRequestId != "")
+         {
+            Print("[COMMANDS] Command is waiting for request resume. request_id=",
+                  pendingRequestId);
+            return false;
+         }
 
          string body = "";
 
