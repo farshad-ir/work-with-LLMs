@@ -37,7 +37,7 @@
             "inquiry": {
                 "question": "Analyze the Mabif river across these 60 candles."
             },
-            "status": "COMPLETED"
+            "status": ""
         }
     ]
 }
@@ -53,7 +53,7 @@
             "inquiry": {
                 "question": "Analyze the current market context and explain the most important observations."
             },
-            "status": "COMPLETED"
+            "status": ""
         }
     ]
 }
@@ -67,16 +67,18 @@
 {
     "commands": [
         {
-            "command": "CHART-INIT",
+            "command": "MT5-RESEND",
             "operation": "MAKE",
             "start": "2026.01.01 00:00",
-            "end": "2026.03.01 00:00"
+            "end": "2026.03.01 00:00",
+            "status": ""
         }
     ]
 }
 ```
 
-**رفتار:** متاتریدر JSON را بسته‌بندی و برای Python ارسال می‌کند. Python مسئول پردازش این فرمان است.
+**رفتار:** متاتریدر JSON را بررسی می کند.
+
 
 ## 5. نمونه سوم: ارسال کندل بعدی
 
@@ -85,13 +87,30 @@
     "commands": [
         {
             "command": "MT5-RESEND",
-            "operation": "SEND-NEXT"
+            "operation": "SEND-NEXT",
+            "status": ""
         }
     ]
 }
 ```
 
 **رفتار:** متاتریدر فرمان را برای خودش برمی‌دارد و اجرا می‌کند. کندل بعدی را استخراج و ارسال می‌کند و موقعیت آخرین کندل ارسال‌شده را در حافظه موقت اکسپرت به‌روزرسانی می‌کند.
+
+## 6. نمونه جهارم: ارسال دستور درخواست لیست جدولها: این دستور اینگونه نوشته می شود ولی همراه  CHART-INIT ارسال می شود
+
+```json
+{
+    "commands": [
+        {
+            "command": "LIST-TABL",
+            "status": ""
+        }
+    ]
+}
+```
+
+**رفتار:** متاتریدر JSON را به پایتون ارسال می کند
+
 
 ## 6. قواعد ثابت
 
