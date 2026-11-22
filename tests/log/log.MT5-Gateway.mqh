@@ -2042,25 +2042,93 @@ private:
       Print("[GATEWAY] Maximum execution steps reached.");
       return false;
    }
-
+   
    bool GatewayResumePendingRequest()
    {
       GatewayState state;
-
+   
       if(!GatewayLoadState(state))
       {
          Print("[GATEWAY] Cannot load state for resume.");
          return false;
       }
-
+   
       if(state == STATE_IDLE ||
          !FileIsExist(m_requestFile, FILE_COMMON))
       {
          Print("[GATEWAY] No pending request to resume.");
          return false;
       }
-
-      return GatewayExecuteRequest("", false);
+   
+      // شناسه درخواست قبلی نباید وارد بازیابی شود.
+      m_lastRequestId = "";
+   
+      bool resumeSuccess = GatewayExecuteRequest("", false);
+   
+      if(!resumeSuccess)
+      {
+         Print("[GATEWAY] Pending request resume failed.");
+         return false;
+      }
+   
+      string requestId = m_lastRequestId;
+   
+      if(requestId == "")
+      {
+         Print("[GATEWAY] Resume completed without request ID.");
+         return false;
+      }
+   
+      // بارگذاری فهرست فرمان‌ها
+      CJAVal root;
+   
+      if(!GatewayLoadCommands(root))
+      {
+         Print("[COMMANDS] Cannot load commands after resume.");
+         return false;
+      }
+   
+      int count = root["commands"].Size();
+   
+      // پیدا کردن فرمانی که این درخواست متعلق به آن است.
+      for(int i = 0; i < count; i++)
+      {
+         string commandRequestId =
+            root["commands"][i]["request_id"].ToStr();
+   
+         if(commandRequestId != requestId)
+            continue;
+   
+         string responseStatus = "";
+   
+         if(!GatewayReadCommandResponse(
+            requestId,
+            responseStatus
+         ))
+         {
+            Print("[COMMANDS] Cannot read resumed response.");
+            return false;
+         }
+   
+         root["commands"][i]["status"] = responseStatus;
+   
+         if(!GatewaySaveCommands(root))
+         {
+            Print("[COMMANDS] Cannot save resumed command status.");
+            return false;
+         }
+   
+         Print("[COMMANDS] Resumed command updated. request_id=",
+               requestId,
+               " status=", responseStatus);
+   
+         return true;
+      }
+   
+      Print("[COMMANDS] No command found for resumed request. request_id=",
+            requestId);
+   
+      return false;
    }
 
 public:
