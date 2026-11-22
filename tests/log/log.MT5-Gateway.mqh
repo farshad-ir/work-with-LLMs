@@ -394,28 +394,24 @@ private:
    bool GatewayRecoverState(GatewayState &state)
    {
    
-      // در حالت ACKNOWLEDGED فقط پاک‌سازی باقی مانده است.
-      if(state == STATE_ACKNOWLEDGED)
-         return true;
-   
-   
       bool hasRequest =
          FileIsExist(m_requestFile, FILE_COMMON);
    
       bool hasResponse =
          FileIsExist(m_responseFile, FILE_COMMON);
+
+
    
-      // شناسه درخواست فعال را از فایل بازیابی کن.
-      if(hasRequest)
+      // در حالت ACKNOWLEDGED فقط پاک‌سازی باقی مانده است.
+      if(state == STATE_ACKNOWLEDGED)
       {
-         if(!GatewayLoadPendingRequest(
-            m_clientId,
-            m_requestId
-         ))
+         if(!hasRequest)
          {
-            Print("[GATEWAY] Recovery failed: invalid request file.");
+            Print("[GATEWAY] Recovery failed: ACKNOWLEDGED request file is missing.");
             return false;
          }
+      
+         return true;
       }
    
    
