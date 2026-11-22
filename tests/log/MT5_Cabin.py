@@ -406,7 +406,7 @@ class MT5Cabin:
 
         ttk.Label(
             self.command_fields_frame,
-            text="Question:"
+            text="Inquiry:"
         ).pack(anchor="w", pady=(8, 3))
 
         self.question_text = tk.Text(
@@ -552,7 +552,7 @@ class MT5Cabin:
 
         self.root_validated = True
 
-       def build_command_data(self):
+    def build_command_data(self):
 
         command_type = self.command_type_var.get()
         command = {}
@@ -755,7 +755,7 @@ class MT5Cabin:
     def send_command(self):
 
         try:
-            data = self.validate_command()
+            data = self.build_command_data()
             for command in data["commands"]:
                 command.pop("result", None)
 
