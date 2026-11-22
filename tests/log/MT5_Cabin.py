@@ -204,15 +204,15 @@ class MT5Cabin:
             command_selector_frame,
             text="Command Type:"
         ).pack(side="left", padx=(0, 8))
-
-        self.command_type_var = tk.StringVar(value="CHART-INIT")
-
+        
+        self.command_type_var = tk.StringVar(value="CONSULT-LLM")
+        
         self.command_type_selector = ttk.Combobox(
             command_selector_frame,
             textvariable=self.command_type_var,
             values=[
                 "CONSULT-LLM",
-                "CHART-INIT",
+                "LIST-TABL",
                 "MT5-RESEND"
             ],
             state="readonly",
@@ -377,7 +377,7 @@ class MT5Cabin:
         if command_type == "CONSULT-LLM":
             self.build_consult_form()
 
-        elif command_type == "CHART-INIT":
+        elif command_type == "LIST-TABL":
             ttk.Label(
                 self.command_fields_frame,
                 text="This command does not require additional input."
@@ -595,7 +595,7 @@ class MT5Cabin:
                 "question": question
             }
 
-        elif command_type == "CHART-INIT":
+        elif command_type == "LIST-TABL":
 
             # Keep the existing CHART-INIT behavior unchanged.
             command = {
