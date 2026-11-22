@@ -85,7 +85,10 @@ void OnTimer()
    {
       Print("[COMMANDS] Command execution failed.");
    }
-
+   if(Gateway.IsMT5ResendPending())
+   {
+      
+   }
 
 }
 
