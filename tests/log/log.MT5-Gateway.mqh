@@ -1652,7 +1652,7 @@ private:
             Print("[COMMANDS] MT5-RESEND dispatched to Expert.");
             processedCount++;
          
-            //continue;
+            continue;
          }
          else
          if(command == "LIST-TABL")
