@@ -619,17 +619,17 @@ class MT5Cabin:
                 try:
                     start_dt = datetime.strptime(
                         start_date,
-                        "%Y-%m-%d %H:%M:%S"
+                        "%Y-%m-%d %H:%M"
                     )
             
                     end_dt = datetime.strptime(
                         end_date,
-                        "%Y-%m-%d %H:%M:%S"
+                        "%Y-%m-%d %H:%M"
                     )
             
                 except ValueError as exc:
                     raise CabinError(
-                        "Both dates must use YYYY-MM-DD HH:MM:SS format."
+                        "Both dates must use YYYY-MM-DD HH:MM format."
                     ) from exc
             
                 if start_dt >= end_dt:
