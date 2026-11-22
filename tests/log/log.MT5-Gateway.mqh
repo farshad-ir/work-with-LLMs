@@ -400,6 +400,19 @@ private:
       bool hasResponse =
          FileIsExist(m_responseFile, FILE_COMMON);
 
+      // شناسه درخواست را پیش از هرگونه خروج از تابع بازیابی کن.
+      if(hasRequest)
+      {
+         if(!GatewayLoadPendingRequest(
+            m_clientId,
+            m_requestId
+         ))
+         {
+            Print("[GATEWAY] Recovery failed: invalid request file.");
+            return false;
+         }
+      }
+
 
    
       // در حالت ACKNOWLEDGED فقط پاک‌سازی باقی مانده است.
