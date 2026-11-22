@@ -450,21 +450,6 @@ class MT5Cabin:
         )
         self.question_text.pack(fill="both", expand=True)
 
-        translation_frame = ttk.Frame(self.command_fields_frame)
-        translation_frame.pack(fill="x", pady=5)
-
-        self.translate_button = ttk.Button(
-            translation_frame,
-            text="Translate to English",
-            state="disabled"
-        )
-        self.translate_button.pack(side="left")
-
-        ttk.Label(
-            translation_frame,
-            text="Translation engine not connected."
-        ).pack(side="left", padx=8)
-
     def build_resend_form(self):
 
         self.resend_mode_var = tk.StringVar(value="SEND-NEXT")
