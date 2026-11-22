@@ -1658,6 +1658,8 @@ private:
          
          
          Print("[COMMANDS] Executing command: ", command);
+
+         m_lastRequestId = "";
          
          bool gatewaySuccess = GatewayExecuteRequest(body);
          
