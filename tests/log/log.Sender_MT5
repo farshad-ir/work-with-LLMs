@@ -67,6 +67,305 @@ CStructure        m_stc;
 CFractalGeometry  m_fractal;
 CMT5Gateway Gateway;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool BuildCandleSeries(
+   const bool reset,
+   const datetime start,
+   const datetime end
+)
+{
+   h1Candles = "";
+   h6Candles = "";
+
+   if(end <= 0)
+      return false;
+
+   int h1Seconds = PeriodSeconds(PERIOD_H1);
+   int h6Seconds = PeriodSeconds(PERIOD_H6);
+
+   if(h1Seconds <= 0 || h6Seconds <= 0)
+      return false;
+
+   // Refresh moving averages
+   g_ma_h1.Update();
+   g_ma_h6.Update();
+
+   MqlRates h1Rates[];
+   MqlRates h6Rates[];
+
+   ArraySetAsSeries(h1Rates, true);
+   ArraySetAsSeries(h6Rates, true);
+
+   int h1Copied = 0;
+   int h6Copied = 0;
+
+   //==================================================
+   // RESET: Build historical series
+   //==================================================
+   if(reset)
+   {
+      if(start <= 0 || start >= end)
+         return false;
+
+      datetime h1WarmupStart =
+         start - (H1_HISTORY_CAPACITY * h1Seconds);
+
+      datetime h6WarmupStart =
+         start - (H6_HISTORY_CAPACITY * h6Seconds);
+
+      h1Copied = CopyRates(
+         _Symbol,
+         PERIOD_H1,
+         h1WarmupStart,
+         end,
+         h1Rates
+      );
+
+      h6Copied = CopyRates(
+         _Symbol,
+         PERIOD_H6,
+         h6WarmupStart,
+         end,
+         h6Rates
+      );
+
+      if(h1Copied <= 0 || h6Copied <= 0)
+      {
+         Print("[CANDLES] Historical CopyRates failed. H1=",
+               h1Copied, " H6=", h6Copied);
+         return false;
+      }
+
+      // Reset calculation state
+      mabif_h1.Reset();
+      mabif_h6.Reset();
+
+      // H1: oldest to newest
+      for(int i = h1Copied - 1; i >= 0; i--)
+      {
+         datetime barStart = h1Rates[i].time;
+         datetime barEnd   = barStart + h1Seconds;
+
+         if(barEnd > end)
+            continue;
+
+         int shift = iBarShift(
+            _Symbol,
+            PERIOD_H1,
+            barStart,
+            true
+         );
+
+         if(shift < 0)
+            return false;
+
+         H1_river.Update(shift);
+
+         int dir = mabif_h1.AddPoint(
+            H1_river.Center()
+         );
+
+         // Warmup candles are calculated but not exported
+         if(barStart < start)
+            continue;
+
+         if(h1Candles != "")
+            h1Candles += ",";
+
+         h1Candles += BuildCandleObject(
+            h1Rates[i],
+            H1_river.Center(),
+            H1_river.Width(),
+            dir
+         );
+      }
+
+      // H6: oldest to newest
+      for(int i = h6Copied - 1; i >= 0; i--)
+      {
+         datetime barStart = h6Rates[i].time;
+         datetime barEnd   = barStart + h6Seconds;
+
+         if(barEnd > end)
+            continue;
+
+         int shift = iBarShift(
+            _Symbol,
+            PERIOD_H6,
+            barStart,
+            true
+         );
+
+         if(shift < 0)
+            return false;
+
+         H6_river.Update(shift);
+
+         int dir = mabif_h6.AddPoint(
+            H6_river.Center()
+         );
+
+         if(barStart < start)
+            continue;
+
+         if(h6Candles != "")
+            h6Candles += ",";
+
+         h6Candles += BuildCandleObject(
+            h6Rates[i],
+            H6_river.Center(),
+            H6_river.Width(),
+            dir
+         );
+      }
+
+      return (h1Candles != "" && h6Candles != "");
+   }
+
+   //==================================================
+   // SEND-NEXT: Continue existing calculation state
+   //==================================================
+
+   MqlDateTime tm;
+   TimeToStruct(end, tm);
+
+   bool sendH6 = (tm.hour % 6 == 0);
+
+   // Read the recent H1 bars around end
+   h1Copied = CopyRates(
+      _Symbol,
+      PERIOD_H1,
+      end - (2 * h1Seconds),
+      end,
+      h1Rates
+   );
+
+   if(h1Copied <= 0)
+      return false;
+
+   // Find the newest completely closed H1 candle
+   int h1Index = -1;
+
+   for(int i = 0; i < h1Copied; i++)
+   {
+      if(h1Rates[i].time + h1Seconds <= end)
+      {
+         h1Index = i;
+         break;
+      }
+   }
+
+   if(h1Index < 0)
+      return false;
+
+   int h1Shift = iBarShift(
+      _Symbol,
+      PERIOD_H1,
+      h1Rates[h1Index].time,
+      true
+   );
+
+   if(h1Shift < 0)
+      return false;
+
+   H1_river.Update(h1Shift);
+
+   int h1Dir = mabif_h1.AddPoint(
+      H1_river.Center()
+   );
+
+   h1Candles = BuildCandleObject(
+      h1Rates[h1Index],
+      H1_river.Center(),
+      H1_river.Width(),
+      h1Dir
+   );
+
+   // H6 is processed only at 6-hour boundaries
+   if(sendH6)
+   {
+      h6Copied = CopyRates(
+         _Symbol,
+         PERIOD_H6,
+         end - (2 * h6Seconds),
+         end,
+         h6Rates
+      );
+
+      if(h6Copied <= 0)
+         return false;
+
+      int h6Index = -1;
+
+      for(int i = 0; i < h6Copied; i++)
+      {
+         if(h6Rates[i].time + h6Seconds <= end)
+         {
+            h6Index = i;
+            break;
+         }
+      }
+
+      if(h6Index < 0)
+         return false;
+
+      int h6Shift = iBarShift(
+         _Symbol,
+         PERIOD_H6,
+         h6Rates[h6Index].time,
+         true
+      );
+
+      if(h6Shift < 0)
+         return false;
+
+      H6_river.Update(h6Shift);
+
+      int h6Dir = mabif_h6.AddPoint(
+         H6_river.Center()
+      );
+
+      h6Candles = BuildCandleObject(
+         h6Rates[h6Index],
+         H6_river.Center(),
+         H6_river.Width(),
+         h6Dir
+      );
+   }
+
+   return (h1Candles != "");
+}
+
+
+
+
+
+
 void OnTimer()
 {
 
@@ -78,7 +377,7 @@ void OnTimer()
 
    if(!Gateway.ResumePendingRequest())
    {
-      //Print("[GATEWAY] Pending request recovery failed.");
+      Print("[GATEWAY] Pending request recovery failed.");
    }
 
    if(!Gateway.RunCommands())
@@ -153,12 +452,12 @@ int OnInit()
 
    // Structure
    m_stc.Init();
-   g_ma_h1.Update();
-   g_ma_h6.Update();
+   g_ma_h1.Update(50000);
+   g_ma_h6.Update(10000);
 
    m_fractal.Set(m_stc,g_ma_h1);
    
-   m_stc.Update(300);
+   m_stc.Update(50000);
    H1_river.Set(g_ma_h1);
    H6_river.Set(g_ma_h6);
    
