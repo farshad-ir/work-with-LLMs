@@ -249,7 +249,7 @@ bool BuildCandleSeries(
       return (h1Candles != "");
    }
 
-      //==================================================
+   //==================================================
    // SEND-NEXT: Find the next available H1 candle
    //==================================================
 
@@ -480,6 +480,46 @@ void HandleCabinOrder()
 
 int OnInit()
 {
+
+
+   ////////////////////////////////
+   //
+   // Init for MAs and Fractals
+   //
+   ////////////////////////////////
+
+   if(!g_ma_h1.Init(7, 14, PERIOD_H1))
+   {
+      Print("[INIT] H1 MA initialization failed.");
+      return INIT_FAILED;
+   }
+   
+   if(!g_ma_h6.Init(42, 84, PERIOD_H6))
+   {
+      Print("[INIT] H6 MA initialization failed.");
+      return INIT_FAILED;
+   }
+   
+   
+   m_stc.Init();
+   m_stc.Update(50000);
+   
+   g_ma_h1.Update(50000);
+   g_ma_h6.Update(50000);
+   
+   m_fractal.Set(m_stc,g_ma_h1);
+   m_fractal.Build(50000);
+   
+   H1_river.Set(g_ma_h1);
+   H6_river.Set(g_ma_h6);
+
+
+
+
+
+
+
+
    if(!Gateway.Initialize(InpGatewayClientId, InpGatewayFolderName))
    {
       Print("[GATEWAY] Initialization failed.");
