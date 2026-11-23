@@ -56,7 +56,7 @@ uchar response[16384];
 
 string h1Candles = "";
 string h6Candles = "";
-
+datetime LastCandle = 0 ;
 
 
 
