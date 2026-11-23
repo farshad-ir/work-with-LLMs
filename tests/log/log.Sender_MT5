@@ -78,7 +78,7 @@ void OnTimer()
 
    if(!Gateway.ResumePendingRequest())
    {
-      Print("[GATEWAY] Pending request recovery failed.");
+      //Print("[GATEWAY] Pending request recovery failed.");
    }
 
    if(!Gateway.RunCommands())
