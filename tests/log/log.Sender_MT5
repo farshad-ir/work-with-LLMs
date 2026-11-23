@@ -87,7 +87,7 @@ void OnTimer()
    }
    if(Gateway.IsMT5ResendPending())
    {
-      
+      Print("[MT5-RESEND]");
    }
 
 }
