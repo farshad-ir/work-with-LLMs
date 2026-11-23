@@ -57,7 +57,7 @@ uchar response[16384];
 string h1Candles = "";
 string h6Candles = "";
 datetime LastCandle = 0 ;
-
+datetime BuiltLastCandle = 0;
 
 
 
@@ -101,6 +101,7 @@ bool BuildCandleSeries(
 {
    h1Candles = "";
    h6Candles = "";
+   BuiltLastCandle = 0;
 
    if(end <= 0)
       return false;
@@ -203,6 +204,7 @@ bool BuildCandleSeries(
             H1_river.Width(),
             dir
          );
+         BuiltLastCandle = barEnd;
       }
 
       // H6: oldest to newest
@@ -244,36 +246,35 @@ bool BuildCandleSeries(
          );
       }
 
-      return (h1Candles != "" && h6Candles != "");
+      return (h1Candles != "");
    }
 
+      //==================================================
+   // SEND-NEXT: Find the next available H1 candle
    //==================================================
-   // SEND-NEXT: Continue existing calculation state
-   //==================================================
 
-   MqlDateTime tm;
-   TimeToStruct(end, tm);
+   if(start <= 0)
+      return false;
 
-   bool sendH6 = (tm.hour % 6 == 0);
+   datetime searchEnd = start + (30 * 86400);
 
-   // Read the recent H1 bars around end
    h1Copied = CopyRates(
       _Symbol,
       PERIOD_H1,
-      end - (2 * h1Seconds),
-      end,
+      start,
+      searchEnd,
       h1Rates
    );
 
    if(h1Copied <= 0)
       return false;
 
-   // Find the newest completely closed H1 candle
+   // Find the earliest available candle after LastCandle
    int h1Index = -1;
 
-   for(int i = 0; i < h1Copied; i++)
+   for(int i = h1Copied - 1; i >= 0; i--)
    {
-      if(h1Rates[i].time + h1Seconds <= end)
+      if(h1Rates[i].time >= start)
       {
          h1Index = i;
          break;
@@ -282,6 +283,8 @@ bool BuildCandleSeries(
 
    if(h1Index < 0)
       return false;
+
+   datetime targetEnd = h1Rates[h1Index].time + h1Seconds;
 
    int h1Shift = iBarShift(
       _Symbol,
@@ -306,14 +309,19 @@ bool BuildCandleSeries(
       h1Dir
    );
 
-   // H6 is processed only at 6-hour boundaries
-   if(sendH6)
+   BuiltLastCandle = targetEnd;
+
+   // H6 only when this H1 candle closes on a 6-hour boundary
+   MqlDateTime tm;
+   TimeToStruct(targetEnd, tm);
+
+   if(tm.hour % 6 == 0 && tm.min == 0)
    {
       h6Copied = CopyRates(
          _Symbol,
          PERIOD_H6,
-         end - (2 * h6Seconds),
-         end,
+         targetEnd - h6Seconds,
+         targetEnd,
          h6Rates
       );
 
@@ -324,7 +332,7 @@ bool BuildCandleSeries(
 
       for(int i = 0; i < h6Copied; i++)
       {
-         if(h6Rates[i].time + h6Seconds <= end)
+         if(h6Rates[i].time + h6Seconds == targetEnd)
          {
             h6Index = i;
             break;
@@ -360,7 +368,6 @@ bool BuildCandleSeries(
 
    return (h1Candles != "");
 }
-
 
 
 
