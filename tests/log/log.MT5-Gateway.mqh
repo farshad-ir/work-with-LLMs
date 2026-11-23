@@ -1245,7 +1245,7 @@ private:
    
       if(status == "COMPLETED")
       {
-         Print("[CONTROL] No pending emergency command.");
+         //Print("[CONTROL] No pending emergency command.");
          return true;
       }
    
@@ -1774,8 +1774,8 @@ private:
          processedCount++;
       }
    
-      if(processedCount == 0)
-         Print("[COMMANDS] No pending commands found.");
+      //if(processedCount == 0)
+         //Print("[COMMANDS] No pending commands found.");
       
       return true;
    }
@@ -2099,7 +2099,7 @@ private:
       if(state == STATE_IDLE ||
          !FileIsExist(m_requestFile, FILE_COMMON))
       {
-         Print("[GATEWAY] No pending request to resume.");
+         //Print("[GATEWAY] No pending request to resume.");
          return false;
       }
    
