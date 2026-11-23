@@ -368,63 +368,36 @@ bool BuildCandleSeries(
 
 void OnTimer()
 {
-
-
    if(!Gateway.ProcessControl())
-   {
       Print("[CONTROL] Emergency control processing failed.");
-   }
 
    if(!Gateway.ResumePendingRequest())
-   {
       Print("[GATEWAY] Pending request recovery failed.");
-   }
 
    if(!Gateway.RunCommands())
-   {
       Print("[COMMANDS] Command execution failed.");
-   }
-   if(Gateway.IsMT5ResendPending())
-   {
-      Print("[MT5-RESEND]"); 
-      Print(Gateway.get_cabin_order().Serialize()); 
-      Gateway.consume_cabin_flag(); 
-   }
 
+   if(Gateway.IsMT5ResendPending())
+      HandleCabinOrder();
+   
+   Gateway.consume_cabin_flag();
 }
 
-void OnTimer()
+
+void HandleCabinOrder()
 {
-   if(!Gateway.ProcessControl())
-      Print("[CONTROL] Emergency control processing failed.");
-
-   if(!Gateway.ResumePendingRequest())
-      Print("[GATEWAY] Pending request recovery failed.");
-
-   if(!Gateway.RunCommands())
-      Print("[COMMANDS] Command execution failed.");
-
-   if(!Gateway.IsMT5ResendPending())
-      return;
-
    CJAVal order = Gateway.get_cabin_order();
 
    Print("[MT5-RESEND] ", order.Serialize());
 
    string operation = order["operation"].ToStr();
-
    bool processed = false;
 
-   //==================================================
-   // TAKE-DATE: Build and send historical candles
-   //==================================================
    if(operation == "TAKE-DATE")
    {
       string startText = order["start"].ToStr();
       string endText   = order["end"].ToStr();
 
-      // Cabin format: YYYY-MM-DD HH:MM
-      // StringToTime format: YYYY.MM.DD HH:MM
       StringReplace(startText, "-", ".");
       StringReplace(endText, "-", ".");
 
@@ -434,7 +407,6 @@ void OnTimer()
       if(startTime <= 0 || endTime <= 0 || startTime >= endTime)
       {
          Print("[MT5-RESEND] Invalid date range.");
-         Gateway.consume_cabin_flag();
          return;
       }
 
@@ -449,10 +421,6 @@ void OnTimer()
       if(processed && h6Candles != "")
          processed = GoSend("h6Candles");
    }
-
-   //==================================================
-   // SEND-NEXT: Build and send the next closed candles
-   //==================================================
    else if(operation == "SEND-NEXT")
    {
       if(!BuildCandleSeries(false, 0, TimeCurrent()))
@@ -469,13 +437,11 @@ void OnTimer()
    else
    {
       Print("[MT5-RESEND] Unknown operation: ", operation);
-      Gateway.consume_cabin_flag();
       return;
    }
 
    if(processed)
    {
-      Gateway.consume_cabin_flag();
       Print("[MT5-RESEND] Operation completed: ", operation);
    }
    else
@@ -483,10 +449,6 @@ void OnTimer()
       Print("[MT5-RESEND] Operation failed; command remains pending.");
    }
 }
-
-
-
-
 
 
 
