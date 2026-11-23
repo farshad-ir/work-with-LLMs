@@ -87,7 +87,9 @@ void OnTimer()
    }
    if(Gateway.IsMT5ResendPending())
    {
-      Print("[MT5-RESEND]");
+      Print("[MT5-RESEND]"); 
+      Print(Gateway.get_cabin_order().Serialize()); 
+      Gateway.consume_cabin_flag(); 
    }
 
 }
@@ -297,5 +299,4 @@ string BuildCandleObject(
 
    return data;
 }
-
 
