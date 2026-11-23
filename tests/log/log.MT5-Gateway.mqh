@@ -1644,7 +1644,7 @@ private:
          if(command == "MT5-RESEND")
          {
             m_mt5ResendPending = true;
-            m_cabin_order = root["commands"][i]["operation"].AsString();
+            m_cabin_order = root["commands"][i]["operation"].ToStr();
 
             root["commands"][i]["status"] = "DISPATCHED";
          
