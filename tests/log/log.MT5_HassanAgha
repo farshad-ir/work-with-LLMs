@@ -393,6 +393,16 @@ void OnTimer()
 
 }
 
+
+
+
+
+
+
+
+
+
+
 int OnInit()
 {
    if(!Gateway.Initialize(InpGatewayClientId, InpGatewayFolderName))
@@ -412,61 +422,6 @@ int OnInit()
    return INIT_SUCCEEDED;
 }
    
-bool GoSend()
-{
-   string data = "{";
-   
-   data += "\"command\":\"CHART-INIT\",";
-   data += "\"operations\":[";
-   
-   // MAKE
-   data += "{";
-   data += "\"command\":\"MAKE\",";
-   data += "\"table\":\"h1Candles\",";
-   data += "\"columns\":[";
-   
-   data += "{\"name\":\"time\",\"type\":\"TEXT\"},";
-   data += "{\"name\":\"open\",\"type\":\"REAL\"},";
-   data += "{\"name\":\"high\",\"type\":\"REAL\"},";
-   data += "{\"name\":\"low\",\"type\":\"REAL\"},";
-   data += "{\"name\":\"close\",\"type\":\"REAL\"},";
-   data += "{\"name\":\"tick_volume\",\"type\":\"INTEGER\"},";
-   data += "{\"name\":\"spread_points\",\"type\":\"INTEGER\"},";
-   data += "{\"name\":\"river_center\",\"type\":\"REAL\"},";
-   data += "{\"name\":\"river_width_pips\",\"type\":\"REAL\"},";
-   data += "{\"name\":\"MABIF\",\"type\":\"TEXT\"}";
-   
-   data += "]";
-   data += "},";
-   
-   // INSR
-   data += "{";
-   data += "\"command\":\"INSR\",";
-   data += "\"table\":\"h1Candles\",";
-   data += "\"records\":[" + h1Candles + "]";
-   data += "}";
-   
-   data += "]";
-   data += "}";
-
-   
-   
-   if(!Gateway.ExecuteRequest(data))
-   {
-      Print("[GATEWAY] Request execution did not complete.");
-      
-   }else{
-   
-      Print("[GATEWAY] Request execution completed.");
-   
-   }
-   
-   Print("");
-   Print("");
-   Print("");   
-
-   return SUCCEEDED;
-}
 
 void OnTick()
 {
@@ -511,6 +466,7 @@ string BuildCandleObject(
 
    string data = "{";
 
+   data += "\"symbol\":\"" + _Symbol + "\",";
    data += "\"time\":\"" + timeStr + "\",";
    data += "\"open\":" + DoubleToString(bar.open, _Digits) + ",";
    data += "\"high\":" + DoubleToString(bar.high, _Digits) + ",";
@@ -530,3 +486,69 @@ string BuildCandleObject(
    return data;
 }
 
+bool GoSend(const string arrayName)
+{
+   string records = "";
+
+   if(arrayName == "h1Candles")
+      records = h1Candles;
+   else if(arrayName == "h6Candles")
+      records = h6Candles;
+   else
+   {
+      Print("[GATEWAY] Unknown candle array: ", arrayName);
+      return false;
+   }
+
+   if(records == "")
+   {
+      Print("[GATEWAY] No candle data in ", arrayName);
+      return false;
+   }
+
+   string data = "{";
+
+   data += "\"command\":\"CHART-INIT\",";
+   data += "\"operations\":[";
+
+   // MAKE
+   data += "{";
+   data += "\"command\":\"MAKE\",";
+   data += "\"table\":\"" + arrayName + "\",";
+   data += "\"columns\":[";
+
+   data += "{\"name\":\"symbol\",\"type\":\"TEXT\"},";
+   data += "{\"name\":\"time\",\"type\":\"TEXT\"},";
+   data += "{\"name\":\"open\",\"type\":\"REAL\"},";
+   data += "{\"name\":\"high\",\"type\":\"REAL\"},";
+   data += "{\"name\":\"low\",\"type\":\"REAL\"},";
+   data += "{\"name\":\"close\",\"type\":\"REAL\"},";
+   data += "{\"name\":\"tick_volume\",\"type\":\"INTEGER\"},";
+   data += "{\"name\":\"spread_points\",\"type\":\"INTEGER\"},";
+   data += "{\"name\":\"river_center\",\"type\":\"REAL\"},";
+   data += "{\"name\":\"river_width_pips\",\"type\":\"REAL\"},";
+   data += "{\"name\":\"MABIF\",\"type\":\"TEXT\"}";
+
+   data += "]";
+   data += "},";
+
+   // INSR
+   data += "{";
+   data += "\"command\":\"INSR\",";
+   data += "\"table\":\"" + arrayName + "\",";
+   data += "\"records\":[" + records + "]";
+   data += "}";
+
+   data += "]";
+   data += "}";
+
+   if(!Gateway.ExecuteRequest(data))
+   {
+      Print("[GATEWAY] Request execution did not complete.");
+      return false;
+   }
+
+   Print("[GATEWAY] Request execution completed: ", arrayName);
+
+   return true;
+}
