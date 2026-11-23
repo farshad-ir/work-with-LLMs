@@ -103,7 +103,7 @@ bool BuildCandleSeries(
    h6Candles = "";
    BuiltLastCandle = 0;
 
-   if(end <= 0)
+   if(reset && end <= 0)
       return false;
 
    int h1Seconds = PeriodSeconds(PERIOD_H1);
@@ -427,19 +427,32 @@ void HandleCabinOrder()
 
       if(processed && h6Candles != "")
          processed = GoSend("h6Candles");
+
+      if(processed)
+         LastCandle = BuiltLastCandle;
+
    }
    else if(operation == "SEND-NEXT")
    {
-      if(!BuildCandleSeries(false, 0, TimeCurrent()))
+      if(LastCandle <= 0)
+      {
+         Print("[MT5-RESEND] LastCandle is not initialized.");
+         return;
+      }
+   
+      if(!BuildCandleSeries(false, LastCandle, 0))
       {
          Print("[MT5-RESEND] Next candle construction failed.");
          return;
       }
-
+   
       processed = GoSend("h1Candles");
-
+   
       if(processed && h6Candles != "")
          processed = GoSend("h6Candles");
+   
+      if(processed)
+         LastCandle = BuiltLastCandle;
    }
    else
    {
