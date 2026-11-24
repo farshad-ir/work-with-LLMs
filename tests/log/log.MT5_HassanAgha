@@ -500,6 +500,8 @@ int GetHassanHistoryBars()
 
    return shift + 1;
 }
+
+
 //+------------------------------------------------------------------+
 //| Draw Hassan Small Boxes                                          |
 //+------------------------------------------------------------------+
@@ -513,8 +515,6 @@ void DrawHassanSmallBoxes()
       if(StringFind(name, "HA_SMALLBOX_") == 0)
          ObjectDelete(0, name);
    }
-
-   int count = m_fractal.SmallBoxCount();
 
    int count = m_fractal.SmallBoxCount();
    Print("[HA-BOX-DRAW] SmallBoxCount=", count);
