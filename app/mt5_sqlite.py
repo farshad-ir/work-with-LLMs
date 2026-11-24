@@ -342,7 +342,8 @@ def _insert(payload, conn=None, ignore_conflicts=False):
                     [values[name] for name in names],
                 )
 
-                inserted_ids.append(cursor.lastrowid)
+                if cursor.rowcount > 0:
+                    inserted_ids.append(cursor.lastrowid)
 
             connection.execute("RELEASE SAVEPOINT mt5_insr_batch")
 
