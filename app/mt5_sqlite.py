@@ -260,7 +260,7 @@ def _make(payload, conn=None):
 
 
 
-def _insert(payload, conn=None):
+def _insert(payload, conn=None, ignore_conflicts=False):
     table = _validate_identifier(payload.get("table"))
     records = payload.get("records")
 
@@ -333,6 +333,9 @@ def _insert(payload, conn=None):
                     f'INSERT INTO "{table}" ({quoted_names}) '
                     f"VALUES ({placeholders})"
                 )
+                
+                if ignore_conflicts:
+                    sql += " ON CONFLICT DO NOTHING"
 
                 cursor = connection.execute(
                     sql,
@@ -504,6 +507,11 @@ def execute_command(payload, execution_id=None):
     handlers = {
         "MAKE": _make,
         "INSR": _insert,
+        "INSR-IGNORE": lambda payload, conn=None: _insert(
+            payload,
+            conn=conn,
+            ignore_conflicts=True,
+        ),
         "SELA": _select_all,
         "LIST-TABL": lambda _, conn=None: _list_tables(conn=conn),
     }
