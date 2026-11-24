@@ -445,6 +445,25 @@ void HandleCabinOrder()
          processed = GoSend("h6Candles", Create);
 
       if(processed)
+      {
+         SmallBoxRecord boxRecords[];
+
+         if(!BuildSmallBoxRecords(
+            true,
+            startTime,
+            endTime,
+            boxRecords
+         ))
+         {
+            processed = false;
+         }
+         else if(!SendSmallBoxRecords(boxRecords, Create))
+         {
+            processed = false;
+         }
+      }
+
+      if(processed)
          LastCandle = BuiltLastCandle;
 
    }
