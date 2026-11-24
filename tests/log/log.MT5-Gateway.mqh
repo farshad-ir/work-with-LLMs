@@ -1655,19 +1655,7 @@ private:
          
             continue;
          }
-         else
-         if(command == "LIST-TABL")
-         {
-            body =
-               "{"
-               "\"command\":\"CHART-INIT\","
-               "\"operations\":["
-                  "{"
-                     "\"command\":\"LIST-TABL\""
-                  "}"
-               "]"
-               "}";
-         }
+
          else
          {
             CJAVal bodyObject;
