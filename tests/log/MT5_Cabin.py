@@ -673,12 +673,63 @@ class MT5Cabin:
                 "question": question
             }
 
-        elif command_type == "LIST-TABL":
+        elif command_type == "SQL-DIRECT":
 
-            # Keep the existing CHART-INIT behavior unchanged.
+            operation_name = self.sql_operation_var.get()
+
+            if operation_name == "LIST-TABL":
+
+                operation = {
+                    "command": "LIST-TABL"
+                }
+
+            elif operation_name == "SELECT":
+
+                table = self.sql_table_var.get().strip()
+
+                if not table:
+                    raise CabinError("Table name is required.")
+
+                columns = [
+                    item.strip()
+                    for item in self.sql_columns_var.get().split(",")
+                    if item.strip()
+                ]
+
+                if not columns:
+                    raise CabinError("At least one column is required.")
+
+                operation = {
+                    "command": "SELA",
+                    "table": table,
+                    "columns": columns
+                }
+
+                limit_value = self.sql_limit_var.get().strip()
+
+                if limit_value:
+                    try:
+                        limit = int(limit_value)
+                    except ValueError as exc:
+                        raise CabinError(
+                            "Limit must be a positive integer."
+                        ) from exc
+
+                    if limit <= 0:
+                        raise CabinError(
+                            "Limit must be a positive integer."
+                        )
+
+                    operation["limit"] = limit
+
+            else:
+                raise CabinError(
+                    f"Unsupported SQL operation: {operation_name}"
+                )
+
             command = {
-                "command": "LIST-TABL",
-                "status": ""
+                "command": "SQL-DIRECT",
+                "operation": operation
             }
 
         elif command_type == "MT5-RESEND":
