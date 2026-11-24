@@ -384,8 +384,11 @@ void OnTimer()
    if(!Gateway.ProcessControl())
       Print("[CONTROL] Emergency control processing failed.");
 
-   if(!Gateway.ResumePendingRequest())
+   if(!Gateway.ResumePendingRequest()){
+      double fuzul = 0;
       //Print("[GATEWAY] Pending request recovery failed.");
+      fuzul += 1;
+   }
 
    if(!Gateway.RunCommands())
       Print("[COMMANDS] Command execution failed.");
