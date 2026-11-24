@@ -6,6 +6,12 @@
 #property version   "2.50"
 #property strict
 
+enum ENUM_CANDLE_SEND_MODE
+{
+   Create,
+   Append
+};
+
 
 input string InpGatewayClientId = "mt5_terminal_01";
 input string InpGatewayFolderName = "LLM-B";
@@ -423,10 +429,10 @@ void HandleCabinOrder()
          return;
       }
 
-      processed = GoSend("h1Candles");
+      processed = GoSend("h1Candles", Create);
 
       if(processed && h6Candles != "")
-         processed = GoSend("h6Candles");
+         processed = GoSend("h6Candles", Create);
 
       if(processed)
          LastCandle = BuiltLastCandle;
@@ -446,10 +452,10 @@ void HandleCabinOrder()
          return;
       }
    
-      processed = GoSend("h1Candles");
+      processed = GoSend("h1Candles", Append);
    
       if(processed && h6Candles != "")
-         processed = GoSend("h6Candles");
+         processed = GoSend("h6Candles", Append);
    
       if(processed)
          LastCandle = BuiltLastCandle;
@@ -601,7 +607,10 @@ string BuildCandleObject(
    return data;
 }
 
-bool GoSend(const string arrayName)
+bool GoSend(
+   const string arrayName,
+   const ENUM_CANDLE_SEND_MODE mode
+)
 {
    string records = "";
 
@@ -626,26 +635,29 @@ bool GoSend(const string arrayName)
    data += "\"command\":\"CHART-INIT\",";
    data += "\"operations\":[";
 
-   // MAKE
-   data += "{";
-   data += "\"command\":\"MAKE\",";
-   data += "\"table\":\"" + arrayName + "\",";
-   data += "\"columns\":[";
-
-   data += "{\"name\":\"symbol\",\"type\":\"TEXT\"},";
-   data += "{\"name\":\"time\",\"type\":\"TEXT\"},";
-   data += "{\"name\":\"open\",\"type\":\"REAL\"},";
-   data += "{\"name\":\"high\",\"type\":\"REAL\"},";
-   data += "{\"name\":\"low\",\"type\":\"REAL\"},";
-   data += "{\"name\":\"close\",\"type\":\"REAL\"},";
-   data += "{\"name\":\"tick_volume\",\"type\":\"INTEGER\"},";
-   data += "{\"name\":\"spread_points\",\"type\":\"INTEGER\"},";
-   data += "{\"name\":\"river_center\",\"type\":\"REAL\"},";
-   data += "{\"name\":\"river_width_pips\",\"type\":\"REAL\"},";
-   data += "{\"name\":\"MABIF\",\"type\":\"TEXT\"}";
-
-   data += "]";
-   data += "},";
+   // MAKE - only when creating a new table
+   if(mode == Create)
+   {
+      data += "{";
+      data += "\"command\":\"MAKE\",";
+      data += "\"table\":\"" + arrayName + "\",";
+      data += "\"columns\":[";
+   
+      data += "{\"name\":\"symbol\",\"type\":\"TEXT\"},";
+      data += "{\"name\":\"time\",\"type\":\"TEXT\"},";
+      data += "{\"name\":\"open\",\"type\":\"REAL\"},";
+      data += "{\"name\":\"high\",\"type\":\"REAL\"},";
+      data += "{\"name\":\"low\",\"type\":\"REAL\"},";
+      data += "{\"name\":\"close\",\"type\":\"REAL\"},";
+      data += "{\"name\":\"tick_volume\",\"type\":\"INTEGER\"},";
+      data += "{\"name\":\"spread_points\",\"type\":\"INTEGER\"},";
+      data += "{\"name\":\"river_center\",\"type\":\"REAL\"},";
+      data += "{\"name\":\"river_width_pips\",\"type\":\"REAL\"},";
+      data += "{\"name\":\"MABIF\",\"type\":\"TEXT\"}";
+   
+      data += "]";
+      data += "},";
+   }
 
    // INSR
    data += "{";
