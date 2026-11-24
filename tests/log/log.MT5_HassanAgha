@@ -516,6 +516,9 @@ void DrawHassanSmallBoxes()
 
    int count = m_fractal.SmallBoxCount();
 
+   int count = m_fractal.SmallBoxCount();
+   Print("[HA-BOX-DRAW] SmallBoxCount=", count);
+
    for(int i = 0; i < count; i++)
    {
       FlatZone box;
@@ -619,6 +622,15 @@ int OnInit()
    
    m_fractal.Set(m_stc,g_ma_h1);
    m_fractal.Build(historyBars);
+
+   PrintFormat(
+      "[HA-BOX-INIT] bars=%d | shift=%d | boxes=%d | first=%s | last=%s",
+      Bars(_Symbol, PERIOD_H1),
+      iBarShift(_Symbol, PERIOD_H1, HassanBoxStart, false),
+      m_fractal.SmallBoxCount(),
+      TimeToString(iTime(_Symbol, PERIOD_H1, Bars(_Symbol, PERIOD_H1)-1), TIME_DATE),
+      TimeToString(iTime(_Symbol, PERIOD_H1, 0), TIME_DATE)
+   );
 
    
    H1_river.Set(g_ma_h1);
