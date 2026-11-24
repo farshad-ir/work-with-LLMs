@@ -376,16 +376,94 @@ class MT5Cabin:
 
         if command_type == "CONSULT-LLM":
             self.build_consult_form()
-
-        elif command_type == "LIST-TABL":
-            ttk.Label(
-                self.command_fields_frame,
-                text="This command does not require additional input."
-            ).pack(anchor="w")
+            
+        elif command_type == "SQL-DIRECT":
+            self.build_sql_direct_form()
 
         elif command_type == "MT5-RESEND":
             self.build_resend_form()
 
+    def build_sql_direct_form(self):
+
+        self.sql_operation_var = tk.StringVar(value="LIST-TABL")
+
+        ttk.Label(
+            self.command_fields_frame,
+            text="SQL Operation:"
+        ).pack(anchor="w")
+
+        self.sql_operation_selector = ttk.Combobox(
+            self.command_fields_frame,
+            textvariable=self.sql_operation_var,
+            values=["LIST-TABL", "SELECT"],
+            state="readonly",
+            width=20
+        )
+        self.sql_operation_selector.pack(anchor="w", pady=3)
+
+        self.sql_operation_selector.bind(
+            "<<ComboboxSelected>>",
+            self.update_sql_direct_fields
+        )
+
+        self.sql_fields_frame = ttk.Frame(
+            self.command_fields_frame
+        )
+        self.sql_fields_frame.pack(fill="x", pady=5)
+
+        self.update_sql_direct_fields()
+
+    def update_sql_direct_fields(self, event=None):
+
+        for widget in self.sql_fields_frame.winfo_children():
+            widget.destroy()
+
+        if self.sql_operation_var.get() == "LIST-TABL":
+            ttk.Label(
+                self.sql_fields_frame,
+                text="No additional input required."
+            ).pack(anchor="w")
+            return
+
+        ttk.Label(
+            self.sql_fields_frame,
+            text="Table:"
+        ).pack(anchor="w")
+
+        self.sql_table_var = tk.StringVar(value="h1Candles")
+
+        ttk.Entry(
+            self.sql_fields_frame,
+            textvariable=self.sql_table_var,
+            width=25
+        ).pack(anchor="w", pady=3)
+
+        ttk.Label(
+            self.sql_fields_frame,
+            text="Columns (comma separated):"
+        ).pack(anchor="w")
+
+        self.sql_columns_var = tk.StringVar(value="*")
+
+        ttk.Entry(
+            self.sql_fields_frame,
+            textvariable=self.sql_columns_var,
+            width=25
+        ).pack(anchor="w", pady=3)
+
+        ttk.Label(
+            self.sql_fields_frame,
+            text="Limit (optional):"
+        ).pack(anchor="w")
+
+        self.sql_limit_var = tk.StringVar()
+
+        ttk.Entry(
+            self.sql_fields_frame,
+            textvariable=self.sql_limit_var,
+            width=12
+        ).pack(anchor="w", pady=3)
+    
     def build_consult_form(self):
 
         candles_frame = ttk.Frame(self.command_fields_frame)
