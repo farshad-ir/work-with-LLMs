@@ -65,6 +65,7 @@ string h6Candles = "";
 datetime LastCandle = 0 ;
 datetime BuiltLastCandle = 0;
 datetime HassanLastBoxBar = 0;
+datetime HassanBoxStart = D'2023.01.01 00:00';
 
 
 
@@ -482,13 +483,29 @@ void HandleCabinOrder()
 
 
 
+int GetHassanHistoryBars()
+{
+   int shift = iBarShift(
+      _Symbol,
+      PERIOD_H1,
+      HassanBoxStart,
+      false
+   );
 
+   if(shift < 0)
+   {
+      Print("[HA-BOX] Cannot locate January 2023 in H1 history.");
+      return 0;
+   }
+
+   return shift + 1;
+}
 //+------------------------------------------------------------------+
 //| Draw Hassan Small Boxes                                          |
 //+------------------------------------------------------------------+
 void DrawHassanSmallBoxes()
 {
-   // Remove only our own chart objects
+   // Remove previous Hassan boxes
    for(int i = ObjectsTotal(0) - 1; i >= 0; i--)
    {
       string name = ObjectName(0, i);
@@ -498,14 +515,21 @@ void DrawHassanSmallBoxes()
    }
 
    int count = m_fractal.SmallBoxCount();
-   int limit = MathMin(count, 10);
 
-   for(int i = 0; i < limit; i++)
+   for(int i = 0; i < count; i++)
    {
       FlatZone box;
 
       if(!m_fractal.GetSmallBox(i, box))
          continue;
+
+      if(box.endTime < HassanBoxStart)
+         continue;
+
+      datetime drawStart = box.startTime;
+
+      if(drawStart < HassanBoxStart)
+         drawStart = HassanBoxStart;
 
       string name = "HA_SMALLBOX_" + IntegerToString(i);
 
@@ -514,26 +538,24 @@ void DrawHassanSmallBoxes()
          name,
          OBJ_RECTANGLE,
          0,
-         box.startTime,
+         drawStart,
          box.highPrice,
          box.endTime,
          box.lowPrice
       ))
          continue;
 
-      ObjectSetInteger(0, name, OBJPROP_COLOR,
-                       i == 0 ? clrLime : clrGold);
-
+      ObjectSetInteger(0, name, OBJPROP_COLOR, clrIvory);
       ObjectSetInteger(0, name, OBJPROP_STYLE, STYLE_SOLID);
       ObjectSetInteger(0, name, OBJPROP_WIDTH, 2);
       ObjectSetInteger(0, name, OBJPROP_FILL, false);
-      ObjectSetInteger(0, name, OBJPROP_BACK, false);
+      ObjectSetInteger(0, name, OBJPROP_BACK, true);
 
       ObjectSetString(
          0,
          name,
          OBJPROP_TOOLTIP,
-         "Hassan Small Box " + IntegerToString(i) + "\n" +
+         "Hassan Small Box\n" +
          "High: " + DoubleToString(box.highPrice, _Digits) + "\n" +
          "Low: " + DoubleToString(box.lowPrice, _Digits) + "\n" +
          "Start: " + TimeToString(box.startTime, TIME_DATE|TIME_MINUTES) + "\n" +
@@ -543,7 +565,6 @@ void DrawHassanSmallBoxes()
 
    ChartRedraw(0);
 }
-
 
 //+------------------------------------------------------------------+
 //| Cleanup Hassan Small Boxes                                       |
@@ -583,15 +604,22 @@ int OnInit()
       return INIT_FAILED;
    }
    
-   
+      
    m_stc.Init();
-   m_stc.Update(50000);
    
-   g_ma_h1.Update(50000);
-   g_ma_h6.Update(50000);
+   int historyBars = GetHassanHistoryBars();
+   
+   if(historyBars <= 0)
+      return INIT_FAILED;
+   
+   m_stc.Update(historyBars);
+   
+   g_ma_h1.Update(historyBars);
+   g_ma_h6.Update(10000);
    
    m_fractal.Set(m_stc,g_ma_h1);
-   m_fractal.Build(50000);
+   m_fractal.Build(historyBars);
+
    
    H1_river.Set(g_ma_h1);
    H6_river.Set(g_ma_h6);
@@ -623,6 +651,7 @@ int OnInit()
 }
    
 
+
 void OnTick()
 {
    datetime currentBar = iTime(_Symbol, PERIOD_H1, 0);
@@ -632,13 +661,19 @@ void OnTick()
 
    HassanLastBoxBar = currentBar;
 
-   g_ma_h1.Update(50000);
-   m_stc.Update(50000);
+   int historyBars = GetHassanHistoryBars();
 
-   m_fractal.Build(50000);
+   if(historyBars <= 0)
+      return;
+
+   g_ma_h1.Update(historyBars);
+   m_stc.Update(historyBars);
+
+   m_fractal.Build(historyBars);
 
    DrawHassanSmallBoxes();
 }
+
 
 
 void OnDeinit(const int reason)
