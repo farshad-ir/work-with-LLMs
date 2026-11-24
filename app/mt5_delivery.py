@@ -150,7 +150,63 @@ def _validate_envelope(envelope):
                 raise ValueError(
                     "Each CHART-INIT operation requires a command."
                 )
+                
+    elif command == "SQL-DIRECT":
+        operation = payload.get("operation")
 
+        if not isinstance(operation, dict):
+            raise ValueError(
+                "SQL-DIRECT requires an operation object."
+            )
+
+        operation_command = operation.get("command")
+
+        if not isinstance(operation_command, str):
+            raise ValueError(
+                "SQL-DIRECT operation requires a command."
+            )
+
+        operation_command = operation_command.upper()
+
+        if operation_command not in ("LIST-TABL", "SELA"):
+            raise ValueError(
+                f"Unsupported SQL-DIRECT operation: {operation_command}"
+            )
+
+        if operation_command == "SELA":
+            table = operation.get("table")
+
+            if not isinstance(table, str) or not table.strip():
+                raise ValueError(
+                    "SELA requires a non-empty table."
+                )
+
+            columns = operation.get("columns")
+
+            if (
+                not isinstance(columns, list)
+                or not columns
+                or any(
+                    not isinstance(column, str) or not column.strip()
+                    for column in columns
+                )
+            ):
+                raise ValueError(
+                    "SELA requires a non-empty columns array of strings."
+                )
+
+            limit = operation.get("limit")
+
+            if limit is not None:
+                if (
+                    isinstance(limit, bool)
+                    or not isinstance(limit, int)
+                    or limit < 1
+                ):
+                    raise ValueError(
+                        "SELA limit must be a positive integer."
+                    )
+                    
     elif command == "CONSULT-LLM":
         inquiry = payload.get("inquiry")
 
