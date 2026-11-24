@@ -74,7 +74,13 @@ CStructure        m_stc;
 CFractalGeometry  m_fractal;
 CMT5Gateway Gateway;
 
-
+struct SmallBoxRecord
+{
+   datetime startTime;
+   datetime endTime;
+   double highPrice;
+   double lowPrice;
+};
 
 
 
@@ -568,6 +574,111 @@ void DrawHassanSmallBoxes()
 
    ChartRedraw(0);
 }
+
+
+
+
+//+------------------------------------------------------------------+
+//| Build Records for Small Boxes                                       |
+//+------------------------------------------------------------------+
+
+bool BuildSmallBoxRecords(
+   const bool takeDate,
+   const datetime rangeStart,
+   const datetime rangeEnd,
+   SmallBoxRecord &records[]
+)
+{
+   ArrayResize(records, 0);
+
+   int count = m_fractal.SmallBoxCount();
+   int mergedCount = 0;
+
+   for(int i = 0; i < count; i++)
+   {
+      FlatZone box;
+
+      if(!m_fractal.GetSmallBox(i, box))
+         continue;
+
+      int shift = iBarShift(
+         _Symbol,
+         PERIOD_H1,
+         box.endTime,
+         false
+      );
+
+      if(shift < 3)
+         continue;
+
+      // TAKE-DATE: select boxes by their maturity time.
+      if(takeDate)
+      {
+         datetime matureTime = iTime(
+            _Symbol,
+            PERIOD_H1,
+            shift - 3
+         );
+
+         if(matureTime < rangeStart || matureTime > rangeEnd)
+            continue;
+      }
+      // SEND-NEXT: only boxes reaching readiness now.
+      else
+      {
+         if(shift != 3)
+            continue;
+      }
+
+      // Merge boxes with the same EndTime.
+      int found = -1;
+
+      for(int j = 0; j < mergedCount; j++)
+      {
+         if(records[j].endTime == box.endTime)
+         {
+            found = j;
+            break;
+         }
+      }
+
+      if(found >= 0)
+      {
+         if(box.startTime < records[found].startTime)
+            records[found].startTime = box.startTime;
+
+         if(box.highPrice > records[found].highPrice)
+            records[found].highPrice = box.highPrice;
+
+         if(box.lowPrice < records[found].lowPrice)
+            records[found].lowPrice = box.lowPrice;
+      }
+      else
+      {
+         int newSize = ArrayResize(records, mergedCount + 1);
+
+         if(newSize != mergedCount + 1)
+            return false;
+
+         records[mergedCount].startTime = box.startTime;
+         records[mergedCount].endTime = box.endTime;
+         records[mergedCount].highPrice = box.highPrice;
+         records[mergedCount].lowPrice = box.lowPrice;
+
+         mergedCount++;
+      }
+   }
+
+   PrintFormat(
+      "[HA-BOX-BUILD] Found=%d | Merged=%d | TAKE-DATE=%s",
+      count,
+      mergedCount,
+      takeDate ? "true" : "false"
+   );
+
+   return true;
+}
+
 
 //+------------------------------------------------------------------+
 //| Cleanup Hassan Small Boxes                                       |
