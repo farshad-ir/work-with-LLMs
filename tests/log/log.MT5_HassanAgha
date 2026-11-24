@@ -64,7 +64,7 @@ string h1Candles = "";
 string h6Candles = "";
 datetime LastCandle = 0 ;
 datetime BuiltLastCandle = 0;
-
+datetime HassanLastBoxBar = 0;
 
 
 
@@ -480,7 +480,81 @@ void HandleCabinOrder()
 
 
 
+//+------------------------------------------------------------------+
+//| Draw Hassan Small Boxes                                          |
+//+------------------------------------------------------------------+
+void DrawHassanSmallBoxes()
+{
+   // Remove only our own chart objects
+   for(int i = ObjectsTotal(0) - 1; i >= 0; i--)
+   {
+      string name = ObjectName(0, i);
 
+      if(StringFind(name, "HA_SMALLBOX_") == 0)
+         ObjectDelete(0, name);
+   }
+
+   int count = m_fractal.SmallBoxCount();
+   int limit = MathMin(count, 10);
+
+   for(int i = 0; i < limit; i++)
+   {
+      FlatZone box;
+
+      if(!m_fractal.GetSmallBox(i, box))
+         continue;
+
+      string name = "HA_SMALLBOX_" + IntegerToString(i);
+
+      if(!ObjectCreate(
+         0,
+         name,
+         OBJ_RECTANGLE,
+         0,
+         box.startTime,
+         box.highPrice,
+         box.endTime,
+         box.lowPrice
+      ))
+         continue;
+
+      ObjectSetInteger(0, name, OBJPROP_COLOR,
+                       i == 0 ? clrLime : clrGold);
+
+      ObjectSetInteger(0, name, OBJPROP_STYLE, STYLE_SOLID);
+      ObjectSetInteger(0, name, OBJPROP_WIDTH, 2);
+      ObjectSetInteger(0, name, OBJPROP_FILL, false);
+      ObjectSetInteger(0, name, OBJPROP_BACK, false);
+
+      ObjectSetString(
+         0,
+         name,
+         OBJPROP_TOOLTIP,
+         "Hassan Small Box " + IntegerToString(i) + "\n" +
+         "High: " + DoubleToString(box.highPrice, _Digits) + "\n" +
+         "Low: " + DoubleToString(box.lowPrice, _Digits) + "\n" +
+         "Start: " + TimeToString(box.startTime, TIME_DATE|TIME_MINUTES) + "\n" +
+         "End: " + TimeToString(box.endTime, TIME_DATE|TIME_MINUTES)
+      );
+   }
+
+   ChartRedraw(0);
+}
+
+
+//+------------------------------------------------------------------+
+//| Cleanup Hassan Small Boxes                                       |
+//+------------------------------------------------------------------+
+void CleanupHassanSmallBoxes()
+{
+   for(int i = ObjectsTotal(0) - 1; i >= 0; i--)
+   {
+      string name = ObjectName(0, i);
+
+      if(StringFind(name, "HA_SMALLBOX_") == 0)
+         ObjectDelete(0, name);
+   }
+}
 
 
 
@@ -519,6 +593,8 @@ int OnInit()
    H1_river.Set(g_ma_h1);
    H6_river.Set(g_ma_h6);
 
+   DrawHassanSmallBoxes();
+   HassanLastBoxBar = iTime(_Symbol, PERIOD_H1, 0);
 
 
 
@@ -546,12 +622,27 @@ int OnInit()
 
 void OnTick()
 {
+   datetime currentBar = iTime(_Symbol, PERIOD_H1, 0);
 
+   if(currentBar <= 0 || currentBar == HassanLastBoxBar)
+      return;
 
+   HassanLastBoxBar = currentBar;
 
+   g_ma_h1.Update(50000);
+   m_stc.Update(50000);
 
-   
+   m_fractal.Build(50000);
+
+   DrawHassanSmallBoxes();
 }
+
+
+void OnDeinit(const int reason)
+{
+   CleanupHassanSmallBoxes();
+}   
+
 //+------------------------------------------------------------------+
 
 
