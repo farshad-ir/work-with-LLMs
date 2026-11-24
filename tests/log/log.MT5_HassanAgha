@@ -579,7 +579,7 @@ void DrawHassanSmallBoxes()
 
 
 //+------------------------------------------------------------------+
-//| Build Records for Small Boxes                                       |
+//| Build Records for Small Boxes                                    |
 //+------------------------------------------------------------------+
 
 bool BuildSmallBoxRecords(
@@ -678,6 +678,119 @@ bool BuildSmallBoxRecords(
 
    return true;
 }
+
+
+//+------------------------------------------------------------------+
+//| Send Records of Small Boxes                                    |
+//+------------------------------------------------------------------+
+
+bool SendSmallBoxRecords(
+   const SmallBoxRecord &records[],
+   const ENUM_CANDLE_SEND_MODE mode
+)
+{
+   int count = ArraySize(records);
+
+   // No data to append.
+   if(mode == Append && count == 0)
+   {
+      Print("[HA-BOX-SEND] No new boxes to append.");
+      return true;
+   }
+
+   string data = "{";
+   data += "\"command\":\"CHART-INIT\",";
+   data += "\"operations\":[";
+
+   // Create mode: recreate SmallBoxes table and its unique index.
+   if(mode == Create)
+   {
+      data += "{";
+      data += "\"command\":\"MAKE\",";
+      data += "\"table\":\"SmallBoxes\",";
+      data += "\"columns\":[";
+
+      data += "{\"name\":\"StartTime\",\"type\":\"TEXT\",\"not_null\":true},";
+      data += "{\"name\":\"EndTime\",\"type\":\"TEXT\",\"not_null\":true},";
+      data += "{\"name\":\"High\",\"type\":\"REAL\",\"not_null\":true},";
+      data += "{\"name\":\"Low\",\"type\":\"REAL\",\"not_null\":true}";
+
+      data += "],";
+      data += "\"unique\":[";
+      data += "{";
+      data += "\"name\":\"SmallBoxes_EndTime_uq\",";
+      data += "\"columns\":[\"EndTime\"]";
+      data += "}";
+      data += "]";
+      data += "}";
+
+      if(count > 0)
+         data += ",";
+   }
+
+   // Insert records.
+   if(count > 0)
+   {
+      data += "{";
+      data += "\"command\":\"";
+      data += (mode == Create ? "INSR" : "INSR-IGNORE");
+      data += "\",";
+      data += "\"table\":\"SmallBoxes\",";
+      data += "\"records\":[";
+
+      for(int i = 0; i < count; i++)
+      {
+         if(i > 0)
+            data += ",";
+
+         data += "{";
+
+         data += "\"StartTime\":\"";
+         data += TimeToString(
+            records[i].startTime,
+            TIME_DATE | TIME_MINUTES
+         );
+         data += "\",";
+
+         data += "\"EndTime\":\"";
+         data += TimeToString(
+            records[i].endTime,
+            TIME_DATE | TIME_MINUTES
+         );
+         data += "\",";
+
+         data += "\"High\":";
+         data += DoubleToString(records[i].highPrice, _Digits);
+         data += ",";
+
+         data += "\"Low\":";
+         data += DoubleToString(records[i].lowPrice, _Digits);
+
+         data += "}";
+      }
+
+      data += "]";
+      data += "}";
+   }
+
+   data += "]";
+   data += "}";
+
+   if(!Gateway.ExecuteRequest(data))
+   {
+      Print("[HA-BOX-SEND] Gateway request failed.");
+      return false;
+   }
+
+   PrintFormat(
+      "[HA-BOX-SEND] Completed | Mode=%s | Records=%d",
+      mode == Create ? "CREATE" : "APPEND",
+      count
+   );
+
+   return true;
+}
+
 
 
 //+------------------------------------------------------------------+
