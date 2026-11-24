@@ -632,7 +632,31 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
 
         if not success:
             response_payload["error"] = "CHART-INIT operation failed."
+            
+    elif command == "SQL-DIRECT":
 
+        if _is_mt5_cancel_requested(client_id, request_id):
+            success = False
+            response_payload = {
+                "error": "Request was cancelled."
+            }
+
+        else:
+            execution_id = (
+                f"{client_id}:{request_id}:SQL-DIRECT"
+            )
+
+            operation_result = execute_command(
+                payload["operation"],
+                execution_id=execution_id,
+            )
+
+            success = operation_result.get("success", False)
+
+            response_payload = {
+                "operation": operation_result,
+            }
+            
     elif command == "CONSULT-LLM":
 
         try:
