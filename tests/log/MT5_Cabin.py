@@ -212,7 +212,7 @@ class MT5Cabin:
             textvariable=self.command_type_var,
             values=[
                 "CONSULT-LLM",
-                "LIST-TABL",
+                "SQL-DIRECT",
                 "MT5-RESEND"
             ],
             state="readonly",
