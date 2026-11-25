@@ -632,7 +632,35 @@ bool BuildSmallBoxRecords(
    int count = m_fractal.SmallBoxCount();
    int mergedCount = 0;
 
-   for(int i = 0; i < count; i++)
+   int rangeStartShift = -1;
+   int rangeEndShift = -1;
+
+   // Convert range end time to shift for both TAKE-DATE and SEND-NEXT.
+   rangeEndShift = iBarShift(
+      _Symbol,
+      PERIOD_H1,
+      rangeEnd,
+      false
+   );
+
+   if(rangeEndShift < 0)
+      return false;
+
+   // Convert range start time only for TAKE-DATE.
+   if(takeDate)
+   {
+      rangeStartShift = iBarShift(
+         _Symbol,
+         PERIOD_H1,
+         rangeStart,
+         false
+      );
+
+      if(rangeStartShift < 0)
+         return false;
+   }
+
+   for(int i = count - 1; i >= 0; i--)
    {
       FlatZone box;
 
@@ -649,22 +677,16 @@ bool BuildSmallBoxRecords(
       if(shift < 3)
          continue;
 
-      // TAKE-DATE: select boxes by their maturity time.
+      // TAKE-DATE: select boxes by their maturity shift.
       if(takeDate)
       {
-         datetime matureTime = iTime(
-            _Symbol,
-            PERIOD_H1,
-            shift - 3
-         );
-
-         if(matureTime < rangeStart || matureTime > rangeEnd)
+         if(shift < rangeEndShift + 3 || shift > rangeStartShift)
             continue;
       }
       // SEND-NEXT: only boxes reaching readiness now.
       else
       {
-         if(shift != 3)
+         if(shift != rangeEndShift + 3)
             continue;
       }
 
