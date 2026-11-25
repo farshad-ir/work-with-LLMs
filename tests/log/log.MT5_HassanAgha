@@ -493,7 +493,7 @@ void HandleCabinOrder()
          if(!BuildSmallBoxRecords(
             false,
             0,
-            0,
+            BuiltLastCandle,
             boxRecords
          ))
          {
