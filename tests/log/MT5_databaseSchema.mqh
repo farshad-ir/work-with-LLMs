@@ -1,8 +1,7 @@
-```mql5
 //+------------------------------------------------------------------+
 //| MT5_databaseSchema.mqh                                           |
-//| Central SQLite schema catalog                                    |
-//| SQL definitions only - no database execution functions           |
+//| Central database schema catalog for MT5 Gateway                  |
+//| JSON definitions compatible with Gateway MAKE command            |
 //+------------------------------------------------------------------+
 #ifndef MT5_DATABASE_SCHEMA_MQH
 #define MT5_DATABASE_SCHEMA_MQH
@@ -16,27 +15,28 @@ public:
    // CONFIRMED: Extracted from HassanAgha Expert
    //===============================================================
 
-   static const string H1_CANDLES;
-   static const string H6_CANDLES;
-   static const string SMALL_BOXES;
-   static const string SMALL_BOXES_INDEX;
+   static const string H1_CANDLES_COLUMNS;
+   static const string H6_CANDLES_COLUMNS;
+
+   static const string SMALL_BOXES_COLUMNS;
+   static const string SMALL_BOXES_UNIQUE;
 
 
    //===============================================================
    // DOCUMENTED: LLM-Trading-Consultation-Workflow.md
    //===============================================================
 
-   static const string OPINIONS;
+   static const string OPINIONS_COLUMNS;
 
 
    //===============================================================
    // PROVISIONAL: Schema requires future confirmation
    //===============================================================
 
-   static const string TRADES;
-   static const string OPINION_TRADE;
-   static const string DEBATE;
-   static const string HUMAN_INTERVENTION;
+   static const string TRADES_COLUMNS;
+   static const string OPINION_TRADE_COLUMNS;
+   static const string DEBATE_COLUMNS;
+   static const string HUMAN_INTERVENTION_COLUMNS;
 
 
    //===============================================================
@@ -44,155 +44,146 @@ public:
    // Historical-Simulation-and-LLM-Data-Isolation.md
    //===============================================================
 
-   static const string SIMULATED_TRADES;
+   static const string SIMULATED_TRADES_COLUMNS;
 };
 
 
 //+------------------------------------------------------------------+
 //| H1 Candles                                                       |
-//| Exact columns from GoSend()                                      |
 //+------------------------------------------------------------------+
-const string CMT5DatabaseSchema::H1_CANDLES =
-   "CREATE TABLE IF NOT EXISTS h1Candles (" +
-   "symbol TEXT, " +
-   "time TEXT, " +
-   "open REAL, " +
-   "high REAL, " +
-   "low REAL, " +
-   "close REAL, " +
-   "tick_volume INTEGER, " +
-   "spread_points INTEGER, " +
-   "river_center REAL, " +
-   "river_width_pips REAL, " +
-   "MABIF TEXT" +
-   ");";
+const string CMT5DatabaseSchema::H1_CANDLES_COLUMNS =
+   "["
+   "{\"name\":\"symbol\",\"type\":\"TEXT\"},"
+   "{\"name\":\"time\",\"type\":\"TEXT\"},"
+   "{\"name\":\"open\",\"type\":\"REAL\"},"
+   "{\"name\":\"high\",\"type\":\"REAL\"},"
+   "{\"name\":\"low\",\"type\":\"REAL\"},"
+   "{\"name\":\"close\",\"type\":\"REAL\"},"
+   "{\"name\":\"tick_volume\",\"type\":\"INTEGER\"},"
+   "{\"name\":\"spread_points\",\"type\":\"INTEGER\"},"
+   "{\"name\":\"river_center\",\"type\":\"REAL\"},"
+   "{\"name\":\"river_width_pips\",\"type\":\"REAL\"},"
+   "{\"name\":\"MABIF\",\"type\":\"TEXT\"}"
+   "]";
 
 
 //+------------------------------------------------------------------+
 //| H6 Candles                                                       |
-//| Exact columns from GoSend()                                      |
 //+------------------------------------------------------------------+
-const string CMT5DatabaseSchema::H6_CANDLES =
-   "CREATE TABLE IF NOT EXISTS h6Candles (" +
-   "symbol TEXT, " +
-   "time TEXT, " +
-   "open REAL, " +
-   "high REAL, " +
-   "low REAL, " +
-   "close REAL, " +
-   "tick_volume INTEGER, " +
-   "spread_points INTEGER, " +
-   "river_center REAL, " +
-   "river_width_pips REAL, " +
-   "MABIF TEXT" +
-   ");";
+const string CMT5DatabaseSchema::H6_CANDLES_COLUMNS =
+   "["
+   "{\"name\":\"symbol\",\"type\":\"TEXT\"},"
+   "{\"name\":\"time\",\"type\":\"TEXT\"},"
+   "{\"name\":\"open\",\"type\":\"REAL\"},"
+   "{\"name\":\"high\",\"type\":\"REAL\"},"
+   "{\"name\":\"low\",\"type\":\"REAL\"},"
+   "{\"name\":\"close\",\"type\":\"REAL\"},"
+   "{\"name\":\"tick_volume\",\"type\":\"INTEGER\"},"
+   "{\"name\":\"spread_points\",\"type\":\"INTEGER\"},"
+   "{\"name\":\"river_center\",\"type\":\"REAL\"},"
+   "{\"name\":\"river_width_pips\",\"type\":\"REAL\"},"
+   "{\"name\":\"MABIF\",\"type\":\"TEXT\"}"
+   "]";
 
 
 //+------------------------------------------------------------------+
 //| SmallBoxes                                                       |
-//| Exact columns from SendSmallBoxRecords()                         |
 //+------------------------------------------------------------------+
-const string CMT5DatabaseSchema::SMALL_BOXES =
-   "CREATE TABLE IF NOT EXISTS SmallBoxes (" +
-   "StartTime TEXT NOT NULL, " +
-   "EndTime TEXT NOT NULL, " +
-   "High REAL NOT NULL, " +
-   "Low REAL NOT NULL" +
-   ");";
+const string CMT5DatabaseSchema::SMALL_BOXES_COLUMNS =
+   "["
+   "{\"name\":\"StartTime\",\"type\":\"TEXT\",\"not_null\":true},"
+   "{\"name\":\"EndTime\",\"type\":\"TEXT\",\"not_null\":true},"
+   "{\"name\":\"High\",\"type\":\"REAL\",\"not_null\":true},"
+   "{\"name\":\"Low\",\"type\":\"REAL\",\"not_null\":true}"
+   "]";
 
 
-const string CMT5DatabaseSchema::SMALL_BOXES_INDEX =
-   "CREATE UNIQUE INDEX IF NOT EXISTS SmallBoxes_EndTime_uq " +
-   "ON SmallBoxes (EndTime);";
+const string CMT5DatabaseSchema::SMALL_BOXES_UNIQUE =
+   "["
+   "{"
+   "\"name\":\"SmallBoxes_EndTime_uq\","
+   "\"columns\":[\"EndTime\"]"
+   "}"
+   "]";
 
 
 //+------------------------------------------------------------------+
 //| Opinions                                                         |
-//| Initial fields documented in consultation workflow              |
 //+------------------------------------------------------------------+
-const string CMT5DatabaseSchema::OPINIONS =
-   "CREATE TABLE IF NOT EXISTS opinions (" +
-   "opinion_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-   "created_at TEXT, " +
-   "symbol TEXT, " +
-   "timeframe TEXT, " +
-   "candle_reference TEXT, " +
-   "box_reference TEXT, " +
-   "model TEXT, " +
-   "opinion TEXT, " +
-   "\"select\" INTEGER" +
-   ");";
+const string CMT5DatabaseSchema::OPINIONS_COLUMNS =
+   "["
+   "{\"name\":\"opinion_id\",\"type\":\"INTEGER\"},"
+   "{\"name\":\"created_at\",\"type\":\"TEXT\"},"
+   "{\"name\":\"symbol\",\"type\":\"TEXT\"},"
+   "{\"name\":\"timeframe\",\"type\":\"TEXT\"},"
+   "{\"name\":\"candle_reference\",\"type\":\"TEXT\"},"
+   "{\"name\":\"box_reference\",\"type\":\"TEXT\"},"
+   "{\"name\":\"model\",\"type\":\"TEXT\"},"
+   "{\"name\":\"opinion\",\"type\":\"TEXT\"},"
+   "{\"name\":\"select\",\"type\":\"INTEGER\"}"
+   "]";
 
 
 //+------------------------------------------------------------------+
-//| Trades                                                           |
-//| PROVISIONAL                                                      |
+//| Trades - PROVISIONAL                                             |
 //+------------------------------------------------------------------+
-const string CMT5DatabaseSchema::TRADES =
-   "CREATE TABLE IF NOT EXISTS trades (" +
-   "trade_id INTEGER PRIMARY KEY, " +
-   "ticket INTEGER NOT NULL UNIQUE, " +
-   "symbol TEXT, " +
-   "open_time TEXT, " +
-   "open_price REAL, " +
-   "close_time TEXT, " +
-   "close_price REAL, " +
-   "profit REAL" +
-   ");";
+const string CMT5DatabaseSchema::TRADES_COLUMNS =
+   "["
+   "{\"name\":\"trade_id\",\"type\":\"INTEGER\"},"
+   "{\"name\":\"ticket\",\"type\":\"INTEGER\",\"not_null\":true},"
+   "{\"name\":\"symbol\",\"type\":\"TEXT\"},"
+   "{\"name\":\"open_time\",\"type\":\"TEXT\"},"
+   "{\"name\":\"open_price\",\"type\":\"REAL\"},"
+   "{\"name\":\"close_time\",\"type\":\"TEXT\"},"
+   "{\"name\":\"close_price\",\"type\":\"REAL\"},"
+   "{\"name\":\"profit\",\"type\":\"REAL\"}"
+   "]";
 
 
 //+------------------------------------------------------------------+
-//| Opinion - Trade relationship                                     |
-//| PROVISIONAL                                                      |
+//| Opinion - Trade relationship - PROVISIONAL                       |
 //+------------------------------------------------------------------+
-const string CMT5DatabaseSchema::OPINION_TRADE =
-   "CREATE TABLE IF NOT EXISTS opinion_trade (" +
-   "opinion_id INTEGER NOT NULL, " +
-   "trade_id INTEGER NOT NULL, " +
-   "PRIMARY KEY (opinion_id, trade_id)" +
-   ");";
+const string CMT5DatabaseSchema::OPINION_TRADE_COLUMNS =
+   "["
+   "{\"name\":\"opinion_id\",\"type\":\"INTEGER\",\"not_null\":true},"
+   "{\"name\":\"trade_id\",\"type\":\"INTEGER\",\"not_null\":true}"
+   "]";
 
 
 //+------------------------------------------------------------------+
-//| Debate                                                           |
-//| PROVISIONAL - temporary discussion records                       |
+//| Debate - PROVISIONAL                                             |
 //+------------------------------------------------------------------+
-const string CMT5DatabaseSchema::DEBATE =
-   "CREATE TABLE IF NOT EXISTS debate (" +
-   "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-   "sequence INTEGER NOT NULL, " +
-   "role TEXT NOT NULL, " +
-   "content TEXT NOT NULL, " +
-   "created_at TEXT" +
-   ");";
+const string CMT5DatabaseSchema::DEBATE_COLUMNS =
+   "["
+   "{\"name\":\"sequence\",\"type\":\"INTEGER\",\"not_null\":true},"
+   "{\"name\":\"role\",\"type\":\"TEXT\",\"not_null\":true},"
+   "{\"name\":\"content\",\"type\":\"TEXT\",\"not_null\":true},"
+   "{\"name\":\"created_at\",\"type\":\"TEXT\"}"
+   "]";
 
 
 //+------------------------------------------------------------------+
-//| Human Intervention                                               |
-//| PROVISIONAL - prompt/role instructions managed by Cabin          |
+//| Human Intervention - PROVISIONAL                                 |
 //+------------------------------------------------------------------+
-const string CMT5DatabaseSchema::HUMAN_INTERVENTION =
-   "CREATE TABLE IF NOT EXISTS human_intervention (" +
-   "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-   "prompt TEXT NOT NULL, " +
-   "role TEXT, " +
-   "enabled INTEGER NOT NULL DEFAULT 1, " +
-   "position INTEGER NOT NULL DEFAULT 0" +
-   ");";
+const string CMT5DatabaseSchema::HUMAN_INTERVENTION_COLUMNS =
+   "["
+   "{\"name\":\"prompt\",\"type\":\"TEXT\",\"not_null\":true},"
+   "{\"name\":\"role\",\"type\":\"TEXT\"},"
+   "{\"name\":\"enabled\",\"type\":\"INTEGER\",\"not_null\":true},"
+   "{\"name\":\"position\",\"type\":\"INTEGER\",\"not_null\":true}"
+   "]";
 
 
 //+------------------------------------------------------------------+
-//| Simulated Trades                                                 |
-//| Minimum fields documented in historical simulation vision       |
+//| Simulated Trades - DOCUMENTED MINIMUM                            |
 //+------------------------------------------------------------------+
-const string CMT5DatabaseSchema::SIMULATED_TRADES =
-   "CREATE TABLE IF NOT EXISTS simulated_trades (" +
-   "ticket INTEGER PRIMARY KEY, " +
-   "open_price REAL" +
-   ");";
+const string CMT5DatabaseSchema::SIMULATED_TRADES_COLUMNS =
+   "["
+   "{\"name\":\"ticket\",\"type\":\"INTEGER\"},"
+   "{\"name\":\"open_price\",\"type\":\"REAL\"}"
+   "]";
 
 
 #endif // MT5_DATABASE_SCHEMA_MQH
 
 //+------------------------------------------------------------------+
-```
