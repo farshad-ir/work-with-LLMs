@@ -768,20 +768,10 @@ bool SendSmallBoxRecords(
       data += "{";
       data += "\"command\":\"MAKE\",";
       data += "\"table\":\"SmallBoxes\",";
-      data += "\"columns\":[";
 
-      data += "{\"name\":\"StartTime\",\"type\":\"TEXT\",\"not_null\":true},";
-      data += "{\"name\":\"EndTime\",\"type\":\"TEXT\",\"not_null\":true},";
-      data += "{\"name\":\"High\",\"type\":\"REAL\",\"not_null\":true},";
-      data += "{\"name\":\"Low\",\"type\":\"REAL\",\"not_null\":true}";
+      data += "\"columns\":" + schema.SMALL_BOXES_COLUMNS + ",";
+      data += "\"unique\":" + schema.SMALL_BOXES_UNIQUE;
 
-      data += "],";
-      data += "\"unique\":[";
-      data += "{";
-      data += "\"name\":\"SmallBoxes_EndTime_uq\",";
-      data += "\"columns\":[\"EndTime\"]";
-      data += "}";
-      data += "]";
       data += "}";
 
       if(count > 0)
@@ -1066,21 +1056,13 @@ bool GoSend(
       data += "{";
       data += "\"command\":\"MAKE\",";
       data += "\"table\":\"" + arrayName + "\",";
-      data += "\"columns\":[";
-   
-      data += "{\"name\":\"symbol\",\"type\":\"TEXT\"},";
-      data += "{\"name\":\"time\",\"type\":\"TEXT\"},";
-      data += "{\"name\":\"open\",\"type\":\"REAL\"},";
-      data += "{\"name\":\"high\",\"type\":\"REAL\"},";
-      data += "{\"name\":\"low\",\"type\":\"REAL\"},";
-      data += "{\"name\":\"close\",\"type\":\"REAL\"},";
-      data += "{\"name\":\"tick_volume\",\"type\":\"INTEGER\"},";
-      data += "{\"name\":\"spread_points\",\"type\":\"INTEGER\"},";
-      data += "{\"name\":\"river_center\",\"type\":\"REAL\"},";
-      data += "{\"name\":\"river_width_pips\",\"type\":\"REAL\"},";
-      data += "{\"name\":\"MABIF\",\"type\":\"TEXT\"}";
-   
-      data += "]";
+
+      data += "\"columns\":";
+      if(arrayName == "h1Candles")
+         data += schema.H1_CANDLES_COLUMNS;
+      else
+         data += schema.H6_CANDLES_COLUMNS;
+
       data += "},";
    }
 
