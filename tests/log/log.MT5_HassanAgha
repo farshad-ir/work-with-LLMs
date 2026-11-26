@@ -491,13 +491,29 @@ bool InitializeLLMTables()
    data += "\"columns\":" + schema.HUMAN_INTERVENTION_COLUMNS;
    data += "},";
 
+   // ------------------------------------------------------
+   // Insert MADS Human Intervention
+   // ------------------------------------------------------
+   
    data += "{";
-   data += "\"command\":\"MAKE\",";
-   data += "\"table\":\"Simulated_Trades\",";
-   data += "\"columns\":" + schema.SIMULATED_TRADES_COLUMNS;
+   data += "\"command\":\"INSR\",";
+   data += "\"table\":\"Human_Intervention\",";
+   data += "\"records\":" + MADS.GetHumanInterventionJSON();
+   data += "},";
+   
+   // ------------------------------------------------------
+   // Insert MADS Common Knowledge into Debate
+   // ------------------------------------------------------
+   
+   data += "{";
+   data += "\"command\":\"INSR\",";
+   data += "\"table\":\"Debate\",";
+   data += "\"records\":" + MADS.GetDebateKnowledgeJSON();
    data += "}";
-
+   
    data += "]}";
+
+
 
    Print("[LLM-INIT] Sending six table definitions to Python.");
 
