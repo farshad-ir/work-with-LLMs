@@ -1,0 +1,339 @@
+[COMMANDS] Commands file saved.
+[COMMANDS] MT5-RESEND dispatched to Expert.
+[MT5-RESEND] {"command":"MT5-RESEND","operation":"TAKE-DATE","start":"2023-01-26 05:00","end":"2023-01-27 21:00","status":null}
+[GATEWAY] State transition: IDLE -> CREATED
+[GATEWAY] Request persisted: mt5_terminal_01-35AF7638477641DD543174CB37B03E97
+[GATEWAY] State transition: CREATED -> SENDING
+[GATEWAY] Pending request recovered. request_id=mt5_terminal_01-35AF7638477641DD543174CB37B03E97
+[GATEWAY] SendLatestJson result: 202
+[GATEWAY] State transition: SENDING -> SENT
+[GATEWAY] Poll validated. status=COMPLETED response_id=21a0823048f3d4ae090936ad94f45d5d
+[GATEWAY] m_response persisted.
+[GATEWAY] m_response saved to received: LLM-LQ/LLM-B/Gateway/received/mt5_terminal_01-35AF7638477641DD543174CB37B03E97.json
+[GATEWAY] State transition: SENT -> RESPONSE_RECEIVED
+[GATEWAY] State transition: RESPONSE_RECEIVED -> ACK_SENDING
+[GATEWAY] Poll validated. status=COMPLETED response_id=21a0823048f3d4ae090936ad94f45d5d
+[GATEWAY] ACKNOWLEDGED. response_id=21a0823048f3d4ae090936ad94f45d5d
+[GATEWAY] State transition: ACK_SENDING -> ACKNOWLEDGED
+[GATEWAY] Request and m_response files cleaned.
+[GATEWAY] State transition: ACKNOWLEDGED -> IDLE
+[GATEWAY] Request cycle completed.
+[GATEWAY] Request execution completed: h1Candles
+[GATEWAY] State transition: IDLE -> CREATED
+[GATEWAY] Request persisted: mt5_terminal_01-42121A3E28533EF86A4F44AB61E1010D
+[GATEWAY] State transition: CREATED -> SENDING
+[GATEWAY] Pending request recovered. request_id=mt5_terminal_01-42121A3E28533EF86A4F44AB61E1010D
+[GATEWAY] SendLatestJson result: 202
+[GATEWAY] State transition: SENDING -> SENT
+[GATEWAY] Poll validated. status=COMPLETED response_id=8985f7528ebfbc06f7c98066bb115c6c
+[GATEWAY] m_response persisted.
+[GATEWAY] m_response saved to received: LLM-LQ/LLM-B/Gateway/received/mt5_terminal_01-42121A3E28533EF86A4F44AB61E1010D.json
+[GATEWAY] State transition: SENT -> RESPONSE_RECEIVED
+[GATEWAY] State transition: RESPONSE_RECEIVED -> ACK_SENDING
+[GATEWAY] Poll validated. status=COMPLETED response_id=8985f7528ebfbc06f7c98066bb115c6c
+[GATEWAY] ACKNOWLEDGED. response_id=8985f7528ebfbc06f7c98066bb115c6c
+[GATEWAY] State transition: ACK_SENDING -> ACKNOWLEDGED
+[GATEWAY] Request and m_response files cleaned.
+[GATEWAY] State transition: ACKNOWLEDGED -> IDLE
+[GATEWAY] Request cycle completed.
+[GATEWAY] Request execution completed: h6Candles
+[HA-BOX-BUILD] Found=1408 | Merged=1 | TAKE-DATE=true
+[GATEWAY] State transition: IDLE -> CREATED
+[GATEWAY] Request persisted: mt5_terminal_01-0C0D0AB1644E798D2B7F78C77F041BC4
+[GATEWAY] State transition: CREATED -> SENDING
+[GATEWAY] Pending request recovered. request_id=mt5_terminal_01-0C0D0AB1644E798D2B7F78C77F041BC4
+[GATEWAY] SendLatestJson result: 202
+[GATEWAY] State transition: SENDING -> SENT
+[GATEWAY] Poll validated. status=COMPLETED response_id=b8b11029d088a78a387f27b804f913ed
+[GATEWAY] m_response persisted.
+[GATEWAY] m_response saved to received: LLM-LQ/LLM-B/Gateway/received/mt5_terminal_01-0C0D0AB1644E798D2B7F78C77F041BC4.json
+[GATEWAY] State transition: SENT -> RESPONSE_RECEIVED
+[GATEWAY] State transition: RESPONSE_RECEIVED -> ACK_SENDING
+[GATEWAY] Poll validated. status=COMPLETED response_id=b8b11029d088a78a387f27b804f913ed
+[GATEWAY] ACKNOWLEDGED. response_id=b8b11029d088a78a387f27b804f913ed
+[GATEWAY] State transition: ACK_SENDING -> ACKNOWLEDGED
+[GATEWAY] Request and m_response files cleaned.
+[GATEWAY] State transition: ACKNOWLEDGED -> IDLE
+[GATEWAY] Request cycle completed.
+[HA-BOX-SEND] Completed | Mode=CREATE | Records=1
+[MT5-RESEND] Operation completed: TAKE-DATE
+[COMMANDS] Commands file saved.
+[COMMANDS] MT5-RESEND dispatched to Expert.
+[MT5-RESEND] {"command":"MT5-RESEND","operation":"SEND-NEXT","status":null}
+[SEND-NEXT-DEBUG] LAST-CANDLE-BEFORE=2023.01.27 21:00
+[SEND-NEXT-DEBUG] START=2023.01.27 21:00 | SEARCH-END=2023.02.26 21:00 | COPIED=483
+[SEND-NEXT-DEBUG] OLDEST=2023.01.27 21:00 | NEWEST=2023.02.24 23:00
+[SEND-NEXT-DEBUG] SELECTED-INDEX=482
+[SEND-NEXT-DEBUG] SELECTED-TIME=2023.01.27 21:00 | TARGET-END=2023.01.27 22:00
+[SEND-NEXT-DEBUG] RATE[482] TIME=2023.01.27 21:00 | OPEN=1.08657 | CLOSE=1.08684
+[SEND-NEXT-DEBUG] RATE[481] TIME=2023.01.27 22:00 | OPEN=1.08684 | CLOSE=1.08653
+[SEND-NEXT-DEBUG] RATE[480] TIME=2023.01.27 23:00 | OPEN=1.08652 | CLOSE=1.08674
+[SEND-NEXT-DEBUG] RATE[479] TIME=2023.01.30 00:00 | OPEN=1.08609 | CLOSE=1.08656
+[GATEWAY] State transition: IDLE -> CREATED
+[GATEWAY] Request persisted: mt5_terminal_01-0A0B38CF2A2A5DD169A857EF05264D11
+[GATEWAY] State transition: CREATED -> SENDING
+[GATEWAY] Pending request recovered. request_id=mt5_terminal_01-0A0B38CF2A2A5DD169A857EF05264D11
+[GATEWAY] SendLatestJson result: 202
+[GATEWAY] State transition: SENDING -> SENT
+[GATEWAY] Poll validated. status=COMPLETED response_id=002e606a12e5226d9c2e4f3406c55ff9
+[GATEWAY] m_response persisted.
+[GATEWAY] m_response saved to received: LLM-LQ/LLM-B/Gateway/received/mt5_terminal_01-0A0B38CF2A2A5DD169A857EF05264D11.json
+[GATEWAY] State transition: SENT -> RESPONSE_RECEIVED
+[GATEWAY] State transition: RESPONSE_RECEIVED -> ACK_SENDING
+[GATEWAY] Poll validated. status=COMPLETED response_id=002e606a12e5226d9c2e4f3406c55ff9
+[GATEWAY] ACKNOWLEDGED. response_id=002e606a12e5226d9c2e4f3406c55ff9
+[GATEWAY] State transition: ACK_SENDING -> ACKNOWLEDGED
+[GATEWAY] Request and m_response files cleaned.
+[GATEWAY] State transition: ACKNOWLEDGED -> IDLE
+[GATEWAY] Request cycle completed.
+[GATEWAY] Request execution completed: h1Candles
+[HA-BOX-BUILD] Found=1408 | Merged=0 | TAKE-DATE=false
+[HA-BOX-SEND] No new boxes to append.
+[SEND-NEXT-DEBUG] POINTER-UPDATE | OLD=2023.01.27 21:00 | BUILT=2023.01.27 22:00
+[SEND-NEXT-DEBUG] LAST-CANDLE-AFTER=2023.01.27 22:00
+[MT5-RESEND] Operation completed: SEND-NEXT
+[COMMANDS] Commands file saved.
+[COMMANDS] MT5-RESEND dispatched to Expert.
+[MT5-RESEND] {"command":"MT5-RESEND","operation":"SEND-NEXT","status":null}
+[SEND-NEXT-DEBUG] LAST-CANDLE-BEFORE=2023.01.27 22:00
+[SEND-NEXT-DEBUG] START=2023.01.27 22:00 | SEARCH-END=2023.02.26 22:00 | COPIED=482
+[SEND-NEXT-DEBUG] OLDEST=2023.01.27 22:00 | NEWEST=2023.02.24 23:00
+[SEND-NEXT-DEBUG] SELECTED-INDEX=481
+[SEND-NEXT-DEBUG] SELECTED-TIME=2023.01.27 22:00 | TARGET-END=2023.01.27 23:00
+[SEND-NEXT-DEBUG] RATE[481] TIME=2023.01.27 22:00 | OPEN=1.08684 | CLOSE=1.08653
+[SEND-NEXT-DEBUG] RATE[480] TIME=2023.01.27 23:00 | OPEN=1.08652 | CLOSE=1.08674
+[SEND-NEXT-DEBUG] RATE[479] TIME=2023.01.30 00:00 | OPEN=1.08609 | CLOSE=1.08656
+[SEND-NEXT-DEBUG] RATE[478] TIME=2023.01.30 01:00 | OPEN=1.08655 | CLOSE=1.08718
+[GATEWAY] State transition: IDLE -> CREATED
+[GATEWAY] Request persisted: mt5_terminal_01-1F8B1E9C1E6046DB3A022EF76849296E
+[GATEWAY] State transition: CREATED -> SENDING
+[GATEWAY] Pending request recovered. request_id=mt5_terminal_01-1F8B1E9C1E6046DB3A022EF76849296E
+[GATEWAY] SendLatestJson result: 202
+[GATEWAY] State transition: SENDING -> SENT
+[GATEWAY] Poll validated. status=COMPLETED response_id=f18766903f721dbd048b54206649f230
+[GATEWAY] m_response persisted.
+[GATEWAY] m_response saved to received: LLM-LQ/LLM-B/Gateway/received/mt5_terminal_01-1F8B1E9C1E6046DB3A022EF76849296E.json
+[GATEWAY] State transition: SENT -> RESPONSE_RECEIVED
+[GATEWAY] State transition: RESPONSE_RECEIVED -> ACK_SENDING
+[GATEWAY] Poll validated. status=COMPLETED response_id=f18766903f721dbd048b54206649f230
+[GATEWAY] ACKNOWLEDGED. response_id=f18766903f721dbd048b54206649f230
+[GATEWAY] State transition: ACK_SENDING -> ACKNOWLEDGED
+[GATEWAY] Request and m_response files cleaned.
+[GATEWAY] State transition: ACKNOWLEDGED -> IDLE
+[GATEWAY] Request cycle completed.
+[GATEWAY] Request execution completed: h1Candles
+[HA-BOX-BUILD] Found=1408 | Merged=0 | TAKE-DATE=false
+[HA-BOX-SEND] No new boxes to append.
+[SEND-NEXT-DEBUG] POINTER-UPDATE | OLD=2023.01.27 22:00 | BUILT=2023.01.27 23:00
+[SEND-NEXT-DEBUG] LAST-CANDLE-AFTER=2023.01.27 23:00
+[MT5-RESEND] Operation completed: SEND-NEXT
+[COMMANDS] Commands file saved.
+[COMMANDS] MT5-RESEND dispatched to Expert.
+[MT5-RESEND] {"command":"MT5-RESEND","operation":"SEND-NEXT","status":null}
+[SEND-NEXT-DEBUG] LAST-CANDLE-BEFORE=2023.01.27 23:00
+[SEND-NEXT-DEBUG] START=2023.01.27 23:00 | SEARCH-END=2023.02.26 23:00 | COPIED=481
+[SEND-NEXT-DEBUG] OLDEST=2023.01.27 23:00 | NEWEST=2023.02.24 23:00
+[SEND-NEXT-DEBUG] SELECTED-INDEX=480
+[SEND-NEXT-DEBUG] SELECTED-TIME=2023.01.27 23:00 | TARGET-END=2023.01.28 00:00
+[SEND-NEXT-DEBUG] RATE[480] TIME=2023.01.27 23:00 | OPEN=1.08652 | CLOSE=1.08674
+[SEND-NEXT-DEBUG] RATE[479] TIME=2023.01.30 00:00 | OPEN=1.08609 | CLOSE=1.08656
+[SEND-NEXT-DEBUG] RATE[478] TIME=2023.01.30 01:00 | OPEN=1.08655 | CLOSE=1.08718
+[SEND-NEXT-DEBUG] RATE[477] TIME=2023.01.30 02:00 | OPEN=1.08717 | CLOSE=1.08747
+[GATEWAY] State transition: IDLE -> CREATED
+[GATEWAY] Request persisted: mt5_terminal_01-3DA05D5D7F9D11273D9A773926E575F8
+[GATEWAY] State transition: CREATED -> SENDING
+[GATEWAY] Pending request recovered. request_id=mt5_terminal_01-3DA05D5D7F9D11273D9A773926E575F8
+[GATEWAY] SendLatestJson result: 202
+[GATEWAY] State transition: SENDING -> SENT
+[GATEWAY] Poll validated. status=COMPLETED response_id=e0d4df30f67ac2877c725ceed28f6907
+[GATEWAY] m_response persisted.
+[GATEWAY] m_response saved to received: LLM-LQ/LLM-B/Gateway/received/mt5_terminal_01-3DA05D5D7F9D11273D9A773926E575F8.json
+[GATEWAY] State transition: SENT -> RESPONSE_RECEIVED
+[GATEWAY] State transition: RESPONSE_RECEIVED -> ACK_SENDING
+[GATEWAY] Poll validated. status=COMPLETED response_id=e0d4df30f67ac2877c725ceed28f6907
+[GATEWAY] ACKNOWLEDGED. response_id=e0d4df30f67ac2877c725ceed28f6907
+[GATEWAY] State transition: ACK_SENDING -> ACKNOWLEDGED
+[GATEWAY] Request and m_response files cleaned.
+[GATEWAY] State transition: ACKNOWLEDGED -> IDLE
+[GATEWAY] Request cycle completed.
+[GATEWAY] Request execution completed: h1Candles
+[GATEWAY] State transition: IDLE -> CREATED
+[GATEWAY] Request persisted: mt5_terminal_01-53716C1D1B3F3D1539D10D12266112F0
+[GATEWAY] State transition: CREATED -> SENDING
+[GATEWAY] Pending request recovered. request_id=mt5_terminal_01-53716C1D1B3F3D1539D10D12266112F0
+[GATEWAY] SendLatestJson result: 202
+[GATEWAY] State transition: SENDING -> SENT
+[GATEWAY] Poll validated. status=COMPLETED response_id=a5c62e4d58372c426e491b5ba913cbff
+[GATEWAY] m_response persisted.
+[GATEWAY] m_response saved to received: LLM-LQ/LLM-B/Gateway/received/mt5_terminal_01-53716C1D1B3F3D1539D10D12266112F0.json
+[GATEWAY] State transition: SENT -> RESPONSE_RECEIVED
+[GATEWAY] State transition: RESPONSE_RECEIVED -> ACK_SENDING
+[GATEWAY] Poll validated. status=COMPLETED response_id=a5c62e4d58372c426e491b5ba913cbff
+[GATEWAY] ACKNOWLEDGED. response_id=a5c62e4d58372c426e491b5ba913cbff
+[GATEWAY] State transition: ACK_SENDING -> ACKNOWLEDGED
+[GATEWAY] Request and m_response files cleaned.
+[GATEWAY] State transition: ACKNOWLEDGED -> IDLE
+[GATEWAY] Request cycle completed.
+[GATEWAY] Request execution completed: h6Candles
+[HA-BOX-BUILD] Found=1408 | Merged=0 | TAKE-DATE=false
+[HA-BOX-SEND] No new boxes to append.
+[SEND-NEXT-DEBUG] POINTER-UPDATE | OLD=2023.01.27 23:00 | BUILT=2023.01.28 00:00
+[SEND-NEXT-DEBUG] LAST-CANDLE-AFTER=2023.01.28 00:00
+[MT5-RESEND] Operation completed: SEND-NEXT
+[COMMANDS] Commands file saved.
+[COMMANDS] MT5-RESEND dispatched to Expert.
+[MT5-RESEND] {"command":"MT5-RESEND","operation":"SEND-NEXT","status":null}
+[SEND-NEXT-DEBUG] LAST-CANDLE-BEFORE=2023.01.28 00:00
+[SEND-NEXT-DEBUG] START=2023.01.28 00:00 | SEARCH-END=2023.02.27 00:00 | COPIED=481
+[SEND-NEXT-DEBUG] OLDEST=2023.01.30 00:00 | NEWEST=2023.02.27 00:00
+[SEND-NEXT-DEBUG] SELECTED-INDEX=480
+[SEND-NEXT-DEBUG] SELECTED-TIME=2023.01.30 00:00 | TARGET-END=2023.01.30 01:00
+[SEND-NEXT-DEBUG] RATE[480] TIME=2023.01.30 00:00 | OPEN=1.08609 | CLOSE=1.08656
+[SEND-NEXT-DEBUG] RATE[479] TIME=2023.01.30 01:00 | OPEN=1.08655 | CLOSE=1.08718
+[SEND-NEXT-DEBUG] RATE[478] TIME=2023.01.30 02:00 | OPEN=1.08717 | CLOSE=1.08747
+[SEND-NEXT-DEBUG] RATE[477] TIME=2023.01.30 03:00 | OPEN=1.08747 | CLOSE=1.08737
+[GATEWAY] State transition: IDLE -> CREATED
+[GATEWAY] Request persisted: mt5_terminal_01-0EBA562C11DC216800DD76615F9E763D
+[GATEWAY] State transition: CREATED -> SENDING
+[GATEWAY] Pending request recovered. request_id=mt5_terminal_01-0EBA562C11DC216800DD76615F9E763D
+[GATEWAY] SendLatestJson result: 202
+[GATEWAY] State transition: SENDING -> SENT
+[GATEWAY] Poll validated. status=COMPLETED response_id=3bfb559d91ee386f61b30714459c6a58
+[GATEWAY] m_response persisted.
+[GATEWAY] m_response saved to received: LLM-LQ/LLM-B/Gateway/received/mt5_terminal_01-0EBA562C11DC216800DD76615F9E763D.json
+[GATEWAY] State transition: SENT -> RESPONSE_RECEIVED
+[GATEWAY] State transition: RESPONSE_RECEIVED -> ACK_SENDING
+[GATEWAY] Poll validated. status=COMPLETED response_id=3bfb559d91ee386f61b30714459c6a58
+[GATEWAY] ACKNOWLEDGED. response_id=3bfb559d91ee386f61b30714459c6a58
+[GATEWAY] State transition: ACK_SENDING -> ACKNOWLEDGED
+[GATEWAY] Request and m_response files cleaned.
+[GATEWAY] State transition: ACKNOWLEDGED -> IDLE
+[GATEWAY] Request cycle completed.
+[GATEWAY] Request execution completed: h1Candles
+[HA-BOX-BUILD] Found=1408 | Merged=0 | TAKE-DATE=false
+[HA-BOX-SEND] No new boxes to append.
+[SEND-NEXT-DEBUG] POINTER-UPDATE | OLD=2023.01.28 00:00 | BUILT=2023.01.30 01:00
+[SEND-NEXT-DEBUG] LAST-CANDLE-AFTER=2023.01.30 01:00
+[MT5-RESEND] Operation completed: SEND-NEXT
+[COMMANDS] Commands file saved.
+[COMMANDS] MT5-RESEND dispatched to Expert.
+[MT5-RESEND] {"command":"MT5-RESEND","operation":"SEND-NEXT","status":null}
+[SEND-NEXT-DEBUG] LAST-CANDLE-BEFORE=2023.01.30 01:00
+[SEND-NEXT-DEBUG] START=2023.01.30 01:00 | SEARCH-END=2023.03.01 01:00 | COPIED=529
+[SEND-NEXT-DEBUG] OLDEST=2023.01.30 01:00 | NEWEST=2023.03.01 01:00
+[SEND-NEXT-DEBUG] SELECTED-INDEX=528
+[SEND-NEXT-DEBUG] SELECTED-TIME=2023.01.30 01:00 | TARGET-END=2023.01.30 02:00
+[SEND-NEXT-DEBUG] RATE[528] TIME=2023.01.30 01:00 | OPEN=1.08655 | CLOSE=1.08718
+[SEND-NEXT-DEBUG] RATE[527] TIME=2023.01.30 02:00 | OPEN=1.08717 | CLOSE=1.08747
+[SEND-NEXT-DEBUG] RATE[526] TIME=2023.01.30 03:00 | OPEN=1.08747 | CLOSE=1.08737
+[SEND-NEXT-DEBUG] RATE[525] TIME=2023.01.30 04:00 | OPEN=1.08737 | CLOSE=1.08692
+[GATEWAY] State transition: IDLE -> CREATED
+[GATEWAY] Request persisted: mt5_terminal_01-6C49099A6BBB2DC82A46390B5B6D35E9
+[GATEWAY] State transition: CREATED -> SENDING
+[GATEWAY] Pending request recovered. request_id=mt5_terminal_01-6C49099A6BBB2DC82A46390B5B6D35E9
+[GATEWAY] SendLatestJson result: 202
+[GATEWAY] State transition: SENDING -> SENT
+[GATEWAY] Poll validated. status=COMPLETED response_id=2d18dfa03a8e67c76fea3a86e840304c
+[GATEWAY] m_response persisted.
+[GATEWAY] m_response saved to received: LLM-LQ/LLM-B/Gateway/received/mt5_terminal_01-6C49099A6BBB2DC82A46390B5B6D35E9.json
+[GATEWAY] State transition: SENT -> RESPONSE_RECEIVED
+[GATEWAY] State transition: RESPONSE_RECEIVED -> ACK_SENDING
+[GATEWAY] Poll validated. status=COMPLETED response_id=2d18dfa03a8e67c76fea3a86e840304c
+[GATEWAY] ACKNOWLEDGED. response_id=2d18dfa03a8e67c76fea3a86e840304c
+[GATEWAY] State transition: ACK_SENDING -> ACKNOWLEDGED
+[GATEWAY] Request and m_response files cleaned.
+[GATEWAY] State transition: ACKNOWLEDGED -> IDLE
+[GATEWAY] Request cycle completed.
+[GATEWAY] Request execution completed: h1Candles
+[HA-BOX-BUILD] Found=1408 | Merged=0 | TAKE-DATE=false
+[HA-BOX-SEND] No new boxes to append.
+[SEND-NEXT-DEBUG] POINTER-UPDATE | OLD=2023.01.30 01:00 | BUILT=2023.01.30 02:00
+[SEND-NEXT-DEBUG] LAST-CANDLE-AFTER=2023.01.30 02:00
+[MT5-RESEND] Operation completed: SEND-NEXT
+[COMMANDS] Commands file saved.
+[COMMANDS] MT5-RESEND dispatched to Expert.
+[MT5-RESEND] {"command":"MT5-RESEND","operation":"SEND-NEXT","status":null}
+[SEND-NEXT-DEBUG] LAST-CANDLE-BEFORE=2023.01.30 02:00
+[SEND-NEXT-DEBUG] START=2023.01.30 02:00 | SEARCH-END=2023.03.01 02:00 | COPIED=529
+[SEND-NEXT-DEBUG] OLDEST=2023.01.30 02:00 | NEWEST=2023.03.01 02:00
+[SEND-NEXT-DEBUG] SELECTED-INDEX=528
+[SEND-NEXT-DEBUG] SELECTED-TIME=2023.01.30 02:00 | TARGET-END=2023.01.30 03:00
+[SEND-NEXT-DEBUG] RATE[528] TIME=2023.01.30 02:00 | OPEN=1.08717 | CLOSE=1.08747
+[SEND-NEXT-DEBUG] RATE[527] TIME=2023.01.30 03:00 | OPEN=1.08747 | CLOSE=1.08737
+[SEND-NEXT-DEBUG] RATE[526] TIME=2023.01.30 04:00 | OPEN=1.08737 | CLOSE=1.08692
+[SEND-NEXT-DEBUG] RATE[525] TIME=2023.01.30 05:00 | OPEN=1.08692 | CLOSE=1.08686
+[GATEWAY] State transition: IDLE -> CREATED
+[GATEWAY] Request persisted: mt5_terminal_01-188135C07D593D401B6A41797F1322A0
+[GATEWAY] State transition: CREATED -> SENDING
+[GATEWAY] Pending request recovered. request_id=mt5_terminal_01-188135C07D593D401B6A41797F1322A0
+[GATEWAY] SendLatestJson result: 202
+[GATEWAY] State transition: SENDING -> SENT
+[GATEWAY] Poll validated. status=COMPLETED response_id=9e36381e861b095f5d65ead024609851
+[GATEWAY] m_response persisted.
+[GATEWAY] m_response saved to received: LLM-LQ/LLM-B/Gateway/received/mt5_terminal_01-188135C07D593D401B6A41797F1322A0.json
+[GATEWAY] State transition: SENT -> RESPONSE_RECEIVED
+[GATEWAY] State transition: RESPONSE_RECEIVED -> ACK_SENDING
+[GATEWAY] Poll validated. status=COMPLETED response_id=9e36381e861b095f5d65ead024609851
+[GATEWAY] ACKNOWLEDGED. response_id=9e36381e861b095f5d65ead024609851
+[GATEWAY] State transition: ACK_SENDING -> ACKNOWLEDGED
+[GATEWAY] Request and m_response files cleaned.
+[GATEWAY] State transition: ACKNOWLEDGED -> IDLE
+[GATEWAY] Request cycle completed.
+[GATEWAY] Request execution completed: h1Candles
+[HA-BOX-BUILD] Found=1408 | Merged=1 | TAKE-DATE=false
+[GATEWAY] State transition: IDLE -> CREATED
+[GATEWAY] Request persisted: mt5_terminal_01-1FDB39B81BE578C05FFA591828CC7234
+[GATEWAY] State transition: CREATED -> SENDING
+[GATEWAY] Pending request recovered. request_id=mt5_terminal_01-1FDB39B81BE578C05FFA591828CC7234
+[GATEWAY] SendLatestJson result: 202
+[GATEWAY] State transition: SENDING -> SENT
+[GATEWAY] Poll validated. status=COMPLETED response_id=9de01a0f0006663a4cb30d2986f07063
+[GATEWAY] m_response persisted.
+[GATEWAY] m_response saved to received: LLM-LQ/LLM-B/Gateway/received/mt5_terminal_01-1FDB39B81BE578C05FFA591828CC7234.json
+[GATEWAY] State transition: SENT -> RESPONSE_RECEIVED
+[GATEWAY] State transition: RESPONSE_RECEIVED -> ACK_SENDING
+[GATEWAY] Poll validated. status=COMPLETED response_id=9de01a0f0006663a4cb30d2986f07063
+[GATEWAY] ACKNOWLEDGED. response_id=9de01a0f0006663a4cb30d2986f07063
+[GATEWAY] State transition: ACK_SENDING -> ACKNOWLEDGED
+[GATEWAY] Request and m_response files cleaned.
+[GATEWAY] State transition: ACKNOWLEDGED -> IDLE
+[GATEWAY] Request cycle completed.
+[HA-BOX-SEND] Completed | Mode=APPEND | Records=1
+[SEND-NEXT-DEBUG] POINTER-UPDATE | OLD=2023.01.30 02:00 | BUILT=2023.01.30 03:00
+[SEND-NEXT-DEBUG] LAST-CANDLE-AFTER=2023.01.30 03:00
+[MT5-RESEND] Operation completed: SEND-NEXT
+[COMMANDS] Commands file saved.
+[COMMANDS] MT5-RESEND dispatched to Expert.
+[MT5-RESEND] {"command":"MT5-RESEND","operation":"SEND-NEXT","status":null}
+[SEND-NEXT-DEBUG] LAST-CANDLE-BEFORE=2023.01.30 03:00
+[SEND-NEXT-DEBUG] START=2023.01.30 03:00 | SEARCH-END=2023.03.01 03:00 | COPIED=529
+[SEND-NEXT-DEBUG] OLDEST=2023.01.30 03:00 | NEWEST=2023.03.01 03:00
+[SEND-NEXT-DEBUG] SELECTED-INDEX=528
+[SEND-NEXT-DEBUG] SELECTED-TIME=2023.01.30 03:00 | TARGET-END=2023.01.30 04:00
+[SEND-NEXT-DEBUG] RATE[528] TIME=2023.01.30 03:00 | OPEN=1.08747 | CLOSE=1.08737
+[SEND-NEXT-DEBUG] RATE[527] TIME=2023.01.30 04:00 | OPEN=1.08737 | CLOSE=1.08692
+[SEND-NEXT-DEBUG] RATE[526] TIME=2023.01.30 05:00 | OPEN=1.08692 | CLOSE=1.08686
+[SEND-NEXT-DEBUG] RATE[525] TIME=2023.01.30 06:00 | OPEN=1.08686 | CLOSE=1.08762
+[GATEWAY] State transition: IDLE -> CREATED
+[GATEWAY] Request persisted: mt5_terminal_01-6F6022E021C4499C527B2CD81C457A1C
+[GATEWAY] State transition: CREATED -> SENDING
+[GATEWAY] Pending request recovered. request_id=mt5_terminal_01-6F6022E021C4499C527B2CD81C457A1C
+[GATEWAY] SendLatestJson result: 202
+[GATEWAY] State transition: SENDING -> SENT
+[GATEWAY] Poll validated. status=COMPLETED response_id=1dc08c75033c31eab9c88316f121d9bd
+[GATEWAY] m_response persisted.
+[GATEWAY] m_response saved to received: LLM-LQ/LLM-B/Gateway/received/mt5_terminal_01-6F6022E021C4499C527B2CD81C457A1C.json
+[GATEWAY] State transition: SENT -> RESPONSE_RECEIVED
+[GATEWAY] State transition: RESPONSE_RECEIVED -> ACK_SENDING
+[GATEWAY] Poll validated. status=COMPLETED response_id=1dc08c75033c31eab9c88316f121d9bd
+[GATEWAY] ACKNOWLEDGED. response_id=1dc08c75033c31eab9c88316f121d9bd
+[GATEWAY] State transition: ACK_SENDING -> ACKNOWLEDGED
+[GATEWAY] Request and m_response files cleaned.
+[GATEWAY] State transition: ACKNOWLEDGED -> IDLE
+[GATEWAY] Request cycle completed.
+[GATEWAY] Request execution completed: h1Candles
+[HA-BOX-BUILD] Found=1408 | Merged=0 | TAKE-DATE=false
+[HA-BOX-SEND] No new boxes to append.
+[SEND-NEXT-DEBUG] POINTER-UPDATE | OLD=2023.01.30 03:00 | BUILT=2023.01.30 04:00
+[SEND-NEXT-DEBUG] LAST-CANDLE-AFTER=2023.01.30 04:00
+[MT5-RESEND] Operation completed: SEND-NEXT
