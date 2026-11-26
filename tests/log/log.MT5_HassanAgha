@@ -281,21 +281,21 @@ bool BuildCandleSeries(
 
 
    
-   PrintFormat(
-      "[SEND-NEXT-DEBUG] START=%s | SEARCH-END=%s | COPIED=%d",
-      TimeToString(start, TIME_DATE|TIME_MINUTES),
-      TimeToString(searchEnd, TIME_DATE|TIME_MINUTES),
-      h1Copied
-   );
+   //PrintFormat(
+   //   "[SEND-NEXT-DEBUG] START=%s | SEARCH-END=%s | COPIED=%d",
+   //   TimeToString(start, TIME_DATE|TIME_MINUTES),
+   //   TimeToString(searchEnd, TIME_DATE|TIME_MINUTES),
+   //   h1Copied
+   //);
    
-   if(h1Copied > 0)
-   {
-      PrintFormat(
-         "[SEND-NEXT-DEBUG] OLDEST=%s | NEWEST=%s",
-         TimeToString(h1Rates[h1Copied - 1].time, TIME_DATE|TIME_MINUTES),
-         TimeToString(h1Rates[0].time, TIME_DATE|TIME_MINUTES)
-      );
-   }
+   //f(h1Copied > 0)
+   //{
+   //   PrintFormat(
+   //      "[SEND-NEXT-DEBUG] OLDEST=%s | NEWEST=%s",
+   //      TimeToString(h1Rates[h1Copied - 1].time, TIME_DATE|TIME_MINUTES),
+   //      TimeToString(h1Rates[0].time, TIME_DATE|TIME_MINUTES)
+   //   );
+   //}
 
    if(h1Copied <= 0)
       return false;
@@ -312,18 +312,18 @@ bool BuildCandleSeries(
       }
    }
    
-   PrintFormat(
-      "[SEND-NEXT-DEBUG] SELECTED-INDEX=%d",
-      h1Index
-   );
+   //PrintFormat(
+   //   "[SEND-NEXT-DEBUG] SELECTED-INDEX=%d",
+   //   h1Index
+   //);
    
    if(h1Index >= 0)
    {
-      PrintFormat(
-         "[SEND-NEXT-DEBUG] SELECTED-TIME=%s | TARGET-END=%s",
-         TimeToString(h1Rates[h1Index].time, TIME_DATE|TIME_MINUTES),
-         TimeToString(h1Rates[h1Index].time + h1Seconds, TIME_DATE|TIME_MINUTES)
-      );
+      //PrintFormat(
+      //   "[SEND-NEXT-DEBUG] SELECTED-TIME=%s | TARGET-END=%s",
+      //   TimeToString(h1Rates[h1Index].time, TIME_DATE|TIME_MINUTES),
+      //   TimeToString(h1Rates[h1Index].time + h1Seconds, TIME_DATE|TIME_MINUTES)
+      //);
    
       // Show three candles before and three candles after selection.
       for(int i = h1Index + 3; i >= h1Index - 3; i--)
@@ -331,13 +331,13 @@ bool BuildCandleSeries(
          if(i < 0 || i >= h1Copied)
             continue;
    
-         PrintFormat(
-            "[SEND-NEXT-DEBUG] RATE[%d] TIME=%s | OPEN=%s | CLOSE=%s",
-            i,
-            TimeToString(h1Rates[i].time, TIME_DATE|TIME_MINUTES),
-            DoubleToString(h1Rates[i].open, _Digits),
-            DoubleToString(h1Rates[i].close, _Digits)
-         );
+         //PrintFormat(
+         //   "[SEND-NEXT-DEBUG] RATE[%d] TIME=%s | OPEN=%s | CLOSE=%s",
+         //   i,
+         //   TimeToString(h1Rates[i].time, TIME_DATE|TIME_MINUTES),
+         //   DoubleToString(h1Rates[i].open, _Digits),
+         //   DoubleToString(h1Rates[i].close, _Digits)
+         //);
       }
    }
 
@@ -523,10 +523,10 @@ void HandleCabinOrder()
          return;
       }
 
-      PrintFormat(
-         "[SEND-NEXT-DEBUG] LAST-CANDLE-BEFORE=%s",
-         TimeToString(LastCandle, TIME_DATE|TIME_MINUTES)
-      );
+      //PrintFormat(
+      //   "[SEND-NEXT-DEBUG] LAST-CANDLE-BEFORE=%s",
+      //   TimeToString(LastCandle, TIME_DATE|TIME_MINUTES)
+      //);
 
       if(!BuildCandleSeries(false, LastCandle, 0))
       {
@@ -559,18 +559,18 @@ void HandleCabinOrder()
       }
       if(processed)
       {
-         PrintFormat(
-            "[SEND-NEXT-DEBUG] POINTER-UPDATE | OLD=%s | BUILT=%s",
-            TimeToString(LastCandle, TIME_DATE|TIME_MINUTES),
-            TimeToString(BuiltLastCandle, TIME_DATE|TIME_MINUTES)
-         );
+         //PrintFormat(
+         //   "[SEND-NEXT-DEBUG] POINTER-UPDATE | OLD=%s | BUILT=%s",
+         //   TimeToString(LastCandle, TIME_DATE|TIME_MINUTES),
+         //   TimeToString(BuiltLastCandle, TIME_DATE|TIME_MINUTES)
+         //);
       
          LastCandle = BuiltLastCandle;
       
-         PrintFormat(
-            "[SEND-NEXT-DEBUG] LAST-CANDLE-AFTER=%s",
-            TimeToString(LastCandle, TIME_DATE|TIME_MINUTES)
-         );
+         //PrintFormat(
+         //   "[SEND-NEXT-DEBUG] LAST-CANDLE-AFTER=%s",
+         //   TimeToString(LastCandle, TIME_DATE|TIME_MINUTES)
+         //);
       }
    }
    else
