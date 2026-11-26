@@ -1640,7 +1640,7 @@ private:
 
 
 
-         if(command == "MT5-RESEND")
+         if(command == "MT5-RESEND" || command == "LLM-INIT")
          {
             m_mt5ResendPending = true;
             m_cabin_command = root["commands"][i];
@@ -1650,7 +1650,7 @@ private:
             if(!GatewaySaveCommands(root))
                return false;
          
-            Print("[COMMANDS] MT5-RESEND dispatched to Expert.");
+            Print("[COMMANDS] Command dispatched to Expert: ", command);
             processedCount++;
          
             continue;
@@ -2232,6 +2232,40 @@ public:
    CJAVal get_cabin_order()
    {
       return m_cabin_command;
+   }
+   bool CompleteCabinCommand(const string finalStatus)
+   {
+      if(finalStatus != "COMPLETED" &&
+         finalStatus != "FAILED")
+         return false;
+   
+      CJAVal root;
+   
+      if(!GatewayLoadCommands(root))
+         return false;
+   
+      for(int i = 0; i < root["commands"].Size(); i++)
+      {
+         string command =
+            root["commands"][i]["command"].ToStr();
+   
+         string status =
+            root["commands"][i]["status"].ToStr();
+   
+         if(command == "LLM-INIT" && status == "DISPATCHED")
+         {
+            root["commands"][i]["status"] = finalStatus;
+   
+            if(!GatewaySaveCommands(root))
+               return false;
+   
+            Print("[COMMANDS] LLM-INIT status: ", finalStatus);
+            return true;
+         }
+      }
+   
+      Print("[COMMANDS] Dispatched LLM-INIT command not found.");
+      return false;
    }
    void consume_cabin_flag()
    {
