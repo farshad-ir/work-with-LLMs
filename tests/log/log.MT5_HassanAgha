@@ -1,8 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                            2.mq5 |
 //+------------------------------------------------------------------+
-
-
 #property version   "2.50"
 #property strict
 
@@ -34,7 +32,7 @@ input string InpGatewayFolderName = "LLM-B";
 #include "MA_INERTIA\\ZigZagEngine.mqh"
 #include "MA_INERTIA\\MABifurcation.mqh"
 #include "MA_INERTIA\\ZigZagAdvisor.mqh"
-
+#include "MT5_databaseSchema.mqh"
 
 
 //+------------------------------------------------------------------+
@@ -45,8 +43,10 @@ input string InpGatewayFolderName = "LLM-B";
 
 
 //+------------------------------------------------------------------+
-//| Global objects                                                    |
+//| Global objects                                                   |
 //+------------------------------------------------------------------+
+CMT5DatabaseSchema schema;
+
 CMovingAverages g_ma_h1;
 CMovingAverages g_ma_h6;
 
