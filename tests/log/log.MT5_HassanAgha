@@ -454,13 +454,85 @@ void OnTimer()
    Gateway.consume_cabin_flag();
 }
 
+bool InitializeLLMTables()
+{
+   string data = "{";
+
+   data += "\"command\":\"CHART-INIT\",";
+   data += "\"operations\":[";
+
+   data += "{";
+   data += "\"command\":\"MAKE\",";
+   data += "\"table\":\"Opinions\",";
+   data += "\"columns\":" + schema.OPINIONS_COLUMNS;
+   data += "},";
+
+   data += "{";
+   data += "\"command\":\"MAKE\",";
+   data += "\"table\":\"Trades\",";
+   data += "\"columns\":" + schema.TRADES_COLUMNS;
+   data += "},";
+
+   data += "{";
+   data += "\"command\":\"MAKE\",";
+   data += "\"table\":\"Opinion_Trade\",";
+   data += "\"columns\":" + schema.OPINION_TRADE_COLUMNS;
+   data += "},";
+
+   data += "{";
+   data += "\"command\":\"MAKE\",";
+   data += "\"table\":\"Debate\",";
+   data += "\"columns\":" + schema.DEBATE_COLUMNS;
+   data += "},";
+
+   data += "{";
+   data += "\"command\":\"MAKE\",";
+   data += "\"table\":\"Human_Intervention\",";
+   data += "\"columns\":" + schema.HUMAN_INTERVENTION_COLUMNS;
+   data += "},";
+
+   data += "{";
+   data += "\"command\":\"MAKE\",";
+   data += "\"table\":\"Simulated_Trades\",";
+   data += "\"columns\":" + schema.SIMULATED_TRADES_COLUMNS;
+   data += "}";
+
+   data += "]}";
+
+   Print("[LLM-INIT] Sending six table definitions to Python.");
+
+   bool success = Gateway.ExecuteRequest(data);
+
+   if(success)
+      Print("[LLM-INIT] All tables created successfully.");
+   else
+      Print("[LLM-INIT] Table creation failed.");
+
+   return success;
+}
 
 void HandleCabinOrder()
 {
    CJAVal order = Gateway.get_cabin_order();
-
-   Print("[MT5-RESEND] ", order.Serialize());
-
+   
+   Print("[CABIN] ", order.Serialize());
+   
+   string cabinCommand = order["command"].ToStr();
+   
+   if(cabinCommand == "LLM-INIT")
+   {
+      bool success = InitializeLLMTables();
+   
+      if(!Gateway.CompleteCabinCommand(
+         success ? "COMPLETED" : "FAILED"
+      ))
+      {
+         Print("[LLM-INIT] Could not update Cabin command status.");
+      }
+   
+      return;
+   }
+   
    string operation = order["operation"].ToStr();
    bool processed = false;
 
