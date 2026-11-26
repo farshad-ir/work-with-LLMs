@@ -213,7 +213,8 @@ class MT5Cabin:
             values=[
                 "CONSULT-LLM",
                 "SQL-DIRECT",
-                "MT5-RESEND"
+                "MT5-RESEND",
+                "LLM-INIT"
             ],
             state="readonly",
             width=20
@@ -771,8 +772,11 @@ class MT5Cabin:
                 command["end"] = end_date
                 
 
-    
+        elif command_type == "LLM-INIT":
 
+            command["command"] = "LLM-INIT"  
+
+        
         else:
             raise CabinError(
                 f"Unsupported command type: {command_type}"
