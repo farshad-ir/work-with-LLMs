@@ -169,10 +169,9 @@ const string CMT5DatabaseSchema::HUMAN_INTERVENTION_COLUMNS =
    "["
    "{\"name\":\"prompt\",\"type\":\"TEXT\",\"not_null\":true},"
    "{\"name\":\"role\",\"type\":\"TEXT\"},"
-   "{\"name\":\"trigger\",\"type\":\"TEXT\"},"
-   "{\"name\":\"enabled\",\"type\":\"INTEGER\",\"not_null\":true}"
+   "{\"name\":\"enabled\",\"type\":\"INTEGER\",\"not_null\":true},"
+   "{\"name\":\"position\",\"type\":\"INTEGER\",\"not_null\":true}"
    "]";
-
 
 
 //+------------------------------------------------------------------+
