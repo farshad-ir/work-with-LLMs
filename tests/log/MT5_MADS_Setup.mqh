@@ -182,9 +182,10 @@ CMADSKnowledge()
    // JSON: Debate
    //
    // Columns:
-   // sequence, role, content
+   // sequence, role, event_type, tool_call_id,
+   // content, created_at
    //
-   // Common knowledge is inserted as one record.
+   // Common knowledge is inserted as one CONTEXT record.
    // ---------------------------------------------------------
 
    string GetDebateKnowledgeJSON()
@@ -196,7 +197,8 @@ CMADSKnowledge()
 
       json += "{";
       json += "\"sequence\":1,";
-      json += "\"role\":\"COMMON\",";
+      json += "\"role\":\"SYSTEM\",";
+      json += "\"event_type\":\"CONTEXT\",";
       json += "\"content\":\"" + JsonEscape(commonKnowledge) + "\"";
       json += "}";
 
@@ -204,6 +206,8 @@ CMADSKnowledge()
 
       return json;
    }
+
+
 
    // ---------------------------------------------------------
    // Clear
