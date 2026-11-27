@@ -682,6 +682,21 @@ def _run_role_turn(role, instruction=None):
 
         content = assistant_message.get("content")
         tool_calls = assistant_message.get("tool_calls") or []
+        
+        if role == "CRITIC":
+            control_calls = [
+                call
+                for call in tool_calls
+                if call.get("function", {}).get("name")
+                == "MADS-CONTROL"
+            ]
+
+            if control_calls and len(tool_calls) != 1:
+                raise RuntimeError(
+                    "CRITIC must call MADS-CONTROL alone, "
+                    "without other tool calls in the same response."
+                )
+                
 
         if content:
             _append_debate(
