@@ -288,7 +288,7 @@ public:
          "Identify contradictions, missing evidence and weak assumptions.\n"
          "Ask for clarification or additional evidence when necessary.\n"
          "You decide which role should speak next: BUYER, SELLER or CRITIC.\n"
-         "You may request additional market data through LLM-SELECTION.\n"
+         "You may request additional market data through LLM-SELQ.\n"
          "You are responsible for deciding when the debate has "
          "reached a sufficient conclusion.",
          "Use these instructions throughout the debate. "
