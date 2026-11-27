@@ -599,7 +599,7 @@ void HandleCabinOrder()
    if(cabinCommand == "LLM-GROUP")
    {
 
-      operation = order["operation"].ToStr();
+      string operation = order["operation"].ToStr();
    
       bool success = false;
    
