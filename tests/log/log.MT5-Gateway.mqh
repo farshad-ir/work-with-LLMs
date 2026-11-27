@@ -1645,11 +1645,7 @@ private:
          //~~~~~~~~~~~~~~~~~~~~
 
 
-         if(
-            command == "MT5-RESEND" ||
-            command == "LLM-INIT"   ||
-            command == "LLM-GROUP"
-         )
+         if( command == "MT5-RESEND" || command == "LLM-GROUP" )
          {
             m_mt5ResendPending = true;
             m_cabin_command = root["commands"][i];
