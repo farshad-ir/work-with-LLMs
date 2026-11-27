@@ -7,6 +7,7 @@ from app.mt5_sqlite import execute_command
 from app.mt5_thinker_room import consult_mt5
 from datetime import datetime, timezone
 from pathlib import Path
+from app.mads_orchestrator import run_mads_debate
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -626,6 +627,25 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
                 success = False
                 break
 
+        
+        mads_result = None
+
+        if success:
+            if _is_mt5_cancel_requested(client_id, request_id):
+                success = False
+            else:
+                try:
+                    mads_result = run_mads_debate()
+
+                except Exception as exc:
+                    success = False
+                    mads_result = {
+                        "success": False,
+                        "error": str(exc)[:1000],
+                    }
+
+
+        
         response_payload = {
             "operations": operation_results,
         }
