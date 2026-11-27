@@ -377,6 +377,7 @@ def _prepare_smallbox_h1_mapping(limit, conn=None):
             valid = (
                 start_id is not None
                 and end_id is not None
+                and box["StartTime"] <= box["EndTime"]
                 and start_id <= end_id
             )
 
