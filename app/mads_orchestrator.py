@@ -127,6 +127,45 @@ def _load_debate():
     finally:
         conn.close()
 
+def _build_debate_report():
+    events = _load_debate()
+
+    lines = [
+        "# MADS Debate Report",
+        "",
+        "## Debate",
+        "",
+    ]
+
+    final_result = None
+
+    for event in events:
+        role = str(event["role"]).upper()
+        event_type = str(event["event_type"]).upper()
+        content = event["content"]
+
+        if role not in ("BUYER", "SELLER", "CRITIC"):
+            continue
+
+        if event_type == "MESSAGE":
+            lines.extend([
+                f"### {role}",
+                "",
+                str(content),
+                "",
+            ])
+
+        elif event_type == "FINAL_RESULT":
+            final_result = str(content)
+
+    lines.extend([
+        "## FINAL RESULT",
+        "",
+        final_result or "No final result was recorded.",
+        "",
+    ])
+
+    return "\n".join(lines).strip()
 
 def _load_role_instructions(role):
     conn = _connect()
@@ -914,6 +953,7 @@ def run_mads_debate(max_turns=MAX_DEBATE_TURNS):
                 "success": True,
                 "turns": turn,
                 "status": "FINISHED",
+                "debate_report": _build_debate_report(),
             }
 
         current_role = next_role
