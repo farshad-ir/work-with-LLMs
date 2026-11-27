@@ -454,14 +454,14 @@ bool InitializeLLMTables()
 
    data += "]}";
 
-   Print("[LLM-INIT] Sending four table definitions to Python.");
+   Print("[LLM-GROUP] Sending four table definitions to Python.");
 
    bool success = Gateway.ExecuteRequest(data);
 
    if(success)
-      Print("[LLM-INIT] Four tables created successfully.");
+      Print("[LLM-GROUP] Four tables created successfully.");
    else
-      Print("[LLM-INIT] Table creation failed.");
+      Print("[LLM-GROUP] Table creation failed.");
 
    return success;
 }
