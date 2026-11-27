@@ -117,11 +117,6 @@ def run_llm_selq(limit):
         ]
 
         return {
-            "debug": {
-                "window_start": window_start,
-                "window_end": window_end,
-                "mapping": mapping_result,
-            },
             "llm_selq": {
                 "requested_h1_count": limit,
                 "h1_candles": h1_data,
