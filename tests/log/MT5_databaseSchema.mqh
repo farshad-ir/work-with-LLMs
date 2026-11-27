@@ -158,9 +158,9 @@ const string CMT5DatabaseSchema::DEBATE_COLUMNS =
    "{\"name\":\"sequence\",\"type\":\"INTEGER\",\"not_null\":true},"
    "{\"name\":\"role\",\"type\":\"TEXT\",\"not_null\":true},"
    "{\"name\":\"event_type\",\"type\":\"TEXT\",\"not_null\":true},"
-   "{\"name\":\"tool_call_id\",\"type\":\"TEXT\",\"nullable\":true},"
+   "{\"name\":\"tool_call_id\",\"type\":\"TEXT\"},"
    "{\"name\":\"content\",\"type\":\"TEXT\",\"not_null\":true},"
-   "{\"name\":\"created_at\",\"type\":\"TEXT\",\"nullable\":true}"
+   "{\"name\":\"created_at\",\"type\":\"TEXT\"}"
    "]";
 
 
