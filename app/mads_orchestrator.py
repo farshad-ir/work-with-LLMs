@@ -503,8 +503,6 @@ def _call_model(messages, tools):
 
 def _summarize_selq(result):
     data = result.get("llm_selq", {})
-    debug = result.get("debug", {})
-    mapping = debug.get("mapping", {})
 
     return {
         "requested_h1_count": data.get(
@@ -513,13 +511,6 @@ def _summarize_selq(result):
         "h1_count": len(data.get("h1_candles", [])),
         "h6_count": len(data.get("h6_candles", [])),
         "small_box_count": len(data.get("small_boxes", [])),
-        "mapping": {
-            "mapped": mapping.get("mapped", 0),
-            "failed": mapping.get("failed", 0),
-            "already_mapped": mapping.get(
-                "already_mapped", 0
-            ),
-        },
     }
 
 
