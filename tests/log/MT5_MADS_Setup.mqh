@@ -277,6 +277,8 @@ public:
          "Pay attention to price weakness or rejection "
          "after an upward movement.\n"
          "Evaluate the behavior and direction of the River.\n"
+         "You may request additional market data through LLM-SELQ.\n"
+         "Continue your analysis using the returned data.\n"
          "Present evidence supporting a selling decision."
       );
 
