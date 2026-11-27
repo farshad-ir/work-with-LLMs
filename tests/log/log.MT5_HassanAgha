@@ -32,8 +32,9 @@ input string InpGatewayFolderName = "LLM-B";
 #include "MA_INERTIA\\ZigZagEngine.mqh"
 #include "MA_INERTIA\\MABifurcation.mqh"
 #include "MA_INERTIA\\ZigZagAdvisor.mqh"
-#include "MT5_databaseSchema.mqh"
 
+#include "MT5_databaseSchema.mqh"
+#include "MT5_MADS_Setup.mqh"
 
 //+------------------------------------------------------------------+
 //| Configuration                                                    |
@@ -46,6 +47,7 @@ input string InpGatewayFolderName = "LLM-B";
 //| Global objects                                                   |
 //+------------------------------------------------------------------+
 CMT5DatabaseSchema schema;
+CMADSSetup MADS;
 
 CMovingAverages g_ma_h1;
 CMovingAverages g_ma_h6;
@@ -56,7 +58,7 @@ CMaRiver H6_river;
 CMABifurcation mabif_h1;
 CMABifurcation mabif_h6;
 
-CJAVal json;
+CJAVal ajson;
 
 uchar response[16384];
 
@@ -491,29 +493,13 @@ bool InitializeLLMTables()
    data += "\"columns\":" + schema.HUMAN_INTERVENTION_COLUMNS;
    data += "},";
 
-   // ------------------------------------------------------
-   // Insert MADS Human Intervention
-   // ------------------------------------------------------
-   
    data += "{";
-   data += "\"command\":\"INSR\",";
-   data += "\"table\":\"Human_Intervention\",";
-   data += "\"records\":" + MADS.GetHumanInterventionJSON();
-   data += "},";
-   
-   // ------------------------------------------------------
-   // Insert MADS Common Knowledge into Debate
-   // ------------------------------------------------------
-   
-   data += "{";
-   data += "\"command\":\"INSR\",";
-   data += "\"table\":\"Debate\",";
-   data += "\"records\":" + MADS.GetDebateKnowledgeJSON();
+   data += "\"command\":\"MAKE\",";
+   data += "\"table\":\"Simulated_Trades\",";
+   data += "\"columns\":" + schema.SIMULATED_TRADES_COLUMNS;
    data += "}";
-   
+
    data += "]}";
-
-
 
    Print("[LLM-INIT] Sending six table definitions to Python.");
 
@@ -1015,7 +1001,8 @@ void CleanupHassanSmallBoxes()
 int OnInit()
 {
 
-
+   Print(MADS.GetHumanInterventionJSON() );
+   Print(MADS.GetDebateKnowledgeJSON() );
    ////////////////////////////////
    //
    // Init for MAs and Fractals
