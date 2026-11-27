@@ -1184,9 +1184,10 @@ class MT5Cabin:
                 indent=4
             )
         )
-
+        
         payload = data.get("payload", {})
-        answer = payload.get("answer") if isinstance(payload, dict) else None
+        mads = payload.get("mads", {}) if isinstance(payload, dict) else {}
+        answer = mads.get("debate_report") if isinstance(mads, dict) else None
 
         self.viewer_json_text = display
         self.viewer_answer_text = (
