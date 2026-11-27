@@ -483,9 +483,79 @@ bool InitializeLLMTables()
 
    data += "{";
    data += "\"command\":\"MAKE\",";
+   data += "\"table\":\"Simulated_Trades\",";
+   data += "\"columns\":" + schema.SIMULATED_TRADES_COLUMNS;
+   data += "}";
+
+   data += "]}";
+
+   Print("[LLM-INIT] Sending four table definitions to Python.");
+
+   bool success = Gateway.ExecuteRequest(data);
+
+   if(success)
+      Print("[LLM-INIT] Four tables created successfully.");
+   else
+      Print("[LLM-INIT] Table creation failed.");
+
+   return success;
+}
+
+bool InitializeLLMDebate()
+{
+   string records = MADS.GetDebateKnowledgeJSON();
+
+   if(records == "" || records == "[]")
+   {
+      Print("[LLM-DEBATE] Common Knowledge is empty.");
+      return false;
+   }
+
+   string data = "{";
+
+   data += "\"command\":\"CHART-INIT\",";
+   data += "\"operations\":[";
+
+   data += "{";
+   data += "\"command\":\"MAKE\",";
    data += "\"table\":\"Debate\",";
    data += "\"columns\":" + schema.DEBATE_COLUMNS;
    data += "},";
+
+   data += "{";
+   data += "\"command\":\"INSR\",";
+   data += "\"table\":\"Debate\",";
+   data += "\"records\":" + records;
+   data += "}";
+
+   data += "]}";
+
+   Print("[LLM-DEBATE] Creating Debate and inserting Common Knowledge.");
+
+   bool success = Gateway.ExecuteRequest(data);
+
+   if(success)
+      Print("[LLM-DEBATE] Debate initialized successfully.");
+   else
+      Print("[LLM-DEBATE] Debate initialization failed.");
+
+   return success;
+}
+
+bool InitializeLLMHumanIntervention()
+{
+   string records = MADS.GetHumanInterventionJSON();
+
+   if(records == "" || records == "[]")
+   {
+      Print("[LLM-HUMAN] Human instructions are empty.");
+      return false;
+   }
+
+   string data = "{";
+
+   data += "\"command\":\"CHART-INIT\",";
+   data += "\"operations\":[";
 
    data += "{";
    data += "\"command\":\"MAKE\",";
@@ -494,24 +564,26 @@ bool InitializeLLMTables()
    data += "},";
 
    data += "{";
-   data += "\"command\":\"MAKE\",";
-   data += "\"table\":\"Simulated_Trades\",";
-   data += "\"columns\":" + schema.SIMULATED_TRADES_COLUMNS;
+   data += "\"command\":\"INSR\",";
+   data += "\"table\":\"Human_Intervention\",";
+   data += "\"records\":" + records;
    data += "}";
 
    data += "]}";
 
-   Print("[LLM-INIT] Sending six table definitions to Python.");
+   Print("[LLM-HUMAN] Creating Human_Intervention and inserting instructions.");
 
    bool success = Gateway.ExecuteRequest(data);
 
    if(success)
-      Print("[LLM-INIT] All tables created successfully.");
+      Print("[LLM-HUMAN] Human instructions initialized successfully.");
    else
-      Print("[LLM-INIT] Table creation failed.");
+      Print("[LLM-HUMAN] Human initialization failed.");
 
    return success;
 }
+
+
 
 void HandleCabinOrder()
 {
@@ -520,149 +592,177 @@ void HandleCabinOrder()
    Print("[CABIN] ", order.Serialize());
    
    string cabinCommand = order["command"].ToStr();
-   
-   if(cabinCommand == "LLM-INIT")
+
+   // -----------------------------------------
+   // LLM-GROUP
+   // -----------------------------------------
+   if(cabinCommand == "LLM-GROUP")
    {
-      bool success = InitializeLLMTables();
+
+      operation = order["operation"].ToStr();
+   
+      bool success = false;
+   
+      if(operation == "INIT")
+      {
+         success = InitializeLLMTables();
+      }
+      else if(operation == "DEBATE")
+      {
+         success = InitializeLLMDebate();
+      }
+      else if(operation == "HUMAN")
+      {
+         success = InitializeLLMHumanIntervention();
+      }
+      else
+      {
+         Print("[LLM-GROUP] Unknown operation: ", operation);
+      }
    
       if(!Gateway.CompleteCabinCommand(
          success ? "COMPLETED" : "FAILED"
       ))
       {
-         Print("[LLM-INIT] Could not update Cabin command status.");
+         Print("[LLM-GROUP] Could not update Cabin command status.");
       }
    
       return;
    }
    
-   string operation = order["operation"].ToStr();
-   bool processed = false;
-
-   if(operation == "TAKE-DATE")
+   // -----------------------------------------
+   // MT5-RESEND
+   // -----------------------------------------
+   else if(cabinCommand == "MT5-RESEND")
    {
-      string startText = order["start"].ToStr();
-      string endText   = order["end"].ToStr();
-
-      StringReplace(startText, "-", ".");
-      StringReplace(endText, "-", ".");
-
-      datetime startTime = StringToTime(startText);
-      datetime endTime   = StringToTime(endText);
-
-      if(startTime <= 0 || endTime <= 0 || startTime >= endTime)
-      {
-         Print("[MT5-RESEND] Invalid date range.");
-         return;
-      }
-
-      if(!BuildCandleSeries(true, startTime, endTime))
-      {
-         Print("[MT5-RESEND] Historical candle construction failed.");
-         return;
-      }
-
-      processed = GoSend("h1Candles", Create);
-
-      if(processed && h6Candles != "")
-         processed = GoSend("h6Candles", Create);
-
-      if(processed)
-      {
-         SmallBoxRecord boxRecords[];
-
-         if(!BuildSmallBoxRecords(
-            true,
-            startTime,
-            endTime,
-            boxRecords
-         ))
-         {
-            processed = false;
-         }
-         else if(!SendSmallBoxRecords(boxRecords, Create))
-         {
-            processed = false;
-         }
-      }
-
-      if(processed)
-         LastCandle = BuiltLastCandle;
-
-   }
-   else if(operation == "SEND-NEXT")
-   {
-      if(LastCandle <= 0)
-      {
-         Print("[MT5-RESEND] LastCandle is not initialized.");
-         return;
-      }
-
-      //PrintFormat(
-      //   "[SEND-NEXT-DEBUG] LAST-CANDLE-BEFORE=%s",
-      //   TimeToString(LastCandle, TIME_DATE|TIME_MINUTES)
-      //);
-
-      if(!BuildCandleSeries(false, LastCandle, 0))
-      {
-         Print("[MT5-RESEND] Next candle construction failed.");
-         return;
-      }
+      string operation = order["operation"].ToStr();
+      bool processed = false;
    
-      processed = GoSend("h1Candles", Append);
-   
-      if(processed && h6Candles != "")
-         processed = GoSend("h6Candles", Append);
-   
-      if(processed)
+      if(operation == "TAKE-DATE")
       {
-         SmallBoxRecord boxRecords[];
-
-         if(!BuildSmallBoxRecords(
-            false,
-            0,
-            BuiltLastCandle,
-            boxRecords
-         ))
+         string startText = order["start"].ToStr();
+         string endText   = order["end"].ToStr();
+   
+         StringReplace(startText, "-", ".");
+         StringReplace(endText, "-", ".");
+   
+         datetime startTime = StringToTime(startText);
+         datetime endTime   = StringToTime(endText);
+   
+         if(startTime <= 0 || endTime <= 0 || startTime >= endTime)
          {
-            processed = false;
+            Print("[MT5-RESEND] Invalid date range.");
+            return;
          }
-         else if(!SendSmallBoxRecords(boxRecords, Append))
+   
+         if(!BuildCandleSeries(true, startTime, endTime))
          {
-            processed = false;
+            Print("[MT5-RESEND] Historical candle construction failed.");
+            return;
          }
+   
+         processed = GoSend("h1Candles", Create);
+   
+         if(processed && h6Candles != "")
+            processed = GoSend("h6Candles", Create);
+   
+         if(processed)
+         {
+            SmallBoxRecord boxRecords[];
+   
+            if(!BuildSmallBoxRecords(
+               true,
+               startTime,
+               endTime,
+               boxRecords
+            ))
+            {
+               processed = false;
+            }
+            else if(!SendSmallBoxRecords(boxRecords, Create))
+            {
+               processed = false;
+            }
+         }
+   
+         if(processed)
+            LastCandle = BuiltLastCandle;
+   
       }
-      if(processed)
+      else if(operation == "SEND-NEXT")
       {
+         if(LastCandle <= 0)
+         {
+            Print("[MT5-RESEND] LastCandle is not initialized.");
+            return;
+         }
+   
          //PrintFormat(
-         //   "[SEND-NEXT-DEBUG] POINTER-UPDATE | OLD=%s | BUILT=%s",
-         //   TimeToString(LastCandle, TIME_DATE|TIME_MINUTES),
-         //   TimeToString(BuiltLastCandle, TIME_DATE|TIME_MINUTES)
-         //);
-      
-         LastCandle = BuiltLastCandle;
-      
-         //PrintFormat(
-         //   "[SEND-NEXT-DEBUG] LAST-CANDLE-AFTER=%s",
+         //   "[SEND-NEXT-DEBUG] LAST-CANDLE-BEFORE=%s",
          //   TimeToString(LastCandle, TIME_DATE|TIME_MINUTES)
          //);
+   
+         if(!BuildCandleSeries(false, LastCandle, 0))
+         {
+            Print("[MT5-RESEND] Next candle construction failed.");
+            return;
+         }
+      
+         processed = GoSend("h1Candles", Append);
+      
+         if(processed && h6Candles != "")
+            processed = GoSend("h6Candles", Append);
+      
+         if(processed)
+         {
+            SmallBoxRecord boxRecords[];
+   
+            if(!BuildSmallBoxRecords(
+               false,
+               0,
+               BuiltLastCandle,
+               boxRecords
+            ))
+            {
+               processed = false;
+            }
+            else if(!SendSmallBoxRecords(boxRecords, Append))
+            {
+               processed = false;
+            }
+         }
+         if(processed)
+         {
+            //PrintFormat(
+            //   "[SEND-NEXT-DEBUG] POINTER-UPDATE | OLD=%s | BUILT=%s",
+            //   TimeToString(LastCandle, TIME_DATE|TIME_MINUTES),
+            //   TimeToString(BuiltLastCandle, TIME_DATE|TIME_MINUTES)
+            //);
+         
+            LastCandle = BuiltLastCandle;
+         
+            //PrintFormat(
+            //   "[SEND-NEXT-DEBUG] LAST-CANDLE-AFTER=%s",
+            //   TimeToString(LastCandle, TIME_DATE|TIME_MINUTES)
+            //);
+         }
+      }
+      else
+      {
+         Print("[MT5-RESEND] Unknown operation: ", operation);
+         return;
+      }
+   
+      if(processed)
+      {
+         Print("[MT5-RESEND] Operation completed: ", operation);
+      }
+      else
+      {
+         Print("[MT5-RESEND] Operation failed; command remains pending.");
       }
    }
-   else
-   {
-      Print("[MT5-RESEND] Unknown operation: ", operation);
-      return;
-   }
-
-   if(processed)
-   {
-      Print("[MT5-RESEND] Operation completed: ", operation);
-   }
-   else
-   {
-      Print("[MT5-RESEND] Operation failed; command remains pending.");
-   }
 }
-
 
 
 
