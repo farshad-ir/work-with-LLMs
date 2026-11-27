@@ -645,13 +645,16 @@ def process_mt5_request(client_id, request_id, allow_processing=False):
                     }
 
 
-        
         response_payload = {
             "operations": operation_results,
+            "mads": mads_result,
         }
 
         if not success:
-            response_payload["error"] = "CHART-INIT operation failed."
+            response_payload["error"] = (
+                "CHART-INIT or MADS execution failed."
+            )
+
             
     elif command == "SQL-DIRECT":
 
