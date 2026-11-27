@@ -2257,19 +2257,19 @@ public:
          string status =
             root["commands"][i]["status"].ToStr();
    
-         if(command == "LLM-INIT" && status == "DISPATCHED")
+         if(command == "LLM-GROUP" && status == "DISPATCHED")
          {
             root["commands"][i]["status"] = finalStatus;
    
             if(!GatewaySaveCommands(root))
                return false;
    
-            Print("[COMMANDS] LLM-INIT status: ", finalStatus);
+            Print("[COMMANDS] LLM-GROUP status: ", finalStatus);
             return true;
          }
       }
    
-      Print("[COMMANDS] Dispatched LLM-INIT command not found.");
+      Print("[COMMANDS] Dispatched LLM-GROUP command not found.");
       return false;
    }
    void consume_cabin_flag()
