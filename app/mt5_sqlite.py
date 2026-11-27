@@ -152,6 +152,26 @@ def _make(payload, conn=None):
 
         definitions.append(definition)
 
+
+    if table.lower() == "smallboxes":
+        mapping_columns = [
+            ("StartH1ID", "INTEGER"),
+            ("EndH1ID", "INTEGER"),
+            ("H1MappingError", "INTEGER"),
+        ]
+
+        for name, column_type in mapping_columns:
+            if name.lower() not in {
+                existing.lower() for existing in column_names
+            }:
+                column_names.append(name)
+                definitions.append(
+                    f'"{name}" {column_type}'
+                )
+
+
+    
+    
     unique_groups = payload.get("unique", [])
 
     if not isinstance(unique_groups, list):
