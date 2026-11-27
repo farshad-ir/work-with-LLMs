@@ -279,6 +279,148 @@ def _make(payload, conn=None):
     }
 
 
+def _prepare_smallbox_h1_mapping(limit, conn=None):
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+        raise ValueError("limit must be a positive integer.")
+
+    def _run(connection):
+        h1_columns = _get_table_columns(connection, "h1Candles")
+        box_columns = _get_table_columns(connection, "SmallBoxes")
+
+        required_h1 = {"id", "time"}
+        required_boxes = {
+            "id",
+            "StartTime",
+            "EndTime",
+            "StartH1ID",
+            "EndH1ID",
+            "H1MappingError",
+        }
+
+        if not required_h1.issubset(h1_columns):
+            raise ValueError("h1Candles is missing required columns.")
+
+        if not required_boxes.issubset(box_columns):
+            raise ValueError("SmallBoxes is missing required columns.")
+
+        recent_candles = connection.execute(
+            """
+            SELECT id, time
+            FROM (
+                SELECT id, time
+                FROM h1Candles
+                ORDER BY id DESC
+                LIMIT ?
+            )
+            ORDER BY id ASC
+            """,
+            (limit,),
+        ).fetchall()
+
+        if not recent_candles:
+            raise ValueError("No H1 candles are available.")
+
+        window_start = recent_candles[0]["time"]
+        window_end = recent_candles[-1]["time"]
+
+        candle_rows = connection.execute(
+            """
+            SELECT id, time
+            FROM h1Candles
+            WHERE time IS NOT NULL
+            ORDER BY id ASC
+            """
+        ).fetchall()
+
+        time_to_id = {}
+
+        for candle in candle_rows:
+            candle_time = candle["time"]
+
+            if candle_time in time_to_id:
+                time_to_id[candle_time] = None
+            else:
+                time_to_id[candle_time] = candle["id"]
+
+        boxes = connection.execute(
+            """
+            SELECT
+                id,
+                StartTime,
+                EndTime,
+                StartH1ID,
+                EndH1ID
+            FROM SmallBoxes
+            WHERE EndTime >= ?
+              AND EndTime <= ?
+              AND H1MappingError IS NULL
+            ORDER BY id ASC
+            """,
+            (window_start, window_end),
+        ).fetchall()
+
+        mapped = 0
+        failed = 0
+        already_mapped = 0
+
+        for box in boxes:
+            if (
+                box["StartH1ID"] is not None
+                and box["EndH1ID"] is not None
+            ):
+                already_mapped += 1
+                continue
+
+            start_id = time_to_id.get(box["StartTime"])
+            end_id = time_to_id.get(box["EndTime"])
+
+            valid = (
+                start_id is not None
+                and end_id is not None
+                and start_id <= end_id
+            )
+
+            if valid:
+                connection.execute(
+                    """
+                    UPDATE SmallBoxes
+                    SET StartH1ID = ?,
+                        EndH1ID = ?
+                    WHERE id = ?
+                    """,
+                    (start_id, end_id, box["id"]),
+                )
+                mapped += 1
+
+            else:
+                connection.execute(
+                    """
+                    UPDATE SmallBoxes
+                    SET StartH1ID = NULL,
+                        EndH1ID = NULL,
+                        H1MappingError = 1
+                    WHERE id = ?
+                    """,
+                    (box["id"],),
+                )
+                failed += 1
+
+        return {
+            "requested_h1_count": limit,
+            "actual_h1_count": len(recent_candles),
+            "boxes_checked": len(boxes),
+            "mapped": mapped,
+            "failed": failed,
+            "already_mapped": already_mapped,
+        }
+
+    if conn is None:
+        with _connect() as connection:
+            return _run(connection)
+
+    return _run(conn)
+
+
 
 def _insert(payload, conn=None, ignore_conflicts=False):
     table = _validate_identifier(payload.get("table"))
