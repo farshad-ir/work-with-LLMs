@@ -22,7 +22,6 @@ struct MADS_KNOWLEDGE_ITEM
 
 // ============================================================
 // Stage 1: Knowledge Management Class
-// This class contains no trading knowledge.
 // ============================================================
 
 class CMADSKnowledge
@@ -31,7 +30,54 @@ private:
    string commonKnowledge;
    MADS_KNOWLEDGE_ITEM instructions[];
 
+   // ---------------------------------------------------------
+   // JSON String Escape
+   // ---------------------------------------------------------
+
+   string JsonEscape(const string value)
+   {
+      string result = "";
+
+      for(int i = 0; i < StringLen(value); i++)
+      {
+         ushort ch = StringGetCharacter(value, i);
+
+         if(ch == 34)
+            result += "\\\"";
+         else if(ch == 92)
+            result += "\\\\";
+         else if(ch == 8)
+            result += "\\b";
+         else if(ch == 9)
+            result += "\\t";
+         else if(ch == 10)
+            result += "\\n";
+         else if(ch == 12)
+            result += "\\f";
+         else if(ch == 13)
+            result += "\\r";
+         else if(ch < 32)
+            result += StringFormat("\\u%04X", (int)ch);
+         else
+            result += ShortToString(ch);
+      }
+
+      return result;
+   }
+
 public:
+
+
+CMADSKnowledge()
+{
+   commonKnowledge = "";
+   ArrayResize(instructions, 0);
+}
+
+   // ---------------------------------------------------------
+   // Common Knowledge
+   // ---------------------------------------------------------
+
    void AddCommonKnowledge(const string text)
    {
       if(text == "")
@@ -47,6 +93,10 @@ public:
    {
       return commonKnowledge;
    }
+
+   // ---------------------------------------------------------
+   // Role Instructions
+   // ---------------------------------------------------------
 
    bool AddInstruction(
       const string role,
@@ -98,6 +148,67 @@ public:
       return true;
    }
 
+   // ---------------------------------------------------------
+   // JSON: Human_Intervention
+   //
+   // Columns:
+   // prompt, role, trigger, enabled
+   // ---------------------------------------------------------
+
+   string GetHumanInterventionJSON()
+   {
+      string json = "[";
+      int count = ArraySize(instructions);
+
+      for(int i = 0; i < count; i++)
+      {
+         if(i > 0)
+            json += ",";
+
+         json += "{";
+         json += "\"prompt\":\"" + JsonEscape(instructions[i].prompt) + "\",";
+         json += "\"role\":\"" + JsonEscape(instructions[i].role) + "\",";
+         json += "\"trigger\":\"" + JsonEscape(instructions[i].trigger) + "\",";
+         json += "\"enabled\":1";
+         json += "}";
+      }
+
+      json += "]";
+
+      return json;
+   }
+
+   // ---------------------------------------------------------
+   // JSON: Debate
+   //
+   // Columns:
+   // sequence, role, content
+   //
+   // Common knowledge is inserted as one record.
+   // ---------------------------------------------------------
+
+   string GetDebateKnowledgeJSON()
+   {
+      if(commonKnowledge == "")
+         return "[]";
+
+      string json = "[";
+
+      json += "{";
+      json += "\"sequence\":1,";
+      json += "\"role\":\"COMMON\",";
+      json += "\"content\":\"" + JsonEscape(commonKnowledge) + "\"";
+      json += "}";
+
+      json += "]";
+
+      return json;
+   }
+
+   // ---------------------------------------------------------
+   // Clear
+   // ---------------------------------------------------------
+
    void Clear()
    {
       commonKnowledge = "";
@@ -107,12 +218,13 @@ public:
 
 // ============================================================
 // Stage 2: MADS Setup Class
-// All trading knowledge and role instructions belong here.
+// Trading knowledge and role instructions belong here.
 // ============================================================
 
 class CMADSSetup : public CMADSKnowledge
 {
 public:
+
    CMADSSetup()
    {
       // ------------------------------------------------------
