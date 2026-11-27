@@ -214,7 +214,7 @@ class MT5Cabin:
                 "CONSULT-LLM",
                 "SQL-DIRECT",
                 "MT5-RESEND",
-                "LLM-INIT"
+                "LLM-GROUP"
             ],
             state="readonly",
             width=20
@@ -384,6 +384,9 @@ class MT5Cabin:
         elif command_type == "MT5-RESEND":
             self.build_resend_form()
 
+        elif command_type == "LLM-GROUP":
+            self.build_llm_form()
+
     def build_sql_direct_form(self):
 
         self.sql_operation_var = tk.StringVar(value="LIST-TABL")
@@ -414,6 +417,28 @@ class MT5Cabin:
 
         self.update_sql_direct_fields()
 
+    
+    def build_llm_form(self):
+    
+        self.llm_operation_var = tk.StringVar(value="INIT")
+    
+        ttk.Label(
+            self.command_fields_frame,
+            text="LLM Operation:"
+        ).pack(anchor="w")
+    
+        self.llm_operation_selector = ttk.Combobox(
+            self.command_fields_frame,
+            textvariable=self.llm_operation_var,
+            values=["INIT", "DEBATE", "HUMAN"],
+            state="readonly",
+            width=20
+        )
+    
+        self.llm_operation_selector.pack(anchor="w", pady=3)
+
+
+    
     def update_sql_direct_fields(self, event=None):
 
         for widget in self.sql_fields_frame.winfo_children():
@@ -771,10 +796,12 @@ class MT5Cabin:
                 command["start"] = start_date
                 command["end"] = end_date
                 
-
-        elif command_type == "LLM-INIT":
-
-            command["command"] = "LLM-INIT"  
+        elif command_type == "LLM-GROUP":
+        
+            command = {
+                "command": "LLM-GROUP",
+                "operation": self.llm_operation_var.get()
+            }
 
         
         else:
