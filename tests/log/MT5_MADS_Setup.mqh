@@ -261,6 +261,8 @@ public:
          "Look for buying opportunities.\n"
          "Examine previous Boxes as potential support areas.\n"
          "Evaluate the behavior and direction of the River.\n"
+         "You may request additional market data through LLM-SELQ.\n"
+         "Continue your analysis using the returned data.\n"
          "Present evidence supporting a buying decision."
       );
 
