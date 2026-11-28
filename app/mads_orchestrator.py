@@ -1007,6 +1007,10 @@ def run_mads_debate(max_turns=MAX_DEBATE_TURNS):
         ),
     )
 
+    debate_context = {
+        "reference_h1_id": None,
+    }
+
     current_role = "CRITIC"
     instruction = (
         "You are activated first. Review the shared knowledge "
@@ -1017,6 +1021,7 @@ def run_mads_debate(max_turns=MAX_DEBATE_TURNS):
         next_role = _run_role_turn(
             role=current_role,
             instruction=instruction,
+            debate_context=debate_context,
         )
 
         if next_role is None:
