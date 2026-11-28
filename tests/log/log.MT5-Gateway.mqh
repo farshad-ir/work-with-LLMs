@@ -2290,6 +2290,42 @@ public:
    {
       return GatewayExecuteRequest(body);
    }
+   
+   bool ReadLastResponse(CJAVal &result)
+   {
+      if(m_lastRequestId == "")
+         return false;
+   
+      string receivedFile =
+         m_receivedDir + "/" + m_lastRequestId + ".json";
+   
+      if(!FileIsExist(receivedFile, FILE_COMMON))
+         return false;
+   
+      int h = FileOpen(
+         receivedFile,
+         FILE_READ | FILE_TXT | FILE_COMMON | FILE_UNICODE
+      );
+   
+      if(h == INVALID_HANDLE)
+         return false;
+   
+      string content = "";
+   
+      while(!FileIsEnding(h))
+         content += FileReadString(h);
+   
+      FileClose(h);
+   
+      if(content == "" || !result.Deserialize(content))
+         return false;
+   
+      if(result["request_id"].ToStr() != m_lastRequestId ||
+         result["status"].ToStr() != "COMPLETED")
+         return false;
+   
+      return true;
+   }
 
 };
 #endif // __MT5_GATEWAY_MQH__
