@@ -61,6 +61,33 @@ def run_llm_selq(limit):
             (limit,),
         ).fetchall()
 
+
+
+        # Select previous opinions for the H1 candles in this window.
+        h1_ids = [str(row["id"]) for row in h1_rows]
+
+        placeholders = ", ".join("?" for _ in h1_ids)
+
+        opinion_rows = conn.execute(
+            f"""
+            SELECT *
+            FROM Opinions
+            WHERE candle_reference IN ({placeholders})
+            ORDER BY id ASC
+            """,
+            h1_ids,
+        ).fetchall()
+
+        opinions_data = [
+            dict(row)
+            for row in opinion_rows
+        ]
+
+        reference_h1_id = h1_rows[-1]["id"]
+
+
+        
+
         # Select H6 candles within the same time window.
         h6_rows = conn.execute(
             """
@@ -119,9 +146,11 @@ def run_llm_selq(limit):
         return {
             "llm_selq": {
                 "requested_h1_count": limit,
+                "reference_h1_id": reference_h1_id,
                 "h1_candles": h1_data,
                 "h6_candles": h6_data,
                 "small_boxes": boxes_data,
+                "opinions": opinions_data,
             },
         }
 
