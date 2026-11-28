@@ -84,7 +84,7 @@ struct SmallBoxRecord
    double lowPrice;
 };
 
-
+long LastPrintedOpinionId = 0;
 
 
 
@@ -401,6 +401,116 @@ bool BuildCandleSeries(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+void ReadLatestOpinion()
+{
+   string data = "{";
+
+   data += "\"command\":\"SQL-DIRECT\",";
+   data += "\"operation\":{";
+   data += "\"command\":\"SELA\",";
+   data += "\"table\":\"Opinions\",";
+   data += "\"columns\":[";
+   data += "\"id\",";
+   data += "\"symbol\",";
+   data += "\"timeframe\",";
+   data += "\"candle_reference\",";
+   data += "\"opinion\"";
+   data += "],";
+   data += "\"limit\":20";
+   data += "}}";
+
+   if(!Gateway.ExecuteRequest(data))
+   {
+      Print("[OPINION] Database request failed.");
+      return;
+   }
+
+   CJAVal response;
+
+   if(!Gateway.ReadLastResponse(response))
+   {
+      Print("[OPINION] Cannot read database response.");
+      return;
+   }
+
+   if(response["payload"]["operation"]["command"].ToStr() != "SELA" ||
+      response["payload"]["operation"]["result"]["table"].ToStr() != "Opinions")
+   {
+      Print("[OPINION] Response does not belong to Opinions query.");
+      return;
+   }
+
+   CJAVal records =
+      response["payload"]["operation"]["result"]["records"];
+
+   long latestId = 0;
+   string latestOpinion = "";
+   string latestCandleReference = "";
+
+   for(int i = 0; i < records.Size(); i++)
+   {
+      if(records[i]["symbol"].ToStr() != _Symbol)
+         continue;
+
+      if(records[i]["timeframe"].ToStr() != "H1")
+         continue;
+
+      string opinion = records[i]["opinion"].ToStr();
+
+      if(opinion == "")
+         continue;
+
+      long id = records[i]["id"].ToInt();
+
+      if(id > latestId)
+      {
+         latestId = id;
+         latestOpinion = opinion;
+         latestCandleReference =
+            records[i]["candle_reference"].ToStr();
+      }
+   }
+
+   if(latestId <= LastPrintedOpinionId || latestOpinion == "")
+      return;
+
+   Print(
+      "[OPINION] ID=", latestId,
+      " | Symbol=", _Symbol,
+      " | Timeframe=H1",
+      " | Candle=", latestCandleReference,
+      " | Theory=", latestOpinion
+   );
+
+   LastPrintedOpinionId = latestId;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void OnTimer()
 {
    if(!Gateway.ProcessControl())
@@ -419,6 +529,8 @@ void OnTimer()
       HandleCabinOrder();
    
    Gateway.consume_cabin_flag();
+
+   ReadLatestOpinion();
 }
 
 bool InitializeLLMTables()
