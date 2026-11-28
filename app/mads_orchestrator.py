@@ -610,7 +610,12 @@ def _summarize_selq(result):
 # CRITIC control
 # ============================================================
 
-def _process_control(role, tool_call_id, arguments):
+def _process_control(
+    role,
+    tool_call_id,
+    arguments,
+    reference_h1_id=None,
+):
     if role != "CRITIC":
         raise ValueError(
             "MADS-CONTROL is available only to CRITIC."
@@ -711,6 +716,13 @@ def _process_control(role, tool_call_id, arguments):
             raise ValueError(
                 "Cannot finish debate without an H1 reference."
             )
+
+
+        opinion_id = _insert_final_opinion(
+            reference_h1_id,
+            final_result,
+        )
+
         
         _append_debate(
             role="CRITIC",
@@ -950,12 +962,15 @@ def _run_role_turn(role, instruction=None, debate_context=None):
                 })
 
             elif tool_name == "MADS-CONTROL":
-                def _process_control(
-                    role,
-                    tool_call_id,
-                    arguments,
-                    reference_h1_id=None,
-                ):
+                _process_control(
+                    role=role,
+                    tool_call_id=tool_call_id,
+                    arguments=arguments,
+                    reference_h1_id=(
+                        debate_context.get("reference_h1_id")
+                        if debate_context else None
+                    ),
+                )
 
                 if arguments.get("action", "").upper() == "FINISH":
                     return None
@@ -963,18 +978,6 @@ def _run_role_turn(role, instruction=None, debate_context=None):
                 return str(
                     arguments.get("next_role", "")
                 ).upper()
-
-            else:
-                result = {
-                    "success": False,
-                    "error": f"Unknown tool: {tool_name}",
-                }
-
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call_id,
-                    "content": _json(result),
-                })
 
 
 # ============================================================
