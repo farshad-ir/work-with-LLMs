@@ -126,7 +126,60 @@ def _load_debate():
 
     finally:
         conn.close()
+        
+def _insert_final_opinion(reference_h1_id, final_result):
+    if reference_h1_id is None:
+        raise ValueError(
+            "Cannot save Opinion: reference_h1_id is missing."
+        )
 
+    conn = _connect()
+
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+
+        cursor = conn.execute(
+            """
+            INSERT INTO Opinions (
+                created_at,
+                symbol,
+                timeframe,
+                candle_reference,
+                opinion
+            )
+            SELECT
+                ?,
+                symbol,
+                'H1',
+                CAST(id AS TEXT),
+                ?
+            FROM h1Candles
+            WHERE id = ?
+            """,
+            (
+                _now(),
+                final_result,
+                reference_h1_id,
+            ),
+        )
+
+        if cursor.rowcount != 1:
+            raise ValueError(
+                f"H1 candle not found: {reference_h1_id}"
+            )
+
+        opinion_id = cursor.lastrowid
+        conn.commit()
+
+        return opinion_id
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+        
 def _build_debate_report():
     events = _load_debate()
 
@@ -653,7 +706,12 @@ def _process_control(role, tool_call_id, arguments):
             },
             tool_call_id=tool_call_id,
         )
-
+        
+        if reference_h1_id is None:
+            raise ValueError(
+                "Cannot finish debate without an H1 reference."
+            )
+        
         _append_debate(
             role="CRITIC",
             event_type="TOOL_RESULT",
@@ -682,7 +740,7 @@ def _process_control(role, tool_call_id, arguments):
 # One role turn
 # ============================================================
 
-def _run_role_turn(role, instruction=None):
+def _run_role_turn(role, instruction=None, debate_context=None):
     role = role.upper()
 
     system_prompt = _build_system_prompt(
@@ -852,6 +910,15 @@ def _run_role_turn(role, instruction=None):
 
                     try:
                         result = run_llm_selq(limit)
+                        
+                        reference_h1_id = result.get(
+                            "llm_selq", {}
+                        ).get("reference_h1_id")
+
+                        if reference_h1_id is not None:
+                            debate_context["reference_h1_id"] = (
+                                reference_h1_id
+                            )
 
                         summary = _summarize_selq(result)
 
@@ -883,11 +950,12 @@ def _run_role_turn(role, instruction=None):
                 })
 
             elif tool_name == "MADS-CONTROL":
-                _process_control(
-                    role=role,
-                    tool_call_id=tool_call_id,
-                    arguments=arguments,
-                )
+                def _process_control(
+                    role,
+                    tool_call_id,
+                    arguments,
+                    reference_h1_id=None,
+                ):
 
                 if arguments.get("action", "").upper() == "FINISH":
                     return None
